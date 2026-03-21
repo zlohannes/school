@@ -338,30 +338,28 @@ async function uploadAvatar(){
   document.getElementById('progressBar').style.width='30%';
 
   try {
-    // 用 ImgBB 免费图床
-    const formData=new FormData();
-    formData.append('image',selectedFile);
-    // 这里用一个公开的测试key，实际使用时建议用户申请自己的key
-    formData.append('key','d36eb928ef1b9a2c2d2c9e6f6e8b8c9a');
+    var ext=selectedFile.name.split('.').pop()||'jpg';
+    var filename=currentUser.username+'_'+Date.now()+'.'+ext;
 
-    const resp=await fetch('https://api.imgbb.com/1/upload?key=d36eb928ef1b9a2c2d2c9e6f6e8b8c9a',{
-      method:'POST',
-      body:formData
+    var _ref=sb.supabaseKey.split('-')[0];
+    // 上传到 Supabase Storage
+    var uploadRes=await sb.storage.from('avatars').upload(filename,selectedFile,{
+      cacheControl:'3600',
+      upsert:true
     });
-    document.getElementById('progressBar').style.width='70%';
+    if(uploadRes.error)throw new Error(uploadRes.error.message||'上传失败');
 
-    if(!resp.ok)throw new Error('上传失败');
-    const json=await resp.json();
-    if(json.error)throw new Error(json.error.message||'上传失败');
+    document.getElementById('progressBar').style.width='80%';
 
-    const imageUrl=json.data.url;
-    document.getElementById('progressBar').style.width='100%';
+    // 获取公开URL
+    var publicUrl=sb.storage.from('avatars').getPublicUrl(filename).data.publicUrl;
 
     // 更新数据库
-    const{error}=await sb.from('users').update({avatar_url:imageUrl}).eq('username',currentUser.username);
-    if(error)throw new Error('保存头像失败：'+error.message);
+    var updateRes=await sb.from('users').update({avatar_url:publicUrl}).eq('username',currentUser.username);
+    if(updateRes.error)throw new Error('保存头像失败：'+updateRes.error.message);
 
-    userData.avatar_url=imageUrl;
+    document.getElementById('progressBar').style.width='100%';
+    userData.avatar_url=publicUrl;
     closeAvatarModal();
     renderAvatar();
     alert('头像更换成功！');
