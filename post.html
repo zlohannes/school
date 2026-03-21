@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>帖子详情 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
-    
-    /* 导航栏 */
     .navbar{background:linear-gradient(135deg,#667eea,#764ba2);padding:12px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
     .nav-content{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
     .nav-left{display:flex;align-items:center;gap:15px}
@@ -22,37 +21,19 @@
     .user-info{display:flex;align-items:center;gap:10px;color:white}
     .user-nickname{font-weight:600;font-size:14px}
     .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-    .role-student{background:rgba(255,255,255,0.2)}
-    .role-teacher{background:#2196F3}
-    .role-admin{background:#e74c3c}
+    .role-student{background:rgba(255,255,255,0.2)}.role-teacher{background:#2196F3}.role-admin{background:#e74c3c}
     .btn-logout{background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:background 0.2s}
     .btn-logout:hover{background:rgba(255,255,255,0.3)}
-    
-    /* 移动端 */
     .mobile-menu-btn{display:none;background:none;border:none;color:white;font-size:24px;cursor:pointer}
-    @media(max-width:768px){
-      .mobile-menu-btn{display:block}
-      .nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}
-      .nav-links.active{display:flex}
-      .nav-left{flex:1}
-    }
-    
-    /* 主内容 */
-    .main{max-width:800px;margin:20px auto;padding:0 15px}
-    
-    /* 帖子内容 */
+    @media(max-width:768px){.mobile-menu-btn{display:block}.nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}.nav-links.active{display:flex}.nav-left{flex:1}}
+    .main{max-width:800px;margin:20px auto;padding:0 15px;padding-bottom:100px}
     .post-card{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px;margin-bottom:20px}
     .post-header{display:flex;align-items:center;gap:12px;margin-bottom:15px;flex-wrap:wrap}
     .category-tag{padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:white}
-    .cat-learning{background:#4CAF50}
-    .cat-campus{background:#2196F3}
-    .cat-trade{background:#FF9800}
-    .cat-job{background:#9C27B0}
-    .cat-chat{background:#FF5722}
-    .cat-notice{background:#f44336}
+    .cat-learning{background:#4CAF50}.cat-campus{background:#2196F3}.cat-trade{background:#FF9800}.cat-job{background:#9C27B0}.cat-chat{background:#FF5722}.cat-notice{background:#f44336}
     .post-title{font-size:22px;font-weight:700;color:#333;margin-bottom:20px;line-height:1.4}
     .post-author{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #eee}
-    .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700}
+    .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;flex-shrink:0}
     .author-info{flex:1}
     .author-name{font-weight:600;color:#333;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .author-time{color:#999;font-size:13px;margin-top:2px}
@@ -62,19 +43,14 @@
     .action-btn:hover{background:#f5f5f5}
     .action-btn.liked{color:#e74c3c}
     .action-btn.liked:hover{background:#ffeaea}
-    
-    /* 举报模态框 */
     .report-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
     .report-modal.active{display:flex}
     .report-box{background:white;border-radius:12px;width:100%;max-width:400px;padding:25px}
     .report-title{font-size:18px;font-weight:600;margin-bottom:15px}
     .report-textarea{width:100%;min-height:120px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit}
     .report-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:15px}
-    .btn-cancel{background:#f5f5f5;color:#333;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer}
-    .btn-submit{background:#e74c3c;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-    .btn-submit:hover{opacity:0.9}
-    
-    /* 回复区域 */
+    .btn-cancel-r{background:#f5f5f5;color:#333;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer}
+    .btn-submit-r{background:#e74c3c;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
     .replies-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px}
     .replies-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
     .replies-title{font-size:18px;font-weight:600;color:#333}
@@ -83,35 +59,27 @@
     .reply-item:last-child{border-bottom:none}
     .reply-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
     .reply-floor{color:#999;font-size:13px;min-width:40px}
-    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
+    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;flex-shrink:0}
     .reply-author{font-weight:600;color:#333;font-size:14px;display:flex;align-items:center;gap:6px}
     .reply-time{color:#999;font-size:12px}
     .reply-content{color:#333;font-size:14px;line-height:1.6;padding-left:48px;white-space:pre-wrap}
-    
     .empty-replies{text-align:center;padding:40px;color:#999}
     .empty-icon{font-size:48px;margin-bottom:10px}
-    
-    /* 回复输入 */
-    .reply-input-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:20px;margin-top:20px;position:sticky;bottom:0}
+    .reply-input-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:20px;margin-top:20px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:800px}
     .reply-input-wrapper{display:flex;gap:12px;align-items:flex-end}
     .reply-textarea{flex:1;min-height:60px;max-height:150px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none;font-family:inherit}
     .reply-textarea:focus{border-color:#667eea;outline:none}
-    .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+    .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s;flex-shrink:0}
     .btn-send:hover{opacity:0.9}
     .btn-send:disabled{opacity:0.5;cursor:not-allowed}
-    
-    /* 错误状态 */
     .error-state{text-align:center;padding:80px 20px}
     .error-icon{font-size:64px;margin-bottom:20px}
     .error-text{font-size:18px;color:#666;margin-bottom:20px}
     .btn-back{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block}
-    
-    /* 加载 */
     .loading{text-align:center;padding:60px;color:#999}
   </style>
 </head>
 <body>
-  <!-- 导航栏 -->
   <nav class="navbar">
     <div class="nav-content">
       <div class="nav-left">
@@ -127,305 +95,156 @@
       </div>
     </div>
   </nav>
-  
-  <!-- 主内容 -->
-  <div class="main" id="mainContent">
-    <div class="loading">加载中...</div>
-  </div>
-  
-  <!-- 举报模态框 -->
+  <div class="main" id="mainContent"><div class="loading">加载中...</div></div>
   <div class="report-modal" id="reportModal">
     <div class="report-box">
       <div class="report-title">🚨 举报帖子</div>
       <textarea class="report-textarea" id="reportReason" placeholder="请说明举报原因..."></textarea>
       <div class="report-btns">
-        <button class="btn-cancel" onclick="closeReportModal()">取消</button>
-        <button class="btn-submit" onclick="submitReport()">提交举报</button>
+        <button class="btn-cancel-r" onclick="closeReportModal()">取消</button>
+        <button class="btn-submit-r" onclick="submitReport()">提交举报</button>
       </div>
     </div>
   </div>
-  
   <script>
-    const DB_NAME = 'lucheng_forum';
-    
-    let db;
-    let currentUser = null;
-    let post = null;
-    let replies = [];
-    
-    // 初始化
-    document.addEventListener('DOMContentLoaded', init);
-    
-    function init() {
-      const userStr = sessionStorage.getItem('currentUser');
-      if (!userStr) {
-        window.location.href = 'index.html';
-        return;
-      }
-      currentUser = JSON.parse(userStr);
-      renderUserInfo();
-      initDB();
-    }
-    
-    function initDB() {
-      const request = indexedDB.open(DB_NAME, 1);
-      request.onsuccess = (e) => {
-        db = e.target.result;
-        loadPost();
-      };
-      request.onerror = (e) => {
-        showError('数据库连接失败');
-      };
-    }
-    
-    function renderUserInfo() {
-      const roleClass = `role-${currentUser.role}`;
-      const roleText = { student: '学生', teacher: '老师', admin: '管理员' }[currentUser.role] || '学生';
-      document.getElementById('userInfo').innerHTML = `
-        <span class="user-nickname">${currentUser.nickname}</span>
-        <span class="role-tag ${roleClass}">${roleText}</span>
-      `;
-    }
-    
-    function toggleMobileMenu() {
-      document.getElementById('navLinks').classList.toggle('active');
-    }
-    
-    function logout() {
-      sessionStorage.clear();
-      window.location.href = 'index.html';
-    }
-    
-    function getPostId() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('id');
-    }
-    
-    function loadPost() {
-      const postId = getPostId();
-      if (!postId) {
-        showError('帖子不存在');
-        return;
-      }
-      
-      const tx = db.transaction(['posts', 'replies'], 'readonly');
-      const postStore = tx.objectStore('posts');
-      const replyStore = tx.objectStore('replies');
-      
-      postStore.get(parseInt(postId)).onsuccess = (e) => {
-        post = e.target.result;
-        if (!post) {
-          showError('帖子不存在');
-          return;
-        }
-        
-        replyStore.getAll().onsuccess = (e2) => {
-          replies = (e2.target.result || []).filter(r => r.postId === post.id);
-          renderPost();
-        };
-      };
-      
-      postStore.get(parseInt(postId)).onerror = () => {
-        showError('帖子不存在');
-      };
-    }
-    
-    function renderPost() {
-      const categoryNames = {
-        learning: '学习交流',
-        campus: '校园生活',
-        trade: '二手交易',
-        job: '求职招聘',
-        chat: '闲聊灌水',
-        notice: '公告通知'
-      };
-      
-      const isLiked = post.likedBy && post.likedBy.includes(currentUser.username);
-      const roleClass = `role-${post.authorRole || 'student'}`;
-      const roleText = { student: '学生', teacher: '老师', admin: '管理员' }[post.authorRole] || '学生';
-      const initial = post.authorNickname ? post.authorNickname.charAt(0) : '?';
-      
-      document.getElementById('mainContent').innerHTML = `
-        <!-- 帖子内容 -->
-        <div class="post-card">
-          <div class="post-header">
-            <span class="category-tag cat-${post.category}">${categoryNames[post.category] || '其他'}</span>
-          </div>
-          <h1 class="post-title">${escapeHtml(post.title)}</h1>
-          
-          <div class="post-author">
-            <div class="author-avatar">${initial}</div>
-            <div class="author-info">
-              <div class="author-name">
-                ${escapeHtml(post.authorNickname)}
-                <span class="role-tag ${roleClass}">${roleText}</span>
-              </div>
-              <div class="author-time">${formatTime(post.createdAt)}</div>
-            </div>
-          </div>
-          
-          <div class="post-content">${escapeHtml(post.content)}</div>
-          
-          <div class="post-actions">
-            <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike()">
-              ${isLiked ? '❤️' : '🤍'} ${post.likes || 0}
-            </button>
-            <button class="action-btn" onclick="openReportModal()">🚩 举报</button>
-          </div>
+const SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
+const SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
+
+let currentUser=null,userData=null,postData=null,replies=[];
+
+document.addEventListener('DOMContentLoaded',init);
+
+async function init(){
+  const s=sessionStorage.getItem('currentUser');
+  if(!s){window.location.href='index.html';return}
+  currentUser=JSON.parse(s);
+  const{data:user}=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
+  userData=user;
+  renderUserInfo();
+  await loadPost();
+}
+
+function renderUserInfo(){
+  const rc=`role-${currentUser.role}`;
+  const rt={student:'学生',teacher:'老师',admin:'管理员'}[currentUser.role]||'学生';
+  const nn=userData?(userData.nickname||currentUser.nickname):currentUser.nickname;
+  const av=userData&&userData.avatar_url;
+  let avatarHtml=av?`<img src="${esc(av)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">`:`<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${(nn||'?').charAt(0).toUpperCase()}</span>`;
+  document.getElementById('userInfo').innerHTML=`<span style="display:flex;align-items:center;gap:8px">${avatarHtml}<span class="user-nickname">${esc(nn)}</span><span class="role-tag ${rc}">${rt}</span></span>`;
+}
+function toggleMobileMenu(){document.getElementById('navLinks').classList.toggle('active')}
+function logout(){sessionStorage.clear();window.location.href='index.html'}
+
+async function loadPost(){
+  const id=new URLSearchParams(location.search).get('id');
+  if(!id){showError('帖子不存在');return}
+  const{data:post}=await sb.from('posts').select('*').eq('id',id).maybeSingle();
+  if(!post){showError('帖子不存在');return}
+  // 获取作者封号状态
+  const{data:authorUser}=await sb.from('users').select('is_banned').eq('username',post.author).maybeSingle();
+  post.author_banned=authorUser&&authorUser.is_banned;
+  postData=post;
+  await loadReplies();
+  render();
+}
+
+async function toggleBanUser(){
+  if(!postData||currentUser.role!=='admin')return;
+  const target=postData.author;
+  const ban=!postData.author_banned;
+  if(!confirm((ban?'封禁':'解封')+'用户 '+postData.author_nickname+' ？'))return;
+  const{error}=await sb.from('users').update({is_banned:ban}).eq('username',target);
+  if(error){alert('操作失败');return}
+  postData.author_banned=ban;
+  alert(ban?'已封禁该用户':'已解封该用户');
+  render();
+}
+
+async function loadReplies(){
+  const{data}=await sb.from('replies').select('*').eq('post_id',postData.id).order('created_at',{ascending:true});
+  replies=data||[];
+}
+
+function render(){
+  const p=postData;
+  const liked=(p.liked_by||[]).includes(currentUser.username);
+  // 获取作者角色
+  document.getElementById('mainContent').innerHTML=`
+    <div class="post-card">
+      <div class="post-header"><span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span></div>
+      <h1 class="post-title">${esc(p.title)}</h1>
+      <div class="post-author">
+        <div class="author-avatar">${(p.author_nickname||'?').charAt(0)}</div>
+        <div class="author-info">
+          <div class="author-name">${esc(p.author_nickname||'')}</div>
+          <div class="author-time">${timeAgo(p.created_at)}</div>
         </div>
-        
-        <!-- 回复列表 -->
-        <div class="replies-section">
-          <div class="replies-header">
-            <span class="replies-title">回复</span>
-            <span class="replies-count">${replies.length}</span>
-          </div>
-          
-          ${replies.length === 0 ? `
-            <div class="empty-replies">
-              <div class="empty-icon">💬</div>
-              <div>暂无回复，快来抢沙发吧！</div>
-            </div>
-          ` : replies.map((reply, index) => {
-            const replyRoleClass = `role-${reply.authorRole || 'student'}`;
-            const replyRoleText = { student: '学生', teacher: '老师', admin: '管理员' }[reply.authorRole] || '学生';
-            const replyInitial = reply.authorNickname ? reply.authorNickname.charAt(0) : '?';
-            return `
-              <div class="reply-item">
-                <div class="reply-header">
-                  <span class="reply-floor">${index + 1}楼</span>
-                  <div class="reply-avatar">${replyInitial}</div>
-                  <span class="reply-author">
-                    ${escapeHtml(reply.authorNickname)}
-                    <span class="role-tag ${replyRoleClass}" style="font-size:10px;padding:1px 6px">${replyRoleText}</span>
-                  </span>
-                  <span class="reply-time">${formatTime(reply.createdAt)}</span>
-                </div>
-                <div class="reply-content">${escapeHtml(reply.content)}</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-        
-        <!-- 回复输入 -->
-        <div class="reply-input-section">
-          <div class="reply-input-wrapper">
-            <textarea class="reply-textarea" id="replyContent" placeholder="写下你的回复..."></textarea>
-            <button class="btn-send" onclick="submitReply()">发送</button>
-          </div>
-        </div>
-      `;
-    }
-    
-    function toggleLike() {
-      if (!post) return;
-      
-      const likedBy = post.likedBy || [];
-      const username = currentUser.username;
-      const isLiked = likedBy.includes(username);
-      
-      if (isLiked) {
-        post.likedBy = likedBy.filter(u => u !== username);
-        post.likes = Math.max(0, (post.likes || 1) - 1);
-      } else {
-        post.likedBy = [...likedBy, username];
-        post.likes = (post.likes || 0) + 1;
-      }
-      
-      const tx = db.transaction(['posts'], 'readwrite');
-      tx.objectStore('posts').put(post);
-      tx.oncomplete = () => {
-        renderPost();
-      };
-    }
-    
-    function openReportModal() {
-      document.getElementById('reportModal').classList.add('active');
-    }
-    
-    function closeReportModal() {
-      document.getElementById('reportModal').classList.remove('active');
-      document.getElementById('reportReason').value = '';
-    }
-    
-    function submitReport() {
-      const reason = document.getElementById('reportReason').value.trim();
-      if (!reason) {
-        alert('请输入举报原因');
-        return;
-      }
-      
-      alert('举报已提交，感谢您的反馈！');
-      closeReportModal();
-    }
-    
-    function submitReply() {
-      const content = document.getElementById('replyContent').value.trim();
-      if (!content) {
-        alert('请输入回复内容');
-        return;
-      }
-      
-      const reply = {
-        postId: post.id,
-        content,
-        author: currentUser.username,
-        authorNickname: currentUser.nickname,
-        authorRole: currentUser.role,
-        createdAt: new Date().toISOString()
-      };
-      
-      const tx = db.transaction(['replies'], 'readwrite');
-      tx.objectStore('replies').add(reply);
-      tx.oncomplete = () => {
-        document.getElementById('replyContent').value = '';
-        // 重新加载回复
-        const replyTx = db.transaction(['replies'], 'readonly');
-        replyTx.objectStore('replies').getAll().onsuccess = (e) => {
-          replies = (e.target.result || []).filter(r => r.postId === post.id);
-          renderPost();
-        };
-      };
-    }
-    
-    function showError(message) {
-      document.getElementById('mainContent').innerHTML = `
-        <div class="error-state">
-          <div class="error-icon">😕</div>
-          <div class="error-text">${message}</div>
-          <a href="forum.html" class="btn-back">返回论坛</a>
-        </div>
-      `;
-    }
-    
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-    
-    function formatTime(dateStr) {
-      const date = new Date(dateStr);
-      const now = new Date();
-      const diff = (now - date) / 1000;
-      
-      if (diff < 60) return '刚刚';
-      if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
-      if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
-      if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
-      return date.toLocaleDateString('zh-CN');
-    }
-    
-    // 回车发送回复
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        const target = e.target;
-        if (target.classList.contains('reply-textarea')) {
-          e.preventDefault();
-          submitReply();
-        }
-      }
-    });
+        ${currentUser.role==='admin'&&p.author!==currentUser.username?'<button onclick="toggleBanUser()" style="margin-left:auto;background:'+(p.author_banned?'#27ae60':'#e74c3c')+';color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer">'+(p.author_banned?'🔓 解封':'🔒 封号')+'</button>':''}
+      </div>
+      <div class="post-content">${esc(p.content)}</div>
+      <div class="post-actions">
+        <button class="action-btn ${liked?'liked':''}" onclick="toggleLike()">
+          ${liked?'❤️':'🤍'} ${p.likes||0}
+        </button>
+        <button class="action-btn" onclick="openReportModal()">🚩 举报</button>
+        ${currentUser.role==='admin'&&!p.is_deleted?'<button class="action-btn" onclick="adminDeletePost()" style="color:#e74c3c">🗑 删除帖子</button>':''}
+      </div>
+    </div>
+    <div class="replies-section">
+      <div class="replies-header"><span class="replies-title">回复</span><span class="replies-count">${replies.length}</span></div>
+      ${replies.length===0?'<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，快来抢沙发吧！</div></div>':
+      replies.map((r,i)=>`<div class="reply-item"><div class="reply-header"><span class="reply-floor">${i+1}楼</span><div class="reply-avatar">${(r.author_nickname||'?').charAt(0)}</div><span class="reply-author">${esc(r.author_nickname||'')}</span><span class="reply-time">${timeAgo(r.created_at)}</span></div><div class="reply-content">${esc(r.content)}</div></div>`).join('')}
+    </div>
+    <div class="reply-input-section">
+      <div class="reply-input-wrapper">
+        <textarea class="reply-textarea" id="replyContent" placeholder="写下你的回复..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitReply()}"></textarea>
+        <button class="btn-send" id="sendBtn" onclick="submitReply()">发送</button>
+      </div>
+    </div>`;
+}
+
+async function toggleLike(){
+  if(!postData)return;
+  const lb=[...(postData.liked_by||[])];
+  const u=currentUser.username;
+  const idx=lb.indexOf(u);
+  if(idx>-1)lb.splice(idx,1);else lb.push(u);
+  const likes=lb.length;
+  const{error}=await sb.from('posts').update({likes,liked_by:lb}).eq('id',postData.id);
+  if(error)return;
+  postData.likes=likes;postData.liked_by=lb;
+  render();
+}
+
+async function submitReply(){
+  const c=document.getElementById('replyContent').value.trim();
+  if(!c){alert('请输入回复内容');return}
+  document.getElementById('sendBtn').disabled=true;
+  const{error}=await sb.from('replies').insert({post_id:postData.id,content:c,author:currentUser.username,author_nickname:currentUser.nickname});
+  document.getElementById('sendBtn').disabled=false;
+  if(error){alert('发送失败：'+error.message);return}
+  await loadReplies();render();
+}
+
+async function adminDeletePost(){
+  if(!confirm('确定删除此帖子？删除后内容不再显示。'))return;
+  const{error}=await sb.from('posts').update({is_deleted:true}).eq('id',postData.id);
+  if(error){alert('删除失败');return}
+  alert('帖子已删除');postData.is_deleted=true;render();
+}
+
+function openReportModal(){document.getElementById('reportModal').classList.add('active')}
+function closeReportModal(){document.getElementById('reportModal').classList.remove('active');document.getElementById('reportReason').value=''}
+function submitReport(){const r=document.getElementById('reportReason').value.trim();if(!r){alert('请输入举报原因');return}alert('举报已提交，感谢您的反馈！');closeReportModal()}
+
+function showError(msg){
+  document.getElementById('mainContent').innerHTML=`<div class="error-state"><div class="error-icon">😕</div><div class="error-text">${msg}</div><a href="forum.html" class="btn-back">返回论坛</a></div>`;
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function timeAgo(d){const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<2592000)return Math.floor(s/86400)+'天前';return new Date(d).toLocaleDateString('zh-CN')}
   </script>
 </body>
 </html>
