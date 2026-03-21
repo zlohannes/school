@@ -144,7 +144,7 @@ function renderUserInfo(){
   const rc=`role-${currentUser.role}`;
   const rt={student:'学生',teacher:'老师',admin:'管理员'}[currentUser.role]||'学生';
   const nn=userData?(userData.nickname||currentUser.nickname):currentUser.nickname;
-  const av=userData&&userData.avatar_url;
+  const av=userData&&(userData.avatar_data||userData.avatar_url);
   let avatarHtml=av?`<img src="${esc(av)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">`:`<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${(nn||'?').charAt(0).toUpperCase()}</span>`;
   document.getElementById('userInfo').innerHTML=`<span style="display:flex;align-items:center;gap:8px">${avatarHtml}<span class="user-nickname">${esc(nn)}</span><span class="role-tag ${rc}">${rt}</span></span>`;
 }

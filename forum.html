@@ -206,7 +206,7 @@
     var role=currentUser.role||'student';
     var rt=roleNames[role]||'学生';
     var nn=(userData&&userData.nickname)||currentUser.nickname||'?';
-    var av=(userData&&userData.avatar_url)||'';
+    var av=(userData&&(userData.avatar_data||userData.avatar_url))||'';
     var avatarHtml=av
       ? '<img src="'+esc(av)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">'
       : '<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+esc(nn.charAt(0).toUpperCase())+'</span>';
