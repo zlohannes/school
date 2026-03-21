@@ -32,7 +32,7 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>🏫 鹿城学院论坛</h1>
+      <h1><img src="https://www.wzvtc.cn/favicon.ico" style="height:28px;vertical-align:middle;"> 鹿城学院论坛</h1>
       <p class="subtitle">温州职业技术学院</p>
       <div id="registerBox">
         <h2>📝 注册账号</h2>
@@ -45,10 +45,31 @@
           </div>
           <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" placeholder="仅管理员可见" required><div class="note"><strong>隐私：</strong>真实姓名仅管理员可见</div></div>
           <div class="row">
-            <div class="form-group"><label>专业</label><select id="regMajor"><option value="">请选择</option><option value="计算机应用技术">计算机应用技术</option><option value="软件技术">软件技术</option><option value="网络技术">网络技术</option><option value="数字媒体">数字媒体</option><option value="电子商务">电子商务</option></select></div>
-            <div class="form-group"><label>性别</label><select id="regGender"><option value="保密">保密</option><option value="男">男</option><option value="女">女</option></select></div>
+            <div class="form-group">
+              <label>专业</label>
+              <select id="regMajor">
+                <option value="">请选择专业</option>
+                <option value="金融科技应用">金融科技应用</option>
+                <option value="大数据与会计">大数据与会计</option>
+                <option value="市场营销">市场营销</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>性别</label>
+              <select id="regGender">
+                <option value="男">男</option>
+                <option value="女">女</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group"><label>角色</label><div class="radio-group"><label class="radio-option"><input type="radio" name="role" value="student" checked> 学生</label><label class="radio-option"><input type="radio" name="role" value="teacher"> 老师</label><label class="radio-option"><input type="radio" name="role" value="admin"> 管理员</label></div></div>
+          <div class="form-group">
+            <label>角色</label>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="role" value="student" checked onclick="toggleMajor()"> 学生</label>
+              <label class="radio-option"><input type="radio" name="role" value="teacher" onclick="toggleMajor()"> 老师</label>
+              <label class="radio-option"><input type="radio" name="role" value="admin" onclick="checkAdmin()"> 管理员</label>
+            </div>
+          </div>
           <button type="submit" class="btn">注册</button>
         </form>
         <div class="switch">已有账号？<a href="#" onclick="showLogin()">点击登录</a></div>
@@ -65,13 +86,134 @@
     </div>
   </div>
   <script>
-const DB='lucheng_forum';
-function showLogin(){document.getElementById('registerBox').style.display='none';document.getElementById('loginBox').style.display='block'}
-function showRegister(){document.getElementById('loginBox').style.display='none';document.getElementById('registerBox').style.display='block'}
-function initDB(){return new Promise((r,e)=>{const t=indexedDB.open(DB,1);t.onupgradeneeded=n=>{const a=n.target.result;if(!a.objectStoreNames.contains('users'))a.createObjectStore('users',{keyPath:'username'})};t.onsuccess=n=>r(n.target.result);t.onerror=n=>e(n.target.error)})}
-async function checkUser(u){const a=await initDB();return new Promise(r=>{const t=a.transaction(['users'],'readonly');const n=t.objectStore('users').get(u);n.onsuccess=e=>r(!!e.target.result)})}
-document.getElementById('registerForm').onsubmit=async e=>{e.preventDefault();const u=document.getElementById('regUsername').value.trim();const n=document.getElementById('regNickname').value.trim()||u;const p=document.getElementById('regPassword').value;const c=document.getElementById('regConfirm').value;const rn=document.getElementById('regRealName').value.trim();const m=document.getElementById('regMajor').value;const g=document.getElementById('regGender').value;const r=document.querySelector('input[name="role"]:checked').value;if(p.length<6||p.length>20){alert('密码6-20位');return}if(p!==c){alert('密码不一致');return}if(await checkUser(u)){alert('用户名已存在');return}const a=await initDB();const db={username:u,nickname:n,password:btoa(p+'lc'),realName:rn,major:m,gender:g,role:r,createdAt:new Date().toISOString()};const tx=a.transaction(['users'],'readwrite');tx.objectStore('users').put(db);tx.oncomplete=()=>{alert('注册成功！');showLogin();document.getElementById('loginUsername').value=u;document.getElementById('regUsername').value='';document.getElementById('regPassword').value='';document.getElementById('regConfirm').value=''}}
-document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();const u=document.getElementById('loginUsername').value.trim();const p=document.getElementById('loginPassword').value;const a=await initDB();const tx=a.transaction(['users'],'readonly');const req=tx.objectStore('users').get(u);req.onsuccess=()=>{const user=req.result;if(user&&user.password===btoa(p+'lc')){sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role}));window.location.href='forum.html'}else{alert('用户名或密码错误')}}}
+const DB = 'lucheng_forum';
+const ADMIN_CODE = 'admin';
+
+function showLogin() {
+  document.getElementById('registerBox').style.display = 'none';
+  document.getElementById('loginBox').style.display = 'block';
+}
+
+function showRegister() {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('registerBox').style.display = 'block';
+}
+
+function toggleMajor() {
+  const role = document.querySelector('input[name="role"]:checked').value;
+  const majorSelect = document.getElementById('regMajor');
+  if (role === 'teacher') {
+    majorSelect.value = '';
+    majorSelect.disabled = true;
+  } else {
+    majorSelect.disabled = false;
+  }
+}
+
+function checkAdmin() {
+  const code = prompt('请输入管理员注册码：');
+  if (code !== ADMIN_CODE) {
+    alert('注册码错误！只有管理员才能注册管理员账号。');
+    document.querySelector('input[name="role"][value="student"]').checked = true;
+    toggleMajor();
+  }
+}
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('users')) {
+        db.createObjectStore('users', { keyPath: 'username' });
+      }
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+async function checkUser(username) {
+  const db = await initDB();
+  return new Promise(resolve => {
+    const tx = db.transaction(['users'], 'readonly');
+    const req = tx.objectStore('users').get(username);
+    req.onsuccess = e => resolve(!!e.target.result);
+  });
+}
+
+document.getElementById('registerForm').onsubmit = async e => {
+  e.preventDefault();
+  const username = document.getElementById('regUsername').value.trim();
+  const nickname = document.getElementById('regNickname').value.trim() || username;
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const realName = document.getElementById('regRealName').value.trim();
+  const major = document.getElementById('regMajor').value;
+  const gender = document.getElementById('regGender').value;
+  const role = document.querySelector('input[name="role"]:checked').value;
+
+  if (password.length < 6 || password.length > 20) {
+    alert('密码长度应为6-20位');
+    return;
+  }
+  if (password !== confirm) {
+    alert('两次密码不一致');
+    return;
+  }
+  if (await checkUser(username)) {
+    alert('用户名已存在');
+    return;
+  }
+
+  const db = await initDB();
+  const user = {
+    username,
+    nickname,
+    password: btoa(password + 'lc'),
+    realName,
+    major,
+    gender,
+    role,
+    createdAt: new Date().toISOString()
+  };
+
+  const tx = db.transaction(['users'], 'readwrite');
+  tx.objectStore('users').put(user);
+  tx.oncomplete = () => {
+    alert('注册成功！请登录');
+    showLogin();
+    document.getElementById('loginUsername').value = username;
+    document.getElementById('regUsername').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('regConfirm').value = '';
+  };
+};
+
+document.getElementById('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  const db = await initDB();
+  const tx = db.transaction(['users'], 'readonly');
+  const req = tx.objectStore('users').get(username);
+
+  req.onsuccess = () => {
+    const user = req.result;
+    if (user && user.password === btoa(password + 'lc')) {
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        username: user.username,
+        nickname: user.nickname,
+        role: user.role,
+        realName: user.realName
+      }));
+      window.location.href = 'forum.html';
+    } else {
+      alert('用户名或密码错误');
+    }
+  };
+};
   </script>
 </body>
 </html>

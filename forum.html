@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 首页</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
+    
+    /* 导航栏 */
+    .navbar{background:linear-gradient(135deg,#667eea,#764ba2);padding:12px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    .nav-content{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .nav-logo{color:white;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;text-decoration:none}
+    .nav-links{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+    .nav-link{color:rgba(255,255,255,0.9);text-decoration:none;font-size:14px;transition:opacity 0.2s}
+    .nav-link:hover{opacity:0.8}
+    .user-info{display:flex;align-items:center;gap:10px;color:white}
+    .user-nickname{font-weight:600;font-size:14px}
+    .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    .role-student{background:rgba(255,255,255,0.2)}
+    .role-teacher{background:#2196F3}
+    .role-admin{background:#e74c3c}
+    .btn-logout{background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:background 0.2s}
+    .btn-logout:hover{background:rgba(255,255,255,0.3)}
+    
+    /* 移动端导航 */
+    .mobile-menu-btn{display:none;background:none;border:none;color:white;font-size:24px;cursor:pointer}
+    @media(max-width:768px){
+      .mobile-menu-btn{display:block}
+      .nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}
+      .nav-links.active{display:flex}
+    }
+    
+    /* 主内容区 */
+    .main-content{max-width:1200px;margin:20px auto;padding:0 15px;display:flex;gap:20px}
+    @media(max-width:900px){.main-content{flex-direction:column}}
+    
+    /* 侧边栏 */
+    .sidebar{width:200px;flex-shrink:0}
+    @media(max-width:900px){.sidebar{width:100%}}
+    .category-list{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);overflow:hidden}
+    .category-item{padding:12px 15px;cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;font-size:14px}
+    .category-item:hover{background:#f5f5f5}
+    .category-item.active{background:linear-gradient(135deg,#667eea20,#764ba220);border-left-color:#667eea;font-weight:600}
+    .category-item .icon{margin-right:8px}
+    
+    /* 手机端分类下拉 */
+    .mobile-category{display:none;width:100%;padding:10px;background:white;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
+    @media(max-width:900px){.mobile-category{display:block}}
+    .mobile-category select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+    
+    /* 搜索和排序 */
+    .search-bar{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+    .search-input{flex:1;min-width:200px;padding:10px 15px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+    .search-input:focus{border-color:#667eea;outline:none}
+    .sort-btn{padding:10px 15px;border:1px solid #ddd;background:white;border-radius:8px;font-size:14px;cursor:pointer;transition:all 0.2s}
+    .sort-btn:hover,.sort-btn.active{background:#667eea;color:white;border-color:#667eea}
+    
+    /* 帖子列表 */
+    .post-list{flex:1}
+    .post-card{background:white;border-radius:12px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.3s}
+    .post-card:hover{transform:translateY(-3px);box-shadow:0 5px 20px rgba(0,0,0,0.12)}
+    .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+    .category-tag{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:white}
+    .cat-learning{background:#4CAF50}
+    .cat-campus{background:#2196F3}
+    .cat-trade{background:#FF9800}
+    .cat-job{background:#9C27B0}
+    .cat-chat{background:#FF5722}
+    .cat-notice{background:#f44336}
+    .post-title{font-size:16px;font-weight:600;color:#333;margin-bottom:8px}
+    .post-preview{color:#666;font-size:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:12px}
+    .post-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;color:#999;font-size:13px}
+    .post-author{display:flex;align-items:center;gap:6px}
+    .post-stats{display:flex;gap:15px}
+    .post-stat{display:flex;align-items:center;gap:4px}
+    
+    /* 空状态 */
+    .empty-state{text-align:center;padding:60px 20px;color:#999}
+    .empty-icon{font-size:60px;margin-bottom:15px}
+    .empty-text{font-size:16px}
+    
+    /* 分页 */
+    .pagination{display:flex;justify-content:center;gap:8px;margin-top:20px}
+    .page-btn{padding:8px 14px;border:1px solid #ddd;background:white;border-radius:6px;cursor:pointer;transition:all 0.2s;font-size:14px}
+    .page-btn:hover,.page-btn.active{background:#667eea;color:white;border-color:#667eea}
+    .page-btn:disabled{opacity:0.5;cursor:not-allowed}
+    
+    /* 发帖按钮 */
+    .fab{position:fixed;bottom:30px;right:30px;width:56px;height:56px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(102,126,234,0.4);transition:all 0.3s;z-index:99}
+    .fab:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(102,126,234,0.5)}
+    
+    /* 发帖模态框 */
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+    .modal-overlay.active{display:flex}
+    .modal{background:white;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+    .modal-header{padding:18px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+    .modal-title{font-size:18px;font-weight:600;color:#333}
+    .modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#999;line-height:1}
+    .modal-body{padding:20px}
+    .form-group{margin-bottom:15px}
+    .form-group label{display:block;font-weight:600;color:#333;font-size:14px;margin-bottom:6px}
+    .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit}
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#667eea;outline:none}
+    .form-group textarea{min-height:120px;resize:vertical}
+    .modal-footer{padding:15px 20px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end}
+    .btn-cancel{background:#f5f5f5;color:#333;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer}
+    .btn-submit{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+    .btn-submit:hover{opacity:0.9}
+    
+    /* 加载动画 */
+    .loading{text-align:center;padding:40px;color:#999}
+  </style>
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="nav-content">
+      <a href="forum.html" class="nav-logo">🏫 鹿城学院论坛</a>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <div class="nav-links" id="navLinks">
+        <a href="forum.html" class="nav-link">首页</a>
+        <a href="profile.html" class="nav-link">我的主页</a>
+        <div class="user-info" id="userInfo"></div>
+        <button class="btn-logout" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- 主内容 -->
+  <div class="main-content">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="mobile-category">
+        <select id="mobileCategory" onchange="filterCategory(this.value)">
+          <option value="">全部帖子</option>
+          <option value="learning">📚 学习交流</option>
+          <option value="campus">🏠 校园生活</option>
+          <option value="trade">🛒 二手交易</option>
+          <option value="job">💼 求职招聘</option>
+          <option value="chat">💬 闲聊灌水</option>
+          <option value="notice">📢 公告通知</option>
+        </select>
+      </div>
+      <div class="category-list">
+        <div class="category-item active" data-category="" onclick="filterCategory('')">
+          <span class="icon">📋</span>全部帖子
+        </div>
+        <div class="category-item" data-category="learning" onclick="filterCategory('learning')">
+          <span class="icon">📚</span>学习交流
+        </div>
+        <div class="category-item" data-category="campus" onclick="filterCategory('campus')">
+          <span class="icon">🏠</span>校园生活
+        </div>
+        <div class="category-item" data-category="trade" onclick="filterCategory('trade')">
+          <span class="icon">🛒</span>二手交易
+        </div>
+        <div class="category-item" data-category="job" onclick="filterCategory('job')">
+          <span class="icon">💼</span>求职招聘
+        </div>
+        <div class="category-item" data-category="chat" onclick="filterCategory('chat')">
+          <span class="icon">💬</span>闲聊灌水
+        </div>
+        <div class="category-item" data-category="notice" onclick="filterCategory('notice')">
+          <span class="icon">📢</span>公告通知
+        </div>
+      </div>
+    </aside>
+    
+    <!-- 帖子列表 -->
+    <div class="post-list">
+      <div class="search-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="搜索帖子标题..." oninput="searchPosts(this.value)">
+        <button class="sort-btn active" onclick="setSort('latest')" id="sortLatest">最新</button>
+        <button class="sort-btn" onclick="setSort('hot')" id="sortHot">最热</button>
+      </div>
+      
+      <div id="postContainer"></div>
+      
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+  
+  <!-- 发帖按钮 -->
+  <button class="fab" onclick="openPostModal()">+</button>
+  
+  <!-- 发帖模态框 -->
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">发布新帖子</h3>
+        <button class="modal-close" onclick="closePostModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>标题 *</label>
+          <input type="text" id="postTitle" placeholder="请输入帖子标题" required>
+        </div>
+        <div class="form-group">
+          <label>分类 *</label>
+          <select id="postCategory" required>
+            <option value="">请选择分类</option>
+            <option value="learning">📚 学习交流</option>
+            <option value="campus">🏠 校园生活</option>
+            <option value="trade">🛒 二手交易</option>
+            <option value="job">💼 求职招聘</option>
+            <option value="chat">💬 闲聊灌水</option>
+            <option value="notice">📢 公告通知</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>内容 *</label>
+          <textarea id="postContent" placeholder="请输入帖子内容" required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closePostModal()">取消</button>
+        <button class="btn-submit" onclick="submitPost()">发布</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const DB_NAME = 'lucheng_forum';
+    const POSTS_PER_PAGE = 10;
+    
+    let db;
+    let currentUser = null;
+    let allPosts = [];
+    let currentCategory = '';
+    let currentSort = 'latest';
+    let currentPage = 1;
+    let searchKeyword = '';
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', init);
+    
+    function init() {
+      const userStr = sessionStorage.getItem('currentUser');
+      if (!userStr) {
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = JSON.parse(userStr);
+      renderUserInfo();
+      initDB();
+    }
+    
+    function initDB() {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains('posts')) {
+          db.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('replies')) {
+          db.createObjectStore('replies', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        loadPosts();
+      };
+      request.onerror = (e) => {
+        console.error('DB error:', e.target.error);
+      };
+    }
+    
+    function renderUserInfo() {
+      const roleClass = `role-${currentUser.role}`;
+      const roleText = { student: '学生', teacher: '老师', admin: '管理员' }[currentUser.role] || '学生';
+      document.getElementById('userInfo').innerHTML = `
+        <span class="user-nickname">${currentUser.nickname}</span>
+        <span class="role-tag ${roleClass}">${roleText}</span>
+      `;
+    }
+    
+    function toggleMobileMenu() {
+      document.getElementById('navLinks').classList.toggle('active');
+    }
+    
+    function logout() {
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    }
+    
+    function loadPosts() {
+      const tx = db.transaction(['posts', 'replies'], 'readonly');
+      const postsStore = tx.objectStore('posts');
+      const repliesStore = tx.objectStore('replies');
+      
+      postsStore.getAll().onsuccess = (e) => {
+        const posts = e.target.result || [];
+        
+        // 获取每个帖子的回复数
+        repliesStore.getAll().onsuccess = (e2) => {
+          const replies = e2.target.result || [];
+          
+          // 计算回复数
+          allPosts = posts.map(post => ({
+            ...post,
+            replyCount: replies.filter(r => r.postId === post.id).length
+          }));
+          
+          // 更新显示
+          filterAndRenderPosts();
+        };
+      };
+    }
+    
+    function filterAndRenderPosts() {
+      let filtered = [...allPosts];
+      
+      // 分类筛选
+      if (currentCategory) {
+        filtered = filtered.filter(p => p.category === currentCategory);
+      }
+      
+      // 搜索筛选
+      if (searchKeyword) {
+        const kw = searchKeyword.toLowerCase();
+        filtered = filtered.filter(p => p.title.toLowerCase().includes(kw));
+      }
+      
+      // 排序
+      if (currentSort === 'latest') {
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else {
+        filtered.sort((a, b) => b.replyCount - a.replyCount);
+      }
+      
+      renderPosts(filtered);
+    }
+    
+    function renderPosts(posts) {
+      const container = document.getElementById('postContainer');
+      
+      if (posts.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">暂无帖子，快来发布第一个吧！</div>
+          </div>
+        `;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+      
+      // 分页
+      const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+      const start = (currentPage - 1) * POSTS_PER_PAGE;
+      const end = start + POSTS_PER_PAGE;
+      const pagePosts = posts.slice(start, end);
+      
+      const categoryNames = {
+        learning: '学习交流',
+        campus: '校园生活',
+        trade: '二手交易',
+        job: '求职招聘',
+        chat: '闲聊灌水',
+        notice: '公告通知'
+      };
+      
+      container.innerHTML = pagePosts.map(post => `
+        <div class="post-card" onclick="goToPost(${post.id})">
+          <div class="post-header">
+            <span class="category-tag cat-${post.category}">${categoryNames[post.category] || '其他'}</span>
+          </div>
+          <div class="post-title">${escapeHtml(post.title)}</div>
+          <div class="post-preview">${escapeHtml(post.content)}</div>
+          <div class="post-meta">
+            <div class="post-author">
+              <span>👤 ${escapeHtml(post.authorNickname)}</span>
+              <span>• ${formatTime(post.createdAt)}</span>
+            </div>
+            <div class="post-stats">
+              <span class="post-stat">💬 ${post.replyCount || 0}</span>
+              <span class="post-stat">👍 ${post.likes || 0}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      // 渲染分页
+      renderPagination(totalPages);
+    }
+    
+    function renderPagination(totalPages) {
+      const pagination = document.getElementById('pagination');
+      if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      html += `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>上一页</button>`;
+      
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+          html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+          html += `<span style="padding:8px">...</span>`;
+        }
+      }
+      
+      html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页</button>`;
+      pagination.innerHTML = html;
+    }
+    
+    function goPage(page) {
+      currentPage = page;
+      filterAndRenderPosts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function filterCategory(category) {
+      currentCategory = category;
+      currentPage = 1;
+      
+      // 更新侧边栏选中状态
+      document.querySelectorAll('.category-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.category === category);
+      });
+      
+      // 更新手机端下拉
+      document.getElementById('mobileCategory').value = category;
+      
+      filterAndRenderPosts();
+    }
+    
+    function searchPosts(keyword) {
+      searchKeyword = keyword;
+      currentPage = 1;
+      filterAndRenderPosts();
+    }
+    
+    function setSort(sort) {
+      currentSort = sort;
+      currentPage = 1;
+      document.getElementById('sortLatest').classList.toggle('active', sort === 'latest');
+      document.getElementById('sortHot').classList.toggle('active', sort === 'hot');
+      filterAndRenderPosts();
+    }
+    
+    function goToPost(id) {
+      window.location.href = `post.html?id=${id}`;
+    }
+    
+    function openPostModal() {
+      document.getElementById('postModal').classList.add('active');
+    }
+    
+    function closePostModal() {
+      document.getElementById('postModal').classList.remove('active');
+      document.getElementById('postTitle').value = '';
+      document.getElementById('postCategory').value = '';
+      document.getElementById('postContent').value = '';
+    }
+    
+    function submitPost() {
+      const title = document.getElementById('postTitle').value.trim();
+      const category = document.getElementById('postCategory').value;
+      const content = document.getElementById('postContent').value.trim();
+      
+      if (!title) {
+        alert('请输入帖子标题');
+        return;
+      }
+      if (!category) {
+        alert('请选择分类');
+        return;
+      }
+      if (!content) {
+        alert('请输入帖子内容');
+        return;
+      }
+      
+      const post = {
+        title,
+        content,
+        category,
+        author: currentUser.username,
+        authorNickname: currentUser.nickname,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        likedBy: []
+      };
+      
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').add(post);
+      tx.oncomplete = () => {
+        closePostModal();
+        loadPosts();
+      };
+      tx.onerror = (e) => {
+        alert('发布失败，请重试');
+        console.error(e.target.error);
+      };
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function formatTime(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = (now - date) / 1000;
+      
+      if (diff < 60) return '刚刚';
+      if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+      if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+      if (diff < 2592000) return Math.floor(diff / 86400) + '天前';
+      return date.toLocaleDateString('zh-CN');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 个人主页</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
+    .navbar{background:linear-gradient(135deg,#667eea,#764ba2);padding:0 24px;display:flex;align-items:center;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.15)}
+    .navbar .logo{color:#fff;font-size:18px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:8px}
+    .navbar .nav-links{display:flex;align-items:center;gap:6px;margin-left:32px}
+    .navbar .nav-links a{color:rgba(255,255,255,0.8);text-decoration:none;font-size:14px;padding:6px 14px;border-radius:20px;transition:all .2s}
+    .navbar .nav-links a:hover,.navbar .nav-links a.active{color:#fff;background:rgba(255,255,255,0.2)}
+    .navbar .user-area{margin-left:auto;display:flex;align-items:center;gap:12px}
+    .navbar .user-info{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px}
+    .role-tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;color:#fff}
+    .role-student{background:rgba(255,255,255,0.25)}
+    .role-teacher{background:#2196F3}
+    .role-admin{background:#e74c3c}
+    .navbar .logout-btn{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.15);border:none;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:all .2s}
+    .navbar .logout-btn:hover{background:rgba(255,255,255,0.3);color:#fff}
+    .container{max-width:800px;margin:24px auto;padding:0 16px}
+    .profile-card{background:#fff;border-radius:16px;padding:32px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.08);margin-bottom:24px;position:relative;overflow:hidden}
+    .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:100px;background:linear-gradient(135deg,#667eea,#764ba2)}
+    .profile-card .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:4px solid #fff;position:relative;z-index:1;margin-top:50px}
+    .profile-card .nickname{font-size:22px;font-weight:700;color:#333;display:flex;align-items:center;justify-content:center;gap:8px}
+    .profile-card .stats{display:flex;justify-content:center;gap:40px;margin-top:16px}
+    .profile-card .stat{text-align:center}
+    .profile-card .stat .num{font-size:24px;font-weight:700;color:#667eea}
+    .profile-card .stat .label{font-size:12px;color:#999;margin-top:2px}
+    .profile-card .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;text-align:left;max-width:400px;margin-left:auto;margin-right:auto}
+    .info-item{padding:8px 12px;background:#f8f9fa;border-radius:8px}
+    .info-item .label{font-size:11px;color:#999;margin-bottom:2px}
+    .info-item .value{font-size:14px;color:#333;font-weight:500}
+    .edit-btn{position:absolute;top:16px;right:16px;z-index:2;background:rgba(255,255,255,0.2);color:#fff;border:none;padding:6px 16px;border-radius:20px;font-size:12px;cursor:pointer;transition:all .2s;backdrop-filter:blur(4px)}
+    .edit-btn:hover{background:rgba(255,255,255,0.4)}
+    .edit-form{display:none;text-align:left;max-width:400px;margin:20px auto 0}
+    .edit-form.show{display:block}
+    .edit-form .form-group{margin-bottom:12px}
+    .edit-form label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px}
+    .edit-form input,.edit-form select{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;transition:border-color .2s}
+    .edit-form input:focus,.edit-form select:focus{border-color:#667eea;outline:none}
+    .edit-form .btn-row{display:flex;gap:8px;margin-top:16px}
+    .edit-form .btn-save{flex:1;background:#667eea;color:#fff;border:none;padding:8px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+    .edit-form .btn-save:hover{background:#5568d3}
+    .edit-form .btn-cancel{flex:1;background:#f0f2f5;color:#666;border:none;padding:8px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s}
+    .edit-form .btn-cancel:hover{background:#e4e6e9}
+    .tabs{display:flex;background:#fff;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow:hidden}
+    .tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:600;color:#999;cursor:pointer;transition:all .2s;border-bottom:3px solid transparent}
+    .tab:hover{color:#667eea;background:#f8f9ff}
+    .tab.active{color:#667eea;border-bottom-color:#667eea;background:#f8f9ff}
+    .post-list,.reply-list{display:flex;flex-direction:column;gap:10px}
+    .post-item{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer;transition:all .25s;text-decoration:none;display:block}
+    .post-item:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+    .post-item .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;font-weight:600;margin-bottom:6px}
+    .post-item .title{font-size:15px;font-weight:600;color:#333;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    .post-item .meta{font-size:12px;color:#999;display:flex;gap:12px;align-items:center}
+    .reply-item{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+    .reply-item .reply-to{font-size:13px;color:#667eea;margin-bottom:4px}
+    .reply-item .reply-to a{color:#667eea;text-decoration:none;font-weight:600}
+    .reply-item .reply-to a:hover{text-decoration:underline}
+    .reply-item .content{font-size:14px;color:#444;line-height:1.6;margin-bottom:6px}
+    .reply-item .meta{font-size:12px;color:#999}
+    .empty-state{text-align:center;padding:60px 20px;color:#999}
+    .empty-state .icon{font-size:48px;margin-bottom:12px}
+    .empty-state .text{font-size:14px}
+    .mobile-menu-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer}
+    @media(max-width:600px){
+      .navbar{padding:0 12px}
+      .navbar .nav-links{display:none}
+      .navbar .user-info span.full-name{display:none}
+      .profile-card{padding:24px 16px}
+      .profile-card .info-grid{grid-template-columns:1fr}
+      .profile-card .stats{gap:24px}
+      .container{margin:16px auto;padding:0 10px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="forum.html" class="logo">🏫 鹿城学院论坛</a>
+    <div class="nav-links">
+      <a href="forum.html">🏠 首页</a>
+      <a href="profile.html" class="active">👤 我的</a>
+    </div>
+    <div class="user-area">
+      <div class="user-info">
+        <span class="full-name" id="navNickname"></span>
+        <span class="role-tag" id="navRole"></span>
+      </div>
+      <button class="logout-btn" onclick="logout()">退出</button>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="profile-card" id="profileCard">
+      <button class="edit-btn" id="editBtn" onclick="toggleEdit()">✏️ 编辑资料</button>
+      <div class="avatar" id="avatarChar"></div>
+      <div class="nickname">
+        <span id="displayName"></span>
+        <span class="role-tag" id="profileRole"></span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="num" id="postCount">0</div><div class="label">发帖</div></div>
+        <div class="stat"><div class="num" id="replyCount">0</div><div class="label">回复</div></div>
+      </div>
+      <div class="info-grid" id="infoGrid">
+        <div class="info-item"><div class="label">真实姓名</div><div class="value" id="infoRealName">-</div></div>
+        <div class="info-item"><div class="label">专业</div><div class="value" id="infoMajor">-</div></div>
+        <div class="info-item"><div class="label">性别</div><div class="value" id="infoGender">-</div></div>
+        <div class="info-item"><div class="label">注册时间</div><div class="value" id="infoJoined">-</div></div>
+      </div>
+      <div class="edit-form" id="editForm">
+        <div class="form-group"><label>昵称</label><input type="text" id="editNickname" placeholder="请输入昵称"></div>
+        <div class="form-group"><label>真实姓名</label><input type="text" id="editRealName" placeholder="请输入真实姓名"></div>
+        <div class="form-group"><label>专业</label><select id="editMajor"><option value="">请选择</option><option value="计算机应用技术">计算机应用技术</option><option value="软件技术">软件技术</option><option value="网络技术">网络技术</option><option value="数字媒体">数字媒体</option><option value="电子商务">电子商务</option></select></div>
+        <div class="form-group"><label>性别</label><select id="editGender"><option value="保密">保密</option><option value="男">男</option><option value="女">女</option></select></div>
+        <div class="btn-row">
+          <button class="btn-save" onclick="saveProfile()">保存</button>
+          <button class="btn-cancel" onclick="toggleEdit()">取消</button>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('posts',this)">📝 我的帖子</div>
+      <div class="tab" onclick="switchTab('replies',this)">💬 我的回复</div>
+    </div>
+    <div id="postsTab" class="post-list"></div>
+    <div id="repliesTab" class="reply-list" style="display:none"></div>
+  </div>
+  <script>
+const DB='lucheng_forum';
+const catColors={'学习交流':'#4CAF50','校园生活':'#2196F3','二手交易':'#FF9800','求职招聘':'#9C27B0','闲聊灌水':'#FF5722','公告通知':'#f44336'};
+const roleClass={'student':'role-student','teacher':'role-teacher','admin':'role-admin'};
+const roleLabel={'student':'学生','teacher':'老师','admin':'管理员'};
+let currentUser=null;
+
+function getUser(){const s=sessionStorage.getItem('currentUser');if(!s){window.location.href='index.html';return null}return JSON.parse(s)}
+function initDB(){return new Promise((r,e)=>{const t=indexedDB.open(DB,2);t.onupgradeneeded=n=>{const a=n.target.result;if(!a.objectStoreNames.contains('users'))a.createObjectStore('users',{keyPath:'username'});if(!a.objectStoreNames.contains('posts'))a.createObjectStore('posts',{keyPath:'id',autoIncrement:true});if(!a.objectStoreNames.contains('replies'))a.createObjectStore('replies',{keyPath:'id',autoIncrement:true})};t.onsuccess=n=>r(n.target.result);t.onerror=n=>e(n.target.error)})}
+function getAll(store){return new Promise(async r=>{const db=await initDB();const tx=db.transaction([store],'readonly');const req=tx.objectStore(store).getAll();req.onsuccess=()=>r(req.result);req.onerror=()=>r([])})}
+function putUser(user){return new Promise(async r=>{const db=await initDB();const tx=db.transaction(['users'],'readwrite');tx.objectStore('users').put(user);tx.oncomplete=()=>r()})}
+function timeAgo(date){const s=Math.floor((Date.now()-new Date(date))/1000);if(s<60)return s+'秒前';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<30*86400)return Math.floor(s/86400)+'天前';return new Date(date).toLocaleDateString('zh-CN')}
+
+function logout(){sessionStorage.clear();window.location.href='index.html'}
+
+function switchTab(tab,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('postsTab').style.display=tab==='posts'?'flex':'none';document.getElementById('repliesTab').style.display=tab==='replies'?'flex':'none'}
+
+function toggleEdit(){const f=document.getElementById('editForm');const b=document.getElementById('editBtn');if(f.classList.contains('show')){f.classList.remove('show');b.textContent='✏️ 编辑资料'}else{f.classList.add('show');b.textContent='✕ 取消'}}
+
+async function saveProfile(){
+  const nn=document.getElementById('editNickname').value.trim();
+  const rn=document.getElementById('editRealName').value.trim();
+  const mj=document.getElementById('editMajor').value;
+  const gd=document.getElementById('editGender').value;
+  if(!nn){alert('昵称不能为空');return}
+  const db=await initDB();
+  const tx=db.transaction(['users'],'readonly');
+  const req=tx.objectStore('users').get(currentUser.username);
+  req.onsuccess=async()=>{
+    const user=req.result;
+    if(!user){alert('用户不存在');return}
+    user.nickname=nn;user.realName=rn;user.major=mj;user.gender=gd;
+    await putUser(user);
+    currentUser.nickname=nn;
+    sessionStorage.setItem('currentUser',JSON.stringify(currentUser));
+    toggleEdit();
+    loadProfile();
+  }
+}
+
+async function loadProfile(){
+  const username=currentUser.username;
+  const users=await getAll('users');
+  const user=users.find(u=>u.username===username);
+  if(!user)return;
+  const nickname=user.nickname||username;
+  const role=user.role||'student';
+  document.getElementById('avatarChar').textContent=nickname.charAt(0).toUpperCase();
+  document.getElementById('displayName').textContent=nickname;
+  document.getElementById('navNickname').textContent=nickname;
+  const rTag=document.getElementById('profileRole');rTag.textContent=roleLabel[role];rTag.className='role-tag '+roleClass[role];
+  const nTag=document.getElementById('navRole');nTag.textContent=roleLabel[role];nTag.className='role-tag '+roleClass[role];
+  document.getElementById('infoRealName').textContent=user.realName||'未设置';
+  document.getElementById('infoMajor').textContent=user.major||'未设置';
+  document.getElementById('infoGender').textContent=user.gender||'保密';
+  document.getElementById('infoJoined').textContent=user.createdAt?new Date(user.createdAt).toLocaleDateString('zh-CN'):'-';
+  // Edit form fill
+  document.getElementById('editNickname').value=nickname;
+  document.getElementById('editRealName').value=user.realName||'';
+  document.getElementById('editMajor').value=user.major||'';
+  document.getElementById('editGender').value=user.gender||'保密';
+  // Stats
+  const posts=await getAll('posts');
+  const replies=await getAll('replies');
+  const myPosts=posts.filter(p=>p.author===username);
+  const myReplies=replies.filter(r=>r.author===username);
+  document.getElementById('postCount').textContent=myPosts.length;
+  document.getElementById('replyCount').textContent=myReplies.length;
+  // Render posts
+  const postsTab=document.getElementById('postsTab');
+  if(myPosts.length===0){postsTab.innerHTML='<div class="empty-state"><div class="icon">📭</div><div class="text">还没有发过帖子哦～去论坛逛逛吧</div></div>'}
+  else{postsTab.innerHTML=myPosts.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(p=>{const cc=catColors[p.category]||'#999';return`<div class="post-item" onclick="location.href='post.html?id=${p.id}'"><span class="cat-tag" style="background:${cc}">${p.category}</span><div class="title">${esc(p.title)}</div><div class="meta"><span>💬 ${getReplyCount(replies,p.id)}</span><span>👍 ${p.likes||0}</span><span>${timeAgo(p.createdAt)}</span></div></div>`}).join('')}
+  // Render replies
+  const repliesTab=document.getElementById('repliesTab');
+  if(myReplies.length===0){repliesTab.innerHTML='<div class="empty-state"><div class="icon">🤫</div><div class="text">还没有回复过任何帖子</div></div>'}
+  else{repliesTab.innerHTML=myReplies.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).map(r=>{const post=posts.find(p=>p.id===r.postId);const title=post?esc(post.title):'帖子已删除';return`<div class="reply-item"><div class="reply-to">回复了 <a href="post.html?id=${r.postId}">${title}</a></div><div class="content">${esc(r.content)}</div><div class="meta">${timeAgo(r.createdAt)}</div></div>`}).join('')}
+}
+
+function getReplyCount(replies,postId){return replies.filter(r=>r.postId===postId).length}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  currentUser=getUser();if(!currentUser)return;
+  loadProfile();
+});
+  </script>
+</body>
+</html>
