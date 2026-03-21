@@ -1,362 +1,77 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>鹿城学院论坛</title>
-  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="https://www.wzvtc.cn/favicon.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 登录注册</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script>sessionStorage.clear();</script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    h1 { color: #333; margin-bottom: 10px; }
-    .main-content { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
-    .sidebar, .posts-section { background: white; padding: 20px; border-radius: 10px; }
-    .category-list { list-style: none; }
-    .category-list li { margin-bottom: 10px; }
-    .category-list button { width: 100%; padding: 10px; background: #f0f0f0; border: none; border-radius: 5px; cursor: pointer; text-align: left; }
-    .category-list button.active, .category-list button:hover { background: #667eea; color: white; }
-    .new-post-form { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .form-group textarea { min-height: 80px; }
-    .btn { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-    .btn:hover { background: #5568d3; }
-    .post-list { list-style: none; }
-    .post-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
-    .post-item:hover { background: #f8f9fa; }
-    .post-title { color: #333; font-size: 1.1em; margin-bottom: 5px; }
-    .post-meta { color: #666; font-size: 0.85em; }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
-    .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 10px; max-width: 800px; max-height: 80vh; overflow-y: auto; }
-    .close { float: right; font-size: 28px; cursor: pointer; }
-    .reply-item { padding: 15px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px; }
-    .reply-author { font-weight: bold; color: #667eea; margin-bottom: 5px; }
-    @media (max-width: 768px) { .main-content { grid-template-columns: 1fr; } }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{width:100%;max-width:420px}
+    .card{background:white;padding:25px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.15)}
+    h1{color:#333;text-align:center;font-size:22px;margin-bottom:3px}
+    .subtitle{color:#666;text-align:center;font-size:13px;margin-bottom:20px}
+    h2{color:#333;font-size:16px;margin-bottom:15px}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
+    .form-group input,.form-group select{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+    .form-group input:focus{border-color:#667eea;outline:none}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .radio-group{display:flex;gap:12px;margin-top:6px}
+    .radio-option{display:flex;align-items:center;gap:4px;font-size:13px}
+    .btn{width:100%;background:#667eea;color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
+    .btn:hover{background:#5568d3}
+    .switch{text-align:center;margin-top:12px;color:#666;font-size:13px}
+    .switch a{color:#667eea;text-decoration:none;font-weight:600}
+    .note{font-size:11px;color:#666;margin-top:3px}
+    .note strong{color:#28a745}
   </style>
 </head>
 <body>
   <div class="container">
-    <header><h1>🏫 鹿城学院论坛</h1><p>温州职业技术学院 · 固定域名 · 永久免费</p></header>
-    <div class="main-content">
-      <aside class="sidebar">
-        <h3>📋 分类</h3>
-        <ul class="category-list" id="categoryList"><li><button class="active" data-category="all">全部分类</button></li></ul>
-      </aside>
-      <section class="posts-section">
-        <div class="new-post-form">
-          <h3>✍️ 发新帖</h3>
-          <div class="form-group"><label>昵称 *</label><input type="text" id="postAuthor" placeholder="随便填" required></div>
-          <div class="form-group"><label>分类</label><select id="postCategory"><option value="综合讨论">综合讨论</option><option value="学术交流">学术交流</option><option value="二手交易">二手交易</option><option value="失物招领">失物招领</option></select></div>
-          <div class="form-group"><label>标题 *</label><input type="text" id="postTitle" placeholder="标题" required></div>
-          <div class="form-group"><label>内容 *</label><textarea id="postContent" placeholder="内容" required></textarea></div>
-          <button class="btn" onclick="createPost()">发布帖子</button>
-        </div>
-        <h3>📝 帖子列表</h3>
-        <ul class="post-list" id="postList"><li class="loading">加载中...</li></ul>
-      </section>
-    </div>
-  </div>
-  <div id="postModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <h2 id="modalTitle"></h2>
-      <p class="post-meta" id="modalMeta"></p>
-      <p id="modalContent" style="margin: 20px 0; line-height: 1.6;"></p>
-      <div style="margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px;">
-        <h3>💬 回复</h3>
-        <div id="replyList" style="margin-top: 15px;"></div>
-        <div style="margin-top: 20px;">
-          <div class="form-group"><label>昵称</label><input type="text" id="replyAuthor" placeholder="填名字"></div>
-          <div class="form-group"><label>回复</label><textarea id="replyContent" placeholder="说点什么" style="min-height: 60px;"></textarea></div>
-          <button class="btn" onclick="createReply()">提交回复</button>
-        </div>
+    <div class="card">
+      <h1>🏫 鹿城学院论坛</h1>
+      <p class="subtitle">温州职业技术学院</p>
+      <div id="registerBox">
+        <h2>📝 注册账号</h2>
+        <form id="registerForm">
+          <div class="form-group"><label>用户名 *</label><input type="text" id="regUsername" placeholder="请输入用户名" required></div>
+          <div class="form-group"><label>昵称</label><input type="text" id="regNickname" placeholder="公开显示的昵称"></div>
+          <div class="row">
+            <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" placeholder="6-20位" required></div>
+            <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirm" placeholder="再次输入" required></div>
+          </div>
+          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" placeholder="仅管理员可见" required><div class="note"><strong>隐私：</strong>真实姓名仅管理员可见</div></div>
+          <div class="row">
+            <div class="form-group"><label>专业</label><select id="regMajor"><option value="">请选择</option><option value="计算机应用技术">计算机应用技术</option><option value="软件技术">软件技术</option><option value="网络技术">网络技术</option><option value="数字媒体">数字媒体</option><option value="电子商务">电子商务</option></select></div>
+            <div class="form-group"><label>性别</label><select id="regGender"><option value="保密">保密</option><option value="男">男</option><option value="女">女</option></select></div>
+          </div>
+          <div class="form-group"><label>角色</label><div class="radio-group"><label class="radio-option"><input type="radio" name="role" value="student" checked> 学生</label><label class="radio-option"><input type="radio" name="role" value="teacher"> 老师</label><label class="radio-option"><input type="radio" name="role" value="admin"> 管理员</label></div></div>
+          <button type="submit" class="btn">注册</button>
+        </form>
+        <div class="switch">已有账号？<a href="#" onclick="showLogin()">点击登录</a></div>
+      </div>
+      <div id="loginBox" style="display:none;">
+        <h2>🔐 用户登录</h2>
+        <form id="loginForm">
+          <div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="请输入用户名" required></div>
+          <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码" required></div>
+          <button type="submit" class="btn">登录</button>
+        </form>
+        <div class="switch">没有账号？<a href="#" onclick="showRegister()">注册</a></div>
       </div>
     </div>
   </div>
-
   <script>
-    // 📦 IndexedDB 数据库配置
-    const DB_NAME = 'schoolForumDB';
-    const DB_VERSION = 1;
-    let db = null;
-    
-    let currentCategory = 'all', currentPostId = null;
-    const $ = id => document.getElementById(id);
-    const escapeHtml = text => { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; };
-
-    // 🔧 初始化 IndexedDB
-    async function initDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onupgradeneeded = (event) => {
-          const db = event.target.result;
-          
-          // 创建帖子表
-          if (!db.objectStoreNames.contains('posts')) {
-            const postsStore = db.createObjectStore('posts', { keyPath: 'id', autoIncrement: true });
-            postsStore.createIndex('category', 'category', { unique: false });
-            postsStore.createIndex('created_at', 'created_at', { unique: false });
-          }
-          
-          // 创建回复表
-          if (!db.objectStoreNames.contains('replies')) {
-            const repliesStore = db.createObjectStore('replies', { keyPath: 'id', autoIncrement: true });
-            repliesStore.createIndex('post_id', 'post_id', { unique: false });
-          }
-        };
-        
-        request.onsuccess = (event) => {
-          db = event.target.result;
-          console.log('✅ 数据库初始化成功');
-          resolve(db);
-        };
-        
-        request.onerror = (event) => {
-          console.error('❌ 数据库初始化失败:', event.target.error);
-          reject(event.target.error);
-        };
-      });
-    }
-
-    // 📋 加载分类（固定分类）
-    // 📋 加载分类（固定分类）
-    async function loadCategories() {
-      const categories = ['综合讨论', '学术交流', '二手交易', '失物招领'];
-      const list = $('categoryList');
-      list.innerHTML = '<li><button class="active" data-category="all">全部分类</button></li>';
-      
-      categories.forEach(cat => {
-        const li = document.createElement('li');
-        li.innerHTML = `<button data-category="${cat}">${cat}</button>`;
-        list.appendChild(li);
-      });
-      
-      // 添加点击事件
-      document.querySelectorAll('.category-list button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.category-list button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentCategory = btn.dataset.category;
-          loadPosts();
-        });
-      });
-    }
-
-    // 📝 加载帖子
-    async function loadPosts() {
-      if (!db) await initDB();
-      
-      try {
-        const transaction = db.transaction(['posts'], 'readonly');
-        const store = transaction.objectStore('posts');
-        const index = store.index('created_at');
-        const request = index.getAll();
-        
-        request.onsuccess = () => {
-          const posts = request.result || [];
-          const list = $('postList');
-          
-          if (posts.length === 0) {
-            list.innerHTML = '<li class="loading">还没有帖子，快来发一个吧！</li>';
-            return;
-          }
-          
-          // 按分类筛选
-          let filteredPosts = posts;
-          if (currentCategory !== 'all') {
-            filteredPosts = posts.filter(p => p.category === currentCategory);
-          }
-          
-          // 按创建时间排序（最新的在前）
-          filteredPosts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
-          list.innerHTML = filteredPosts.map(p => `
-            <li class="post-item" onclick="viewPost(${p.id})">
-              <div class="post-title">${escapeHtml(p.title)}</div>
-              <div class="post-meta">作者:${escapeHtml(p.author)} | ${escapeHtml(p.category || '未知')} | ${new Date(p.created_at).toLocaleString('zh-CN')}</div>
-            </li>
-          `).join('');
-        };
-        
-        request.onerror = (event) => {
-          console.error('加载帖子失败:', event.target.error);
-          $('postList').innerHTML = '<li class="loading">加载失败，请刷新重试</li>';
-        };
-      } catch (e) {
-        console.error('加载帖子失败:', e);
-        $('postList').innerHTML = '<li class="loading">加载失败，请刷新重试</li>';
-      }
-    }
-
-    // ✍️ 创建新帖子
-    async function createPost() {
-      const author = $('postAuthor').value.trim(), 
-            title = $('postTitle').value.trim(), 
-            content = $('postContent').value.trim(), 
-            category = $('postCategory').value;
-            
-      if (!author || !title || !content) { 
-        alert('请填写所有必填项！'); 
-        return; 
-      }
-      
-      if (!db) await initDB();
-      
-      const transaction = db.transaction(['posts'], 'readwrite');
-      const store = transaction.objectStore('posts');
-      
-      const post = {
-        author,
-        title,
-        content,
-        category,
-        created_at: new Date().toISOString()
-      };
-      
-      const request = store.add(post);
-      
-      request.onsuccess = () => {
-        alert('发布成功！');
-        $('postAuthor').value = '';
-        $('postTitle').value = '';
-        $('postContent').value = '';
-        loadPosts();
-      };
-      
-      request.onerror = (event) => {
-        alert('发布失败：' + event.target.error.message);
-      };
-    }
-
-    // 👁️ 查看帖子详情
-    async function viewPost(id) {
-      if (!db) await initDB();
-      
-      const transaction = db.transaction(['posts'], 'readonly');
-      const store = transaction.objectStore('posts');
-      const request = store.get(Number(id));
-      
-      request.onsuccess = () => {
-        const data = request.result;
-        if (!data) {
-          alert('帖子不存在');
-          return;
-        }
-        
-        $('modalTitle').textContent = data.title;
-        $('modalMeta').textContent = `作者：${data.author} | ${data.category || '未知'} | ${new Date(data.created_at).toLocaleString('zh-CN')}`;
-        $('modalContent').textContent = data.content;
-        loadReplies(id);
-        $('postModal').style.display = 'block';
-        currentPostId = Number(id);
-      };
-      
-      request.onerror = (event) => {
-        alert('加载失败：' + event.target.error.message);
-      };
-    }
-
-    // 💬 加载回复
-    async function loadReplies(postId) {
-      if (!db) await initDB();
-      
-      const transaction = db.transaction(['replies'], 'readonly');
-      const store = transaction.objectStore('replies');
-      const index = store.index('post_id');
-      const request = index.getAll(Number(postId));
-      
-      request.onsuccess = () => {
-        const replies = request.result || [];
-        const list = $('replyList');
-        
-        if (replies.length === 0) {
-          list.innerHTML = '<p>还没有回复</p>';
-          return;
-        }
-        
-        // 按时间排序
-        replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        
-        list.innerHTML = replies.map(r => `
-          <div class="reply-item">
-            <div class="reply-author">${escapeHtml(r.author)}</div>
-            <div>${escapeHtml(r.content)}</div>
-            <small>${new Date(r.created_at).toLocaleString('zh-CN')}</small>
-          </div>
-        `).join('');
-      };
-      
-      request.onerror = (event) => {
-        console.error('加载回复失败:', event.target.error);
-        $('replyList').innerHTML = '<p>加载回复失败</p>';
-      };
-    }
-
-    // 💬 创建回复
-    async function createReply() {
-      const author = $('replyAuthor').value.trim(), 
-            content = $('replyContent').value.trim();
-            
-      if (!author || !content) { 
-        alert('请填写昵称和回复内容！'); 
-        return; 
-      }
-      
-      if (!currentPostId) {
-        alert('请先选择一个帖子');
-        return;
-      }
-      
-      if (!db) await initDB();
-      
-      const transaction = db.transaction(['replies'], 'readwrite');
-      const store = transaction.objectStore('replies');
-      
-      const reply = {
-        author,
-        content,
-        post_id: currentPostId,
-        created_at: new Date().toISOString()
-      };
-      
-      const request = store.add(reply);
-      
-      request.onsuccess = () => {
-        alert('回复成功！');
-        $('replyAuthor').value = '';
-        $('replyContent').value = '';
-        loadReplies(currentPostId);
-      };
-      
-      request.onerror = (event) => {
-        alert('回复失败：' + event.target.error.message);
-      };
-    }
-
-    function closeModal() { 
-      $('postModal').style.display = 'none'; 
-      currentPostId = null;
-    }
-
-    // 📱 页面加载后初始化
-    document.addEventListener('DOMContentLoaded', async () => {
-      await initDB();
-      await loadCategories();
-      await loadPosts();
-      
-      // 点击模态框外部关闭
-      window.onclick = function(event) {
-        const modal = $('postModal');
-        if (event.target === modal) {
-          closeModal();
-        }
-      };
-    });
+const DB='lucheng_forum';
+function showLogin(){document.getElementById('registerBox').style.display='none';document.getElementById('loginBox').style.display='block'}
+function showRegister(){document.getElementById('loginBox').style.display='none';document.getElementById('registerBox').style.display='block'}
+function initDB(){return new Promise((r,e)=>{const t=indexedDB.open(DB,1);t.onupgradeneeded=n=>{const a=n.target.result;if(!a.objectStoreNames.contains('users'))a.createObjectStore('users',{keyPath:'username'})};t.onsuccess=n=>r(n.target.result);t.onerror=n=>e(n.target.error)})}
+async function checkUser(u){const a=await initDB();return new Promise(r=>{const t=a.transaction(['users'],'readonly');const n=t.objectStore('users').get(u);n.onsuccess=e=>r(!!e.target.result)})}
+document.getElementById('registerForm').onsubmit=async e=>{e.preventDefault();const u=document.getElementById('regUsername').value.trim();const n=document.getElementById('regNickname').value.trim()||u;const p=document.getElementById('regPassword').value;const c=document.getElementById('regConfirm').value;const rn=document.getElementById('regRealName').value.trim();const m=document.getElementById('regMajor').value;const g=document.getElementById('regGender').value;const r=document.querySelector('input[name="role"]:checked').value;if(p.length<6||p.length>20){alert('密码6-20位');return}if(p!==c){alert('密码不一致');return}if(await checkUser(u)){alert('用户名已存在');return}const a=await initDB();const db={username:u,nickname:n,password:btoa(p+'lc'),realName:rn,major:m,gender:g,role:r,createdAt:new Date().toISOString()};const tx=a.transaction(['users'],'readwrite');tx.objectStore('users').put(db);tx.oncomplete=()=>{alert('注册成功！');showLogin();document.getElementById('loginUsername').value=u;document.getElementById('regUsername').value='';document.getElementById('regPassword').value='';document.getElementById('regConfirm').value=''}}
+document.getElementById('loginForm').onsubmit=async e=>{e.preventDefault();const u=document.getElementById('loginUsername').value.trim();const p=document.getElementById('loginPassword').value;const a=await initDB();const tx=a.transaction(['users'],'readonly');const req=tx.objectStore('users').get(u);req.onsuccess=()=>{const user=req.result;if(user&&user.password===btoa(p+'lc')){sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role}));window.location.href='forum.html'}else{alert('用户名或密码错误')}}}
   </script>
 </body>
 </html>
