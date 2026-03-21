@@ -33,7 +33,6 @@
     .category-item{padding:12px 15px;cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;font-size:14px}
     .category-item:hover{background:#f5f5f5}
     .category-item.active{background:linear-gradient(135deg,#667eea20,#764ba220);border-left-color:#667eea;font-weight:600}
-    .category-item .icon{margin-right:8px}
     .mobile-category{display:none;width:100%;padding:10px;background:white;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
     @media(max-width:900px){.mobile-category{display:block}}
     .mobile-category select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
@@ -45,7 +44,6 @@
     .post-list{flex:1}
     .post-card{background:white;border-radius:12px;padding:18px;margin-bottom:15px;box-shadow:0 2px 10px rgba(0,0,0,0.08);cursor:pointer;transition:all 0.3s;position:relative}
     .post-card:hover{transform:translateY(-3px);box-shadow:0 5px 20px rgba(0,0,0,0.12)}
-    .post-card.deleted{opacity:0.5;cursor:default}
     .post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
     .category-tag{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;color:white}
     .cat-learning{background:#4CAF50}.cat-campus{background:#2196F3}.cat-trade{background:#FF9800}.cat-job{background:#9C27B0}.cat-chat{background:#FF5722}.cat-notice{background:#f44336}
@@ -65,7 +63,7 @@
     .page-btn:hover,.page-btn.active{background:#667eea;color:white;border-color:#667eea}
     .page-btn:disabled{opacity:0.5;cursor:not-allowed}
     .fab{position:fixed;bottom:30px;right:30px;width:56px;height:56px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(102,126,234,0.4);transition:all 0.3s;z-index:99}
-    .fab:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(102,126,234,0.5)}
+    .fab:hover{transform:scale(1.1)}
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
     .modal-overlay.active{display:flex}
     .modal{background:white;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
@@ -81,7 +79,6 @@
     .modal-footer{padding:15px 20px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end}
     .btn-cancel{background:#f5f5f5;color:#333;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer}
     .btn-submit{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-    .btn-submit:hover{opacity:0.9}
     .btn-submit:disabled{opacity:0.5;cursor:not-allowed}
     .loading-full{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
     .loading-full.hidden{display:none}
@@ -91,30 +88,27 @@
   </style>
 </head>
 <body>
-  <div class="loading-full" id="loadingFull">
-    <div class="spinner"></div>
-    <div class="msg">加载中，请稍候...</div>
-  </div>
+  <div class="loading-full" id="loadingFull"><div class="spinner"></div><div class="msg">加载中，请稍候...</div></div>
   <div id="announceBanner" style="background:#fff3cd;border-bottom:1px solid #ffeeba;padding:10px 20px;text-align:center;font-size:13px;color:#856404;display:none">
     <span id="announceText"></span>
-    <button onclick="document.getElementById('announceBanner').style.display='none';localStorage.setItem('announceHidden','1')" style="background:none;border:none;font-size:16px;color:#856404;cursor:pointer;padding:0 0 0 8px;line-height:1">×</button>
+    <button id="announceClose" style="background:none;border:none;font-size:16px;color:#856404;cursor:pointer;padding:0 0 0 8px;line-height:1">×</button>
   </div>
   <nav class="navbar">
     <div class="nav-content">
       <a href="forum.html" class="nav-logo">🏫 鹿城学院论坛</a>
-      <button class="mobile-menu-btn" onclick="document.getElementById('navLinks').classList.toggle('active')">☰</button>
+      <button class="mobile-menu-btn" id="menuBtn">☰</button>
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link">首页</a>
         <a href="profile.html" class="nav-link">我的主页</a>
         <div class="user-info" id="userInfo"></div>
-        <button class="btn-logout" onclick="doLogout()">退出登录</button>
+        <button class="btn-logout" id="logoutBtn">退出登录</button>
       </div>
     </div>
   </nav>
   <div class="main-content">
     <aside class="sidebar">
       <div class="mobile-category">
-        <select id="mobileCategory" onchange="doFilterCategory(this.value)">
+        <select id="mobileCategory">
           <option value="">全部帖子</option>
           <option value="learning">📚 学习交流</option>
           <option value="campus">🏠 校园生活</option>
@@ -125,31 +119,31 @@
         </select>
       </div>
       <div class="category-list">
-        <div class="category-item active" data-category="" onclick="doFilterCategory('')">📋 全部帖子</div>
-        <div class="category-item" data-category="learning" onclick="doFilterCategory('learning')">📚 学习交流</div>
-        <div class="category-item" data-category="campus" onclick="doFilterCategory('campus')">🏠 校园生活</div>
-        <div class="category-item" data-category="trade" onclick="doFilterCategory('trade')">🛒 二手交易</div>
-        <div class="category-item" data-category="job" onclick="doFilterCategory('job')">💼 求职招聘</div>
-        <div class="category-item" data-category="chat" onclick="doFilterCategory('chat')">💬 闲聊灌水</div>
-        <div class="category-item" data-category="notice" onclick="doFilterCategory('notice')">📢 公告通知</div>
+        <div class="category-item active" data-category="">📋 全部帖子</div>
+        <div class="category-item" data-category="learning">📚 学习交流</div>
+        <div class="category-item" data-category="campus">🏠 校园生活</div>
+        <div class="category-item" data-category="trade">🛒 二手交易</div>
+        <div class="category-item" data-category="job">💼 求职招聘</div>
+        <div class="category-item" data-category="chat">💬 闲聊灌水</div>
+        <div class="category-item" data-category="notice">📢 公告通知</div>
       </div>
     </aside>
     <div class="post-list">
       <div class="search-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="搜索帖子标题..." oninput="doSearch(this.value)">
-        <button class="sort-btn active" id="sortLatest" onclick="doSort('latest')">最新</button>
-        <button class="sort-btn" id="sortHot" onclick="doSort('hot')">最热</button>
+        <input type="text" class="search-input" id="searchInput" placeholder="搜索帖子标题...">
+        <button class="sort-btn active" id="sortLatest">最新</button>
+        <button class="sort-btn" id="sortHot">最热</button>
       </div>
       <div id="postContainer"></div>
       <div class="pagination" id="pagination"></div>
     </div>
   </div>
-  <button class="fab" onclick="openPostModal()">+</button>
+  <button class="fab" id="fabBtn">+</button>
   <div class="modal-overlay" id="postModal">
     <div class="modal">
       <div class="modal-header">
         <h3 class="modal-title">发布新帖子</h3>
-        <button class="modal-close" onclick="closePostModal()">×</button>
+        <button class="modal-close" id="modalCloseBtn">×</button>
       </div>
       <div class="modal-body">
         <div class="form-group"><label>标题 *</label><input type="text" id="postTitle" placeholder="请输入帖子标题"></div>
@@ -167,8 +161,8 @@
         <div class="form-group"><label>内容 *</label><textarea id="postContent" placeholder="请输入帖子内容"></textarea></div>
       </div>
       <div class="modal-footer">
-        <button class="btn-cancel" onclick="closePostModal()">取消</button>
-        <button class="btn-submit" id="submitBtn" onclick="doSubmitPost()">发布</button>
+        <button class="btn-cancel" id="modalCancelBtn">取消</button>
+        <button class="btn-submit" id="submitBtn">发布</button>
       </div>
     </div>
   </div>
@@ -180,6 +174,7 @@
   var PER_PAGE=10;
   var catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
   var roleNames={student:'学生',teacher:'老师',admin:'管理员'};
+  var catBg={'learning':'#4CAF50',campus:'#2196F3',trade:'#FF9800',job:'#9C27B0',chat:'#FF5722',notice:'#f44336'};
 
   var currentUser=null;
   var userData=null;
@@ -191,73 +186,74 @@
   var searchKeyword='';
   var searchTimer=null;
 
-  function showLoading(){document.getElementById('loadingFull').classList.remove('hidden')}
-  function hideLoading(){document.getElementById('loadingFull').classList.add('hidden')}
+  // DOM shortcuts
+  function $(id){return document.getElementById(id)}
+  function showLoading(){$('loadingFull').classList.remove('hidden')}
+  function hideLoading(){$('loadingFull').classList.add('hidden')}
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
   function timeAgo(d){var s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<2592000)return Math.floor(s/86400)+'天前';return new Date(d).toLocaleDateString('zh-CN')}
 
-  function doLogout(){
-    sessionStorage.clear();
-    window.location.href='index.html';
-  }
-
+  // Announce
   function loadAnnouncement(){
-    var hide=localStorage.getItem('announceHidden');
-    if(hide)return;
-    var msg='⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。如有反馈和建议，请联系 13587769094（微信同号）';
-    document.getElementById('announceText').textContent=msg;
-    document.getElementById('announceBanner').style.display='block';
+    if(localStorage.getItem('announceHidden'))return;
+    $('announceText').textContent='⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。如有反馈和建议，请联系 13587769094（微信同号）';
+    $('announceBanner').style.display='block';
   }
+  $('announceClose').onclick=function(){$('announceBanner').style.display='none';localStorage.setItem('announceHidden','1')};
 
+  // User info
   function renderUserInfo(){
-    var rc='role-'+(currentUser.role||'student');
-    var rt=roleNames[currentUser.role]||'学生';
+    var role=currentUser.role||'student';
+    var rt=roleNames[role]||'学生';
     var nn=(userData&&userData.nickname)||currentUser.nickname||'?';
-    var av=userData&&userData.avatar_url;
-    var avatarHtml;
-    if(av){
-      avatarHtml='<img src="'+esc(av)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">';
-    } else {
-      avatarHtml='<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+esc(nn.charAt(0).toUpperCase())+'</span>';
-    }
-    document.getElementById('userInfo').innerHTML=avatarHtml+'<span class="user-nickname">'+esc(nn)+'</span><span class="role-tag '+esc(rc)+'">'+esc(rt)+'</span>';
+    var av=(userData&&userData.avatar_url)||'';
+    var avatarHtml=av
+      ? '<img src="'+esc(av)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">'
+      : '<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+esc(nn.charAt(0).toUpperCase())+'</span>';
+    $('userInfo').innerHTML=avatarHtml+'<span class="user-nickname">'+esc(nn)+'</span><span class="role-tag role-'+esc(role)+'">'+esc(rt)+'</span>';
   }
 
-  async function init(){
+  // Init
+  function init(){
     var s=sessionStorage.getItem('currentUser');
     if(!s){window.location.href='index.html';return}
     currentUser=JSON.parse(s);
     showLoading();
-    try {
-      var userRes=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
-      var postsRes=await sb.from('posts').select('*').order('created_at',{ascending:false});
+    Promise.all([
+      sb.from('users').select('*').eq('username',currentUser.username).maybeSingle(),
+      sb.from('posts').select('*').order('created_at',{ascending:false})
+    ]).then(function(results){
+      var userRes=results[0];
+      var postsRes=results[1];
       userData=userRes.data;
       allPosts=postsRes.data||[];
-      // 获取回复数
       if(allPosts.length>0){
         var ids=allPosts.map(function(p){return p.id});
-        var repliesRes=await sb.from('replies').select('post_id').in('post_id',ids);
-        (repliesRes.data||[]).forEach(function(r){
-          replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1;
+        sb.from('replies').select('post_id').in('post_id',ids).then(function(r){
+          (r.data||[]).forEach(function(item){replyCounts[item.post_id]=(replyCounts[item.post_id]||0)+1});
+          hideLoading();
+          renderUserInfo();
+          filterAndRender();
+          loadAnnouncement();
         });
+      } else {
+        hideLoading();
+        renderUserInfo();
+        filterAndRender();
+        loadAnnouncement();
       }
-    } catch(e){
+    }).catch(function(){
+      hideLoading();
       alert('加载失败，请刷新重试');
-    }
-    hideLoading();
-    renderUserInfo();
-    filterAndRender();
-    loadAnnouncement();
+    });
   }
 
+  // Render posts
   function filterAndRender(){
     var filtered=allPosts.filter(function(p){
       if(p.is_deleted)return false;
       if(currentCategory&&p.category!==currentCategory)return false;
-      if(searchKeyword){
-        var kw=searchKeyword.toLowerCase();
-        if(p.title.toLowerCase().indexOf(kw)===-1)return false;
-      }
+      if(searchKeyword&&p.title.toLowerCase().indexOf(searchKeyword.toLowerCase())===-1)return false;
       return true;
     });
     filtered.sort(function(a,b){
@@ -268,10 +264,10 @@
   }
 
   function renderPosts(posts){
-    var c=document.getElementById('postContainer');
+    var c=$('postContainer');
     if(posts.length===0){
       c.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无帖子，快来发布第一个吧！</div></div>';
-      document.getElementById('pagination').innerHTML='';
+      $('pagination').innerHTML='';
       return;
     }
     var total=Math.ceil(posts.length/PER_PAGE);
@@ -282,10 +278,10 @@
     for(var i=0;i<page.length;i++){
       var p=page[i];
       var cn=catNames[p.category]||'其他';
-      var cc={'learning':'#4CAF50','campus':'#2196F3','trade':'#FF9800','job':'#9C27B0','chat':'#FF5722','notice':'#f44336'}[p.category]||'#999';
-      var delBtn=isAdmin?'<button class="admin-del" onclick="event.stopPropagation();doDeletePost('+p.id+')">🗑 删除</button>':'';
-      html+='<div class="post-card" onclick="gotoPost('+p.id+')">'+delBtn+
-        '<div class="post-header"><span class="category-tag" style="background:'+cc+'">'+esc(cn)+'</span></div>'+
+      var bg=catBg[p.category]||'#999';
+      var delBtn=isAdmin?'<button class="admin-del" data-id="'+p.id+'">🗑 删除</button>':'';
+      html+='<div class="post-card" data-id="'+p.id+'">'+delBtn+
+        '<div class="post-header"><span class="category-tag" style="background:'+bg+'">'+esc(cn)+'</span></div>'+
         '<div class="post-title">'+esc(p.title)+'</div>'+
         '<div class="post-preview">'+esc(p.content)+'</div>'+
         '<div class="post-meta">'+
@@ -294,85 +290,120 @@
         '</div></div>';
     }
     c.innerHTML=html;
-    // 分页
-    var pEl=document.getElementById('pagination');
+    // Bind post clicks
+    var cards=c.querySelectorAll('.post-card');
+    cards.forEach(function(card){
+      card.addEventListener('click',function(e){
+        if(e.target.classList.contains('admin-del'))return;
+        window.location.href='post.html?id='+this.getAttribute('data-id');
+      });
+    });
+    // Bind delete
+    var dels=c.querySelectorAll('.admin-del');
+    dels.forEach(function(btn){
+      btn.addEventListener('click',function(e){e.stopPropagation();doDeletePost(parseInt(this.getAttribute('data-id')))});
+    });
+    // Pagination
+    var pEl=$('pagination');
     if(total<=1){pEl.innerHTML='';return}
-    var h='<button class="page-btn" onclick="goPage('+(currentPage-1)+')" '+(currentPage===1?'disabled':'')+'>上一页</button>';
+    var h='<button class="page-btn" '+(currentPage===1?'disabled':'')+' data-page="'+(currentPage-1)+'">上一页</button>';
     for(var j=1;j<=total;j++){
       if(j===1||j===total||(j>=currentPage-1&&j<=currentPage+1)){
-        h+='<button class="page-btn'+(j===currentPage?' active':'')+'" onclick="goPage('+j+')">'+j+'</button>';
+        h+='<button class="page-btn'+(j===currentPage?' active':'')+'" data-page="'+j+'">'+j+'</button>';
       } else if(j===currentPage-2||j===currentPage+2){
         h+='<span style="padding:8px">...</span>';
       }
     }
-    h+='<button class="page-btn" onclick="goPage('+(currentPage+1)+')" '+(currentPage===total?'disabled':'')+'>下一页</button>';
+    h+='<button class="page-btn" '+(currentPage===total?'disabled':'')+' data-page="'+(currentPage+1)+'">下一页</button>';
     pEl.innerHTML=h;
+    pEl.querySelectorAll('.page-btn:not([disabled])').forEach(function(btn){
+      btn.addEventListener('click',function(){goPage(parseInt(this.getAttribute('data-page')))});
+    });
   }
 
-  window.gotoPost=function(id){window.location.href='post.html?id='+id};
-  window.goPage=function(p){currentPage=p;filterAndRender();window.scrollTo({top:0,behavior:'smooth'})};
-  window.doFilterCategory=function(cat){
+  // Event handlers
+  function goPage(p){currentPage=p;filterAndRender();window.scrollTo({top:0,behavior:'smooth'})}
+  function doFilterCategory(cat){
     currentCategory=cat;currentPage=1;
-    document.querySelectorAll('.category-item').forEach(function(item){item.classList.toggle('active',item.getAttribute('data-category')===cat)});
-    document.getElementById('mobileCategory').value=cat;
+    document.querySelectorAll('.category-item').forEach(function(item){
+      item.classList.toggle('active',item.getAttribute('data-category')===cat);
+    });
+    $('mobileCategory').value=cat;
     filterAndRender();
-  };
-  window.doSearch=function(kw){
+  }
+  function doSearch(kw){
     searchKeyword=kw;currentPage=1;
     clearTimeout(searchTimer);
     searchTimer=setTimeout(function(){filterAndRender()},400);
-  };
-  window.doSort=function(s){
+  }
+  function doSort(s){
     currentSort=s;currentPage=1;
-    document.getElementById('sortLatest').classList.toggle('active',s==='latest');
-    document.getElementById('sortHot').classList.toggle('active',s==='hot');
+    $('sortLatest').classList.toggle('active',s==='latest');
+    $('sortHot').classList.toggle('active',s==='hot');
     filterAndRender();
-  };
-  window.openPostModal=function(){
-    document.getElementById('postModal').classList.add('active');
-    document.getElementById('postTitle').value='';
-    document.getElementById('postCategory').value='';
-    document.getElementById('postContent').value='';
-  };
-  window.closePostModal=function(){document.getElementById('postModal').classList.remove('active')};
-  window.doSubmitPost=function(){
-    var title=document.getElementById('postTitle').value.trim();
-    var category=document.getElementById('postCategory').value;
-    var content=document.getElementById('postContent').value.trim();
+  }
+  function doLogout(){
+    sessionStorage.clear();
+    window.location.href='index.html';
+  }
+  function openPostModal(){
+    $('postModal').classList.add('active');
+    $('postTitle').value='';
+    $('postCategory').value='';
+    $('postContent').value='';
+  }
+  function closePostModal(){$('postModal').classList.remove('active')}
+  function doSubmitPost(){
+    var title=$('postTitle').value.trim();
+    var category=$('postCategory').value;
+    var content=$('postContent').value.trim();
     if(!title){alert('请输入帖子标题');return}
     if(!category){alert('请选择分类');return}
     if(!content){alert('请输入帖子内容');return}
-    var btn=document.getElementById('submitBtn');
-    btn.disabled=true;
+    $('submitBtn').disabled=true;
     sb.from('posts').insert({title:title,content:content,category:category,author:currentUser.username,author_nickname:currentUser.nickname}).then(function(res){
-      btn.disabled=false;
+      $('submitBtn').disabled=false;
       if(res.error){alert('发布失败：'+res.error.message);return}
       closePostModal();
       replyCounts={};currentPage=1;
-      // 重新加载
       sb.from('posts').select('*').order('created_at',{ascending:false}).then(function(r){
         allPosts=r.data||[];
         if(allPosts.length>0){
           var ids=allPosts.map(function(p){return p.id});
           sb.from('replies').select('post_id').in('post_id',ids).then(function(rp){
-            replyCounts={};
-            (rp.data||[]).forEach(function(r2){replyCounts[r2.post_id]=(replyCounts[r2.post_id]||0)+1});
+            (rp.data||[]).forEach(function(item){replyCounts[item.post_id]=(replyCounts[item.post_id]||0)+1});
             filterAndRender();
           });
         } else {filterAndRender();}
       });
     });
-  };
-  window.doDeletePost=function(id){
+  }
+  function doDeletePost(id){
     if(!confirm('确定要删除这篇帖子吗？'))return;
     sb.from('posts').update({is_deleted:true}).eq('id',id).then(function(res){
       if(res.error){alert('删除失败');return}
       allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_deleted:true}):p});
       filterAndRender();
     });
-  };
+  }
 
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}else{init()}
+  // Bind events
+  $('menuBtn').onclick=function(){$('navLinks').classList.toggle('active')};
+  $('logoutBtn').onclick=doLogout;
+  $('fabBtn').onclick=openPostModal;
+  $('modalCloseBtn').onclick=closePostModal;
+  $('modalCancelBtn').onclick=closePostModal;
+  $('submitBtn').onclick=doSubmitPost;
+  $('sortLatest').onclick=function(){doSort('latest')};
+  $('sortHot').onclick=function(){doSort('hot')};
+  $('searchInput').oninput=function(){doSearch(this.value)};
+  $('mobileCategory').onchange=function(){doFilterCategory(this.value)};
+  document.querySelectorAll('.category-item').forEach(function(item){
+    item.onclick=function(){doFilterCategory(this.getAttribute('data-category'))};
+  });
+
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init)}
+  else{init()}
 })();
   </script>
 </body>
