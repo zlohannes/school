@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 登录注册</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script>sessionStorage.clear();</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{width:100%;max-width:420px}
+    .card{background:white;padding:25px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.15)}
+    h1{color:#333;text-align:center;font-size:22px;margin-bottom:3px}
+    .subtitle{color:#666;text-align:center;font-size:13px;margin-bottom:20px}
+    h2{color:#333;font-size:16px;margin-bottom:15px}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
+    .form-group input,.form-group select{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+    .form-group input:focus{border-color:#667eea;outline:none}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .radio-group{display:flex;gap:12px;margin-top:6px}
+    .radio-option{display:flex;align-items:center;gap:4px;font-size:13px}
+    .btn{width:100%;background:#667eea;color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
+    .btn:hover{background:#5568d3}
+    .btn:disabled{background:#aaa;cursor:not-allowed}
+    .switch{text-align:center;margin-top:12px;color:#666;font-size:13px}
+    .switch a{color:#667eea;text-decoration:none;font-weight:600}
+    .note{font-size:11px;color:#666;margin-top:3px}
+    .note strong{color:#28a745}
+    .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.8);display:none;align-items:center;justify-content:center;z-index:999}
+    .loading.show{display:flex}
+    .loading .spinner{width:36px;height:36px;border:3px solid #ddd;border-top-color:#667eea;border-radius:50%;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div class="container">
+    <div class="card">
+      <h1><img src="https://www.wzvtc.cn/favicon.ico" style="height:28px;vertical-align:middle;"> 鹿城学院论坛</h1>
+      <p class="subtitle">温州职业技术学院</p>
+      <div id="registerBox">
+        <h2>📝 注册账号</h2>
+        <form id="registerForm">
+          <div class="form-group"><label>用户名 *</label><input type="text" id="regUsername" placeholder="请输入用户名" required></div>
+          <div class="form-group"><label>昵称</label><input type="text" id="regNickname" placeholder="公开显示的昵称"></div>
+          <div class="row">
+            <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" placeholder="6-20位" required></div>
+            <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirm" placeholder="再次输入" required></div>
+          </div>
+          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" placeholder="仅管理员可见" required><div class="note"><strong>隐私：</strong>真实姓名仅管理员可见</div></div>
+          <div class="row">
+            <div class="form-group">
+              <label>专业</label>
+              <select id="regMajor">
+                <option value="">请选择专业</option>
+                <option value="金融科技应用">金融科技应用</option>
+                <option value="大数据与会计">大数据与会计</option>
+                <option value="市场营销">市场营销</option>
+                <option value="国际商务">国际商务</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>性别</label>
+              <select id="regGender">
+                <option value="男">男</option>
+                <option value="女" selected>女</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>角色</label>
+            <div class="radio-group">
+              <label class="radio-option"><input type="radio" name="role" value="student" checked onclick="toggleMajor()"> 学生</label>
+              <label class="radio-option"><input type="radio" name="role" value="teacher" onclick="toggleMajor()"> 老师</label>
+              <label class="radio-option"><input type="radio" name="role" value="admin" onclick="checkAdmin()"> 管理员</label>
+            </div>
+          </div>
+          <button type="submit" class="btn" id="regBtn">注册</button>
+        </form>
+        <div class="switch">已有账号？<a href="#" onclick="showLogin()">点击登录</a></div>
+      </div>
+      <div id="loginBox" style="display:none;">
+        <h2>🔐 用户登录</h2>
+        <form id="loginForm">
+          <div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="请输入用户名" required></div>
+          <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码" required></div>
+          <button type="submit" class="btn" id="loginBtn">登录</button>
+        </form>
+        <div class="switch">没有账号？<a href="#" onclick="showRegister()">注册</a></div>
+      </div>
+    </div>
+  </div>
+  <script>
+const SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+const SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+const ADMIN_CODE = 'admin';
+
+function showLoading(v){document.getElementById('loading').classList.toggle('show',v)}
+
+function showLogin(){document.getElementById('registerBox').style.display='none';document.getElementById('loginBox').style.display='block'}
+function showRegister(){document.getElementById('loginBox').style.display='none';document.getElementById('registerBox').style.display='block'}
+
+function toggleMajor(){
+  const role=document.querySelector('input[name="role"]:checked').value;
+  const s=document.getElementById('regMajor');
+  s.disabled=role==='teacher';
+  if(role==='teacher')s.value='';
+}
+
+function checkAdmin(){
+  const code=prompt('请输入管理员注册码：');
+  if(code!==ADMIN_CODE){alert('注册码错误！只有管理员才能注册管理员账号。');document.querySelector('input[name="role"][value="student"]').checked=true;toggleMajor()}
+}
+
+document.getElementById('registerForm').onsubmit=async e=>{
+  e.preventDefault();
+  const u=document.getElementById('regUsername').value.trim();
+  const n=document.getElementById('regNickname').value.trim()||u;
+  const p=document.getElementById('regPassword').value;
+  const c=document.getElementById('regConfirm').value;
+  const rn=document.getElementById('regRealName').value.trim();
+  const m=document.getElementById('regMajor').value;
+  const g=document.getElementById('regGender').value;
+  const r=document.querySelector('input[name="role"]:checked').value;
+
+  if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
+  if(p!==c){alert('两次密码不一致');return}
+
+  showLoading(true);
+  document.getElementById('regBtn').disabled=true;
+
+  const{data:exists}=await sb.from('users').select('username').eq('username',u).maybeSingle();
+  if(exists){alert('用户名已存在');showLoading(false);document.getElementById('regBtn').disabled=false;return}
+
+  const{error}=await sb.from('users').insert({username:u,nickname:n,password:btoa(p+'lc'),real_name:rn,major:m,gender:g,role:r});
+  showLoading(false);
+  document.getElementById('regBtn').disabled=false;
+
+  if(error){alert('注册失败：'+error.message);return}
+  alert('注册成功！请登录');
+  showLogin();
+  document.getElementById('loginUsername').value=u;
+  document.getElementById('regUsername').value='';
+  document.getElementById('regPassword').value='';
+  document.getElementById('regConfirm').value='';
+};
+
+document.getElementById('loginForm').onsubmit=async e=>{
+  e.preventDefault();
+  const u=document.getElementById('loginUsername').value.trim();
+  const p=document.getElementById('loginPassword').value;
+
+  showLoading(true);
+  document.getElementById('loginBtn').disabled=true;
+
+  try {
+    const {data: user, error} = await sb.from('users').select('*').eq('username',u).maybeSingle();
+    showLoading(false);
+    document.getElementById('loginBtn').disabled=false;
+
+    if(error||!user){alert('用户名不存在');return}
+    if(user.password!==btoa(p+'lc')){alert('密码错误');return}
+    if(user.is_banned){alert('账号已被封禁，请联系管理员');return}
+
+    sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role,realName:user.real_name}));
+    window.location.href='forum.html';
+  } catch(e){
+    showLoading(false);
+    document.getElementById('loginBtn').disabled=false;
+    alert('网络连接失败，请检查网络后重试');
+  }
+};
+  </script>
+</body>
+</html>
