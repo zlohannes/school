@@ -122,16 +122,12 @@
         <div class="stat"><div class="num" id="replyCount">0</div><div class="label">回复</div></div>
       </div>
       <div class="info-grid" id="infoGrid">
-        <div class="info-item"><div class="label">真实姓名</div><div class="value" id="infoRealName">-</div></div>
-        <div class="info-item"><div class="label">专业</div><div class="value" id="infoMajor">-</div></div>
         <div class="info-item"><div class="label">性别</div><div class="value" id="infoGender">-</div></div>
         <div class="info-item"><div class="label">注册时间</div><div class="value" id="infoJoined">-</div></div>
       </div>
       <div class="edit-form" id="editForm">
         <div class="form-group"><label>昵称</label><input type="text" id="editNickname" placeholder="请输入昵称"></div>
-        <div class="form-group"><label>真实姓名</label><input type="text" id="editRealName" placeholder="请输入真实姓名"></div>
-        <div class="form-group"><label>专业</label><select id="editMajor"><option value="">请选择</option><option value="金融科技应用">金融科技应用</option><option value="大数据与会计">大数据与会计</option><option value="市场营销">市场营销</option><option value="国际商务">国际商务</option></select></div>
-        <div class="form-group"><label>性别</label><select id="editGender"><option value="保密">保密</option><option value="男">男</option><option value="女">女</option></select></div>
+        <div class="form-group"><label>性别</label><select id="editGender"><option value="男">男</option><option value="女">女</option></select></div>
         <div class="btn-row">
           <button class="btn-save" id="saveBtn" onclick="saveProfile()">保存</button>
           <button class="btn-cancel" onclick="toggleEdit()">取消</button>
@@ -227,14 +223,10 @@ async function loadProfile(){
   rTag.textContent=roleLabel[role];rTag.className='role-tag role-'+role;
   document.getElementById('displayName').textContent=nickname;
   renderAvatar();
-  document.getElementById('infoRealName').textContent=user.real_name||'未设置';
-  document.getElementById('infoMajor').textContent=user.major||'未设置';
-  document.getElementById('infoGender').textContent=user.gender||'保密';
+  document.getElementById('infoGender').textContent=user.gender||'男';
   document.getElementById('infoJoined').textContent=user.created_at?new Date(user.created_at).toLocaleDateString('zh-CN'):'-';
   document.getElementById('editNickname').value=nickname;
-  document.getElementById('editRealName').value=user.real_name||'';
-  document.getElementById('editMajor').value=user.major||'';
-  document.getElementById('editGender').value=user.gender||'保密';
+  document.getElementById('editGender').value=user.gender||'男';
   document.getElementById('postCount').textContent=postsRes.data?.length||0;
   document.getElementById('replyCount').textContent=repliesRes.data?.length||0;
   allPosts=postsRes.data||[];
@@ -255,7 +247,6 @@ async function loadProfile(){
     else{adminContent.innerHTML=users.map(u=>`<div class="reply-item" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div style="flex:1;min-width:120px">
         <div style="font-weight:600;color:#333;font-size:14px">${esc(u.nickname||u.username)} <span style="font-size:12px;color:#999">(${esc(u.username)})</span></div>
-        <div style="font-size:12px;color:#999;margin-top:2px">${u.major||'未设置'}</div>
       </div>
       <span class="role-tag role-${u.role||'student'}">${roleLabel[u.role]||'学生'}</span>
       <span style="font-size:12px;padding:2px 8px;border-radius:10px;${u.is_banned?'background:#ffe0e0;color:#e74c3c':'background:#e8f5e9;color:#27ae60'}">${u.is_banned?'🔒 已封禁':'✅ 正常'}</span>
@@ -270,12 +261,10 @@ function toggleEdit(){const f=document.getElementById('editForm');const b=docume
 
 async function saveProfile(){
   const nn=document.getElementById('editNickname').value.trim();
-  const rn=document.getElementById('editRealName').value.trim();
-  const mj=document.getElementById('editMajor').value;
   const gd=document.getElementById('editGender').value;
   if(!nn){alert('昵称不能为空');return}
   document.getElementById('saveBtn').disabled=true;
-  const{error}=await sb.from('users').update({nickname:nn,real_name:rn,major:mj,gender:gd}).eq('username',currentUser.username);
+  const{error}=await sb.from('users').update({nickname:nn,gender:gd}).eq('username',currentUser.username);
   document.getElementById('saveBtn').disabled=false;
   if(error){alert('保存失败：'+error.message);return}
   currentUser.nickname=nn;
