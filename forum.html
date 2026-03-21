@@ -82,6 +82,10 @@
     .btn-submit:disabled{opacity:0.5;cursor:not-allowed}
     .loading{text-align:center;padding:40px;color:#999}
     .loading .spinner{width:30px;height:30px;border:3px solid #ddd;border-top-color:#667eea;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+    .page-loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.92);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
+    .page-loading.show{display:flex}
+    .page-loading .msg{font-size:15px;color:#667eea;font-weight:600}
+    .page-loading .spinner2{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
@@ -122,8 +126,9 @@
       </div>
     </aside>
     <div class="post-list">
+      <div class="page-loading" id="pageLoading"><div class="spinner2"></div><div class="msg">加载中，请稍候...</div></div>
       <div class="search-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="搜索帖子标题..." oninput="searchPosts(this.value)">
+        <input type="text" class="search-input" id="searchInput" placeholder="搜索帖子标题..." oninput="debounceSearch(this.value)">
         <button class="sort-btn active" onclick="setSort('latest')" id="sortLatest">最新</button>
         <button class="sort-btn" onclick="setSort('hot')" id="sortHot">最热</button>
       </div>
@@ -156,7 +161,10 @@ const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const PER_PAGE=10;
 const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
 
-let currentUser=null,userData=null,allPosts=[],replyCounts={},currentCategory='',currentSort='latest',currentPage=1,searchKeyword='';
+let currentUser=null,userData=null,allPosts=[],replyCounts={},currentCategory='',currentSort='latest',currentPage=1,searchKeyword='',searchTimer=null;
+const SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';const SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';const sb=window.supabase.createClient(SB_URL,SB_KEY);const PER_PAGE=10;const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
+
+function showLoading(){$('#pageLoading').classList.add('show')}function hideLoading(){$('#pageLoading').classList.remove('show')}function $(s){return document.querySelector(s)}
 
 document.addEventListener('DOMContentLoaded',init);
 
@@ -164,10 +172,22 @@ async function init(){
   const s=sessionStorage.getItem('currentUser');
   if(!s){window.location.href='index.html';return}
   currentUser=JSON.parse(s);
-  const{data:user}=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
-  userData=user;
+  showLoading();
+  // 并行加载：用户信息 + 帖子列表
+  const [userRes,postsRes]=await Promise.all([
+    sb.from('users').select('*').eq('username',currentUser.username).maybeSingle(),
+    sb.from('posts').select('*').order('created_at',{ascending:false})
+  ]);
+  hideLoading();
+  userData=userRes.data;
   renderUserInfo();
-  await loadPosts();
+  allPosts=postsRes.data||[];
+  // 一次性获取所有回复，按post_id分组
+  if(allPosts.length>0){
+    const{data:replies}=await sb.from('replies').select('post_id');
+    (replies||[]).forEach(r=>{replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1});
+  }
+  filterAndRender();
 }
 
 function renderUserInfo(){
@@ -183,14 +203,13 @@ function toggleMobileMenu(){document.getElementById('navLinks').classList.toggle
 function logout(){sessionStorage.clear();window.location.href='index.html'}
 
 async function loadPosts(){
+  showLoading();
   const{data:posts}=await sb.from('posts').select('*').order('created_at',{ascending:false});
+  hideLoading();
   allPosts=posts||[];
-  // 获取所有帖子的回复数
-  const{count:total}=await sb.from('replies').select('id',{count:'exact',head:true});
-  // 按帖子ID获取回复数
+  replyCounts={};
   if(allPosts.length>0){
-    const ids=allPosts.map(p=>p.id);
-    const{data:replies}=await sb.from('replies').select('post_id').in('post_id',ids);
+    const{data:replies}=await sb.from('replies').select('post_id');
     (replies||[]).forEach(r=>{replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1});
   }
   filterAndRender();
@@ -204,6 +223,12 @@ function filterAndRender(){
   if(currentSort==='latest')filtered.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   else filtered.sort((a,b)=>(replyCounts[b.id]||0)-(replyCounts[a.id]||0));
   renderPosts(filtered);
+}
+
+function debounceSearch(kw){
+  searchKeyword=kw;
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{currentPage=1;filterAndRender()},400);
 }
 
 function renderPosts(posts){

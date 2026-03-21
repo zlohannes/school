@@ -77,6 +77,10 @@
     .error-text{font-size:18px;color:#666;margin-bottom:20px}
     .btn-back{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block}
     .loading{text-align:center;padding:60px;color:#999}
+    .page-loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.92);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
+    .page-loading.show{display:flex}
+    .page-loading .msg{font-size:15px;color:#667eea;font-weight:600}
+    .page-loading .spinner2{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin .7s linear infinite}
   </style>
 </head>
 <body>
@@ -95,7 +99,8 @@
       </div>
     </div>
   </nav>
-  <div class="main" id="mainContent"><div class="loading">加载中...</div></div>
+  <div class="page-loading" id="pageLoading"><div class="spinner2"></div><div class="msg">加载中，请稍候...</div></div>
+  <div class="main" id="mainContent"></div>
   <div class="report-modal" id="reportModal">
     <div class="report-box">
       <div class="report-title">🚨 举报帖子</div>
@@ -112,7 +117,7 @@ const SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
 
-let currentUser=null,userData=null,postData=null,replies=[];
+let currentUser=null,userData=null,postData=null,replies=[];function showLoading(){$('#pageLoading').classList.add('show')}function hideLoading(){$('#pageLoading').classList.remove('show')}function $(s){return document.querySelector(s)}
 
 document.addEventListener('DOMContentLoaded',init);
 
@@ -120,10 +125,14 @@ async function init(){
   const s=sessionStorage.getItem('currentUser');
   if(!s){window.location.href='index.html';return}
   currentUser=JSON.parse(s);
-  const{data:user}=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
-  userData=user;
+  showLoading();
+  const[userRes]=await Promise.all([
+    sb.from('users').select('*').eq('username',currentUser.username).maybeSingle()
+  ]);
+  userData=userRes.data;
   renderUserInfo();
   await loadPost();
+  hideLoading();
 }
 
 function renderUserInfo(){
@@ -140,13 +149,16 @@ function logout(){sessionStorage.clear();window.location.href='index.html'}
 async function loadPost(){
   const id=new URLSearchParams(location.search).get('id');
   if(!id){showError('帖子不存在');return}
-  const{data:post}=await sb.from('posts').select('*').eq('id',id).maybeSingle();
-  if(!post){showError('帖子不存在');return}
-  // 获取作者封号状态
-  const{data:authorUser}=await sb.from('users').select('is_banned').eq('username',post.author).maybeSingle();
+  const{data:post,error:postErr}=await sb.from('posts').select('*').eq('id',id).maybeSingle();
+  if(postErr||!post){showError('帖子不存在');return}
+  // 并行获取作者信息和回复
+  const[{data:authorUser},{data:repliesData}]=await Promise.all([
+    sb.from('users').select('is_banned').eq('username',post.author).maybeSingle(),
+    sb.from('replies').select('*').eq('post_id',id).order('created_at',{ascending:true})
+  ]);
   post.author_banned=authorUser&&authorUser.is_banned;
   postData=post;
-  await loadReplies();
+  replies=repliesData||[];
   render();
 }
 
@@ -225,7 +237,7 @@ async function submitReply(){
   const{error}=await sb.from('replies').insert({post_id:postData.id,content:c,author:currentUser.username,author_nickname:currentUser.nickname});
   document.getElementById('sendBtn').disabled=false;
   if(error){alert('发送失败：'+error.message);return}
-  await loadReplies();render();
+  render();
 }
 
 async function adminDeletePost(){
@@ -239,9 +251,7 @@ function openReportModal(){document.getElementById('reportModal').classList.add(
 function closeReportModal(){document.getElementById('reportModal').classList.remove('active');document.getElementById('reportReason').value=''}
 function submitReport(){const r=document.getElementById('reportReason').value.trim();if(!r){alert('请输入举报原因');return}alert('举报已提交，感谢您的反馈！');closeReportModal()}
 
-function showError(msg){
-  document.getElementById('mainContent').innerHTML=`<div class="error-state"><div class="error-icon">😕</div><div class="error-text">${msg}</div><a href="forum.html" class="btn-back">返回论坛</a></div>`;
-}
+function showError(msg){hideLoading();document.getElementById('mainContent').innerHTML=`<div class="error-state"><div class="error-icon">😕</div><div class="error-text">${msg}</div><a href="forum.html" class="btn-back">返回论坛</a></div>`;}
 
 function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function timeAgo(d){const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<2592000)return Math.floor(s/86400)+'天前';return new Date(d).toLocaleDateString('zh-CN')}

@@ -212,8 +212,13 @@ function renderAvatar(){
 
 async function loadProfile(){
   showLoading('加载中...');
-  const{data:user}=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
+  const[userRes,postsRes,repliesRes]=await Promise.all([
+    sb.from('users').select('*').eq('username',currentUser.username).maybeSingle(),
+    sb.from('posts').select('*').eq('author',currentUser.username).order('created_at',{ascending:false}),
+    sb.from('replies').select('*').eq('author',currentUser.username).order('created_at',{ascending:false})
+  ]);
   hideLoading();
+  const user=userRes.data;
   if(!user){return}
   userData=user;
   const nickname=user.nickname||currentUser.username;
@@ -230,18 +235,15 @@ async function loadProfile(){
   document.getElementById('editRealName').value=user.real_name||'';
   document.getElementById('editMajor').value=user.major||'';
   document.getElementById('editGender').value=user.gender||'保密';
-  const{count:pc}=await sb.from('posts').select('id',{count:'exact',head:true}).eq('author',currentUser.username);
-  const{count:rc}=await sb.from('replies').select('id',{count:'exact',head:true}).eq('author',currentUser.username);
-  document.getElementById('postCount').textContent=pc||0;
-  document.getElementById('replyCount').textContent=rc||0;
-  const{data:posts}=await sb.from('posts').select('*').eq('author',currentUser.username).order('created_at',{ascending:false});
-  allPosts=posts||[];
+  document.getElementById('postCount').textContent=postsRes.data?.length||0;
+  document.getElementById('replyCount').textContent=repliesRes.data?.length||0;
+  allPosts=postsRes.data||[];
   const postsTab=document.getElementById('postsTab');
   if(!allPosts.length){postsTab.innerHTML='<div class="empty-state"><div class="icon">📭</div><div class="text">还没有发过帖子哦～去论坛逛逛吧</div></div>'}
   else{postsTab.innerHTML=allPosts.map(p=>{const cn=catValue[p.category]||'其他';const cc=catColors[cn]||'#999';return`<div class="post-item" onclick="location.href='post.html?id=${p.id}'"><span class="cat-tag" style="background:${cc}">${cn}</span><div class="title">${esc(p.title)}</div><div class="meta"><span>👍 ${p.likes||0}</span><span>${timeAgo(p.created_at)}</span></div></div>`}).join('')}
-  const{data:replies}=await sb.from('replies').select('*').eq('author',currentUser.username).order('created_at',{ascending:false});
+  const replies=repliesRes.data||[];
   const repliesTab=document.getElementById('repliesTab');
-  if(!replies||!replies.length){repliesTab.innerHTML='<div class="empty-state"><div class="icon">🤫</div><div class="text">还没有回复过任何帖子</div></div>'}
+  if(!replies.length){repliesTab.innerHTML='<div class="empty-state"><div class="icon">🤫</div><div class="text">还没有回复过任何帖子</div></div>'}
   else{repliesTab.innerHTML=replies.map(r=>{const post=allPosts.find(p=>p.id===r.post_id);const title=post?esc(post.title):'帖子已删除';return`<div class="reply-item"><div class="reply-to">回复了 <a href="post.html?id=${r.post_id}">${title}</a></div><div class="content">${esc(r.content)}</div><div class="meta">${timeAgo(r.created_at)}</div></div>`}).join('')}
 
   // 管理员面板
