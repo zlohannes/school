@@ -100,6 +100,10 @@
     </div>
   </nav>
   <div class="page-loading" id="pageLoading"><div class="spinner2"></div><div class="msg">加载中，请稍候...</div></div>
+  <div id="announceBanner" style="background:#fff3cd;border-bottom:1px solid #ffeeba;padding:10px 20px;text-align:center;font-size:13px;color:#856404;display:none">
+    <span id="announceText"></span>
+    <button onclick="document.getElementById('announceBanner').style.display='none';localStorage.setItem('announceHidden','1')" style="background:none;border:none;font-size:16px;color:#856404;cursor:pointer;padding:0 0 0 8px;line-height:1">×</button>
+  </div>
   <div class="main" id="mainContent"></div>
   <div class="report-modal" id="reportModal">
     <div class="report-box">
@@ -133,6 +137,7 @@ async function init(){
   renderUserInfo();
   await loadPost();
   hideLoading();
+  loadAnnouncement();
 }
 
 function renderUserInfo(){
@@ -145,6 +150,7 @@ function renderUserInfo(){
 }
 function toggleMobileMenu(){document.getElementById('navLinks').classList.toggle('active')}
 function logout(){sessionStorage.clear();window.location.href='index.html'}
+function loadAnnouncement(){var hide=localStorage.getItem('announceHidden');if(hide)return;var msg='⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。如有反馈和建议，请联系 13587769094（微信同号）';document.getElementById('announceText').textContent=msg;document.getElementById('announceBanner').style.display='block'}
 
 async function loadPost(){
   const id=new URLSearchParams(location.search).get('id');

@@ -165,6 +165,10 @@
     <div class="spinner"></div>
     <div class="text" id="loadingText">上传中...</div>
   </div>
+  <div id="announceBanner" style="background:#fff3cd;border-bottom:1px solid #ffeeba;padding:10px 20px;text-align:center;font-size:13px;color:#856404;display:none">
+    <span id="announceText"></span>
+    <button onclick="document.getElementById('announceBanner').style.display='none';localStorage.setItem('announceHidden','1')" style="background:none;border:none;font-size:16px;color:#856404;cursor:pointer;padding:0 0 0 8px;line-height:1">×</button>
+  </div>
 
   <script>
 const SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
@@ -182,7 +186,10 @@ async function init(){
   if(!s){location.href='index.html';return}
   currentUser=JSON.parse(s);
   await loadProfile();
+  loadAnnouncement();
 }
+
+function loadAnnouncement(){var hide=localStorage.getItem('announceHidden');if(hide)return;var msg='⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。如有反馈和建议，请联系 13587769094（微信同号）';document.getElementById('announceText').textContent=msg;document.getElementById('announceBanner').style.display='block'}
 
 function showLoading(text){
   document.getElementById('loadingText').textContent=text||'加载中...';
