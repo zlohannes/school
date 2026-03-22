@@ -87,6 +87,12 @@
               <label class="radio-option"><input type="radio" name="role" value="admin"> 管理员</label>
             </div>
           </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:15px">
+            <input type="checkbox" id="agreeTerms" required style="width:18px;height:18px;accent-color:#667eea">
+            <label for="agreeTerms" style="margin:0;font-size:13px;cursor:pointer">
+              我已阅读并同意 <a href="agreement.html" target="_blank" style="color:#667eea;text-decoration:none;font-weight:600">《用户协议》</a>
+            </label>
+          </div>
           <button type="submit" class="btn" id="regBtn">注册</button>
         </form>
         <div class="switch">已有账号？<a href="#" id="toLoginBtn">点击登录</a></div>
@@ -110,6 +116,10 @@
           <button type="submit" class="btn" id="resetBtn">重置密码</button>
         </form>
         <div class="switch"><a href="#" id="toLoginFromReset">返回登录</a></div>
+      </div>
+      <div class="agreement" style="margin-top:20px;padding-top:15px;border-top:1px solid #eee;text-align:center;font-size:12px;color:#666">
+        使用本论坛即表示您同意 <a href="agreement.html" target="_blank" style="color:#667eea;text-decoration:none;font-weight:600">《用户协议》</a><br>
+        <span style="color:#999;font-size:11px">严禁发布违法违规、造谣、人身攻击等内容</span>
       </div>
     </div>
   </div>
@@ -193,16 +203,29 @@
 
     if(p.length < 6 || p.length > 20){ alert('密码长度应为6-20位'); return }
     if(p !== c){ alert('两次密码不一致'); return }
+    if(!$('agreeTerms').checked){ alert('请阅读并同意用户协议'); return }
 
     showLoading();
     $('regBtn').disabled = true;
 
     try {
+      // 检查用户名是否已存在
       var checkRes = await sb.from('users').select('username').eq('username', u).maybeSingle();
       if(checkRes.data){
         hideLoading();
         $('regBtn').disabled = false;
         alert('用户名已存在');
+        return;
+      }
+      
+      // 检查真实姓名是否已存在（防止刷号）
+      var nameCheckRes = await sb.from('users').select('username').eq('real_name', rn).maybeSingle();
+      if(nameCheckRes.data){
+        hideLoading();
+        $('regBtn').disabled = false;
+        alert('该真实姓名已注册过账号，请直接登录');
+        showLogin();
+        $('loginUsername').value = nameCheckRes.data.username;
         return;
       }
 

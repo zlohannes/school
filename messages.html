@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>好友私信 - 鹿城学院论坛</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:1000px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+    .nav-logo img{height:24px}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none}
+    .nav-link:hover,.nav-link.active{color:var(--text);background:rgba(255,255,255,0.06)}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer}
+    .container{max-width:1000px;margin:20px auto;padding:0 16px}
+    .page-title{font-size:20px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+    .tabs{display:flex;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:16px;overflow:hidden}
+    .tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent}
+    .tab:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+    .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+    .tab .badge{background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:6px}
+    .friend-list{display:flex;flex-direction:column;gap:10px}
+    .friend-item{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s}
+    .friend-item:hover{border-color:rgba(76,201,240,0.3)}
+    .friend-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;overflow:hidden}
+    .friend-avatar img{width:100%;height:100%;object-fit:cover}
+    .friend-info{flex:1}
+    .friend-name{font-weight:600;font-size:15px;margin-bottom:2px}
+    .friend-status{color:var(--muted);font-size:13px}
+    .friend-actions{display:flex;gap:8px}
+    .btn-small{padding:6px 14px;font-size:12px}
+    .btn-primary{background:linear-gradient(135deg,var(--acc),var(--purple));border:none;color:#fff}
+    .btn-success{background:rgba(34,197,94,0.2);border-color:rgba(34,197,94,0.3);color:#22c55e}
+    .btn-danger{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444}
+    .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+    .empty-icon{font-size:48px;margin-bottom:10px}
+    .add-friend-btn{position:fixed;bottom:24px;right:24px;width:56px;height:56px;background:linear-gradient(135deg,var(--acc),var(--purple));color:#fff;border:none;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(76,201,240,0.3);z-index:99}
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+    .modal-overlay.active{display:flex}
+    .modal{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;width:100%;max-width:400px;padding:24px}
+    .modal-title{font-size:18px;font-weight:600;margin-bottom:16px}
+    .modal-input{width:100%;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);font-size:14px;margin-bottom:12px}
+    .modal-input:focus{border-color:var(--acc);outline:none}
+    .modal-btns{display:flex;gap:10px;justify-content:flex-end}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+    .loading.hidden{display:none}
+    .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
+      <div class="nav-links">
+        <a href="forum.html" class="nav-link">首页</a>
+        <a href="profile.html" class="nav-link">我的主页</a>
+        <a href="messages.html" class="nav-link active">好友</a>
+        <button class="btn" onclick="history.back()">← 返回</button>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <div class="page-title">
+      <span>👥 好友管理</span>
+    </div>
+    
+    <div class="tabs">
+      <div class="tab active" id="tabFriends" onclick="showTab('friends')">我的好友</div>
+      <div class="tab" id="tabRequests" onclick="showTab('requests')">好友申请<span class="badge" id="requestBadge" style="display:none">0</span></div>
+      <div class="tab" id="tabPending" onclick="showTab('pending')">待处理</div>
+    </div>
+    
+    <div class="friend-list" id="friendList"></div>
+  </div>
+  
+  <button class="add-friend-btn" onclick="showAddFriendModal()" title="添加好友">+</button>
+  
+  <!-- 添加好友弹窗 -->
+  <div class="modal-overlay" id="addFriendModal">
+    <div class="modal">
+      <div class="modal-title">添加好友</div>
+      <input type="text" class="modal-input" id="friendUsername" placeholder="输入对方用户名">
+      <textarea class="modal-input" id="friendMessage" placeholder="输入验证消息..." style="min-height:60px;resize:vertical"></textarea>
+      <div class="modal-btns">
+        <button class="btn" onclick="hideAddFriendModal()">取消</button>
+        <button class="btn btn-primary" onclick="sendFriendRequest()">发送申请</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function(){
+  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
+  var currentUser = null;
+  var friends = [];
+  var requests = [];
+  var pending = [];
+  var currentTab = 'friends';
+
+  function $(id) { return document.getElementById(id); }
+
+  async function init() {
+    var s = sessionStorage.getItem('currentUser');
+    if (!s) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(s);
+    
+    $('loading').classList.add('hidden');
+    await loadData();
+  }
+
+  async function loadData() {
+    // 获取我的好友（双向accepted）
+    var friendsRes = await sb.from('friendships')
+      .select('*')
+      .eq('status', 'accepted')
+      .or('requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + currentUser.username);
+    
+    friends = friendsRes.data || [];
+    
+    // 获取收到的好友申请
+    var requestsRes = await sb.from('friendships')
+      .select('*')
+      .eq('recipient_username', currentUser.username)
+      .eq('status', 'pending');
+    
+    requests = requestsRes.data || [];
+    
+    // 获取我发送的申请
+    var pendingRes = await sb.from('friendships')
+      .select('*')
+      .eq('requester_username', currentUser.username)
+      .eq('status', 'pending');
+    
+    pending = pendingRes.data || [];
+    
+    // 更新申请数量徽章
+    if (requests.length > 0) {
+      $('requestBadge').textContent = requests.length;
+      $('requestBadge').style.display = 'inline';
+    } else {
+      $('requestBadge').style.display = 'none';
+    }
+    
+    render();
+  }
+
+  function render() {
+    var list = $('friendList');
+    var data = currentTab === 'friends' ? friends : currentTab === 'requests' ? requests : pending;
+    
+    if (data.length === 0) {
+      var emptyText = currentTab === 'friends' ? '还没有好友，快去添加吧' : currentTab === 'requests' ? '暂无好友申请' : '没有待处理的申请';
+      list.innerHTML = '<div class="empty"><div class="empty-icon">👥</div><div>' + emptyText + '</div></div>';
+      return;
+    }
+    
+    list.innerHTML = data.map(function(f) {
+      var isFriend = currentTab === 'friends';
+      var isRequest = currentTab === 'requests';
+      var otherUser = isFriend 
+        ? (f.requester_username === currentUser.username ? f.recipient_username : f.requester_username)
+        : isRequest ? f.requester_username : f.recipient_username;
+      
+      var actions = '';
+      if (isRequest) {
+        actions = '<div class="friend-actions">' +
+          '<button class="btn btn-success btn-small" onclick="acceptRequest(' + f.id + ')">同意</button>' +
+          '<button class="btn btn-danger btn-small" onclick="rejectRequest(' + f.id + ')">拒绝</button>' +
+        '</div>';
+      } else if (isFriend) {
+        actions = '<div class="friend-actions">' +
+          '<a href="chat.html?u=' + encodeURIComponent(otherUser) + '" class="btn btn-primary btn-small">💬 发私信</a>' +
+          '<button class="btn btn-danger btn-small" onclick="removeFriend(' + f.id + ')">删除</button>' +
+        '</div>';
+      } else {
+        actions = '<div class="friend-actions"><span style="color:var(--muted);font-size:13px">等待对方同意...</span></div>';
+      }
+      
+      return '<div class="friend-item">' +
+        '<div class="friend-avatar">' + otherUser.charAt(0).toUpperCase() + '</div>' +
+        '<div class="friend-info">' +
+          '<div class="friend-name">' + otherUser + '</div>' +
+          '<div class="friend-status">@' + otherUser + '</div>' +
+        '</div>' +
+        actions +
+      '</div>';
+    }).join('');
+  }
+
+  window.showTab = function(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    $('tab' + (tab.charAt(0).toUpperCase() + tab.slice(1))).classList.add('active');
+    render();
+  };
+
+  window.showAddFriendModal = function() {
+    $('addFriendModal').classList.add('active');
+    $('friendUsername').focus();
+  };
+
+  window.hideAddFriendModal = function() {
+    $('addFriendModal').classList.remove('active');
+    $('friendUsername').value = '';
+    $('friendMessage').value = '';
+  };
+
+  window.sendFriendRequest = async function() {
+    var username = $('friendUsername').value.trim();
+    var message = $('friendMessage').value.trim();
+    
+    if (!username) { alert('请输入对方用户名'); return; }
+    if (username === currentUser.username) { alert('不能添加自己为好友'); return; }
+    
+    // 检查用户是否存在
+    var userRes = await sb.from('users').select('username').eq('username', username).maybeSingle();
+    if (!userRes.data) { alert('用户不存在'); return; }
+    
+    // 检查是否已经是好友或已有申请
+    var existingRes = await sb.from('friendships')
+      .select('*')
+      .or('and(requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + username + '),and(requester_username.eq.' + username + ',recipient_username.eq.' + currentUser.username + ')')
+      .maybeSingle();
+    
+    if (existingRes.data) {
+      if (existingRes.data.status === 'accepted') {
+        alert('你们已经是好友了');
+      } else if (existingRes.data.status === 'pending') {
+        alert('已经发送过申请了，请等待对方回应');
+      }
+      return;
+    }
+    
+    // 发送好友申请
+    var res = await sb.from('friendships').insert({
+      requester_username: currentUser.username,
+      recipient_username: username,
+      status: 'pending'
+    });
+    
+    if (res.error) {
+      alert('发送失败：' + res.error.message);
+      return;
+    }
+    
+    // 发送系统通知
+    await sb.from('notifications').insert({
+      recipient_username: username,
+      sender_username: currentUser.username,
+      sender_nickname: currentUser.nickname,
+      type: 'mention',
+      post_id: 0,
+      post_title: '好友申请',
+      content: message || currentUser.nickname + ' 请求添加你为好友'
+    });
+    
+    alert('好友申请已发送');
+    hideAddFriendModal();
+    await loadData();
+  };
+
+  window.acceptRequest = async function(id) {
+    if (!confirm('确定同意该好友申请？')) return;
+    
+    var res = await sb.from('friendships').update({status: 'accepted', updated_at: new Date().toISOString()}).eq('id', id);
+    if (res.error) { alert('操作失败'); return; }
+    
+    alert('已添加为好友，现在可以互相发私信了');
+    await loadData();
+  };
+
+  window.rejectRequest = async function(id) {
+    if (!confirm('确定拒绝该好友申请？')) return;
+    
+    var res = await sb.from('friendships').update({status: 'rejected', updated_at: new Date().toISOString()}).eq('id', id);
+    if (res.error) { alert('操作失败'); return; }
+    
+    await loadData();
+  };
+
+  window.removeFriend = async function(id) {
+    if (!confirm('确定删除该好友？删除后将无法互相发私信')) return;
+    
+    var res = await sb.from('friendships').delete().eq('id', id);
+    if (res.error) { alert('删除失败'); return; }
+    
+    await loadData();
+  };
+
+  // 点击弹窗外部关闭
+  $('addFriendModal').onclick = function(e) {
+    if (e.target === $('addFriendModal')) hideAddFriendModal();
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+  </script>
+</body>
+</html>

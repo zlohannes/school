@@ -311,9 +311,28 @@
     if (!postData) return;
     var lb = postData.liked_by || [];
     var idx = lb.indexOf(currentUser.username);
+    var isLiking = idx === -1; // 是否是点赞操作
+    
     if (idx > -1) lb.splice(idx, 1); else lb.push(currentUser.username);
     var res = await sb.from('posts').update({likes: lb.length, liked_by: lb}).eq('id', postData.id);
-    if (!res.error) { postData.likes = lb.length; postData.liked_by = lb; render(); }
+    
+    if (!res.error) { 
+      postData.likes = lb.length; 
+      postData.liked_by = lb; 
+      render(); 
+      
+      // 发送点赞通知（如果是点赞且不是给自己点赞）
+      if (isLiking && postData.author !== currentUser.username) {
+        await sb.from('notifications').insert({
+          recipient_username: postData.author,
+          sender_username: currentUser.username,
+          sender_nickname: currentUser.nickname,
+          type: 'like',
+          post_id: postData.id,
+          post_title: postData.title
+        });
+      }
+    }
   };
   
   window.togglePin = async function() {
@@ -338,6 +357,20 @@
     var res = await sb.from('replies').insert({post_id: postData.id, content: c, author: currentUser.username, author_nickname: currentUser.nickname});
     $('sendBtn').disabled = false;
     if (res.error) { alert('发送失败：' + res.error.message); return; }
+    
+    // 发送通知给帖子作者（如果不是回复自己）
+    if (postData.author !== currentUser.username) {
+      await sb.from('notifications').insert({
+        recipient_username: postData.author,
+        sender_username: currentUser.username,
+        sender_nickname: currentUser.nickname,
+        type: 'reply',
+        post_id: postData.id,
+        post_title: postData.title,
+        content: c
+      });
+    }
+    
     var repRes = await sb.from('replies').select('*').eq('post_id', postData.id).order('created_at', {ascending: true});
     replies = repRes.data || [];
     $('replyContent').value = '';

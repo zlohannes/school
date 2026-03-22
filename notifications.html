@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>消息通知 - 鹿城学院论坛</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:800px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+    .nav-logo img{height:24px}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none;transition:all 0.2s}
+    .nav-link:hover,.nav-link.active{color:var(--text);background:rgba(255,255,255,0.06)}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer}
+    .container{max-width:800px;margin:20px auto;padding:0 16px}
+    .page-title{font-size:20px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+    .page-title .count{background:var(--acc);color:#fff;padding:2px 10px;border-radius:10px;font-size:13px}
+    .tabs{display:flex;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:16px;overflow:hidden}
+    .tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent}
+    .tab:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+    .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+    .notification-list{display:flex;flex-direction:column;gap:10px}
+    .notification-item{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s;display:flex;align-items:flex-start;gap:12px}
+    .notification-item:hover{border-color:rgba(76,201,240,0.3)}
+    .notification-item.unread{background:rgba(76,201,240,0.05);border-color:rgba(76,201,240,0.2)}
+    .notification-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .icon-reply{background:rgba(76,201,240,0.15)}
+    .icon-like{background:rgba(239,68,68,0.15)}
+    .icon-mention{background:rgba(168,85,247,0.15)}
+    .notification-content{flex:1}
+    .notification-title{font-size:14px;font-weight:600;margin-bottom:4px}
+    .notification-text{color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:6px}
+    .notification-time{font-size:12px;color:var(--muted)}
+    .notification-actions{display:flex;gap:8px;margin-top:8px}
+    .btn-small{padding:4px 12px;font-size:12px}
+    .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+    .empty-icon{font-size:48px;margin-bottom:10px}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+    .loading.hidden{display:none}
+    .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
+      <div class="nav-links">
+        <a href="forum.html" class="nav-link">首页</a>
+        <a href="profile.html" class="nav-link">我的主页</a>
+        <a href="notifications.html" class="nav-link active">消息</a>
+        <button class="btn" onclick="history.back()">← 返回</button>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <div class="page-title">
+      🔔 消息通知
+      <span class="count" id="unreadCount">0</span>
+    </div>
+    
+    <div class="tabs">
+      <div class="tab active" id="tabAll" onclick="showTab('all')">全部</div>
+      <div class="tab" id="tabUnread" onclick="showTab('unread')">未读</div>
+    </div>
+    
+    <div class="notification-list" id="notificationList"></div>
+  </div>
+
+  <script>
+(function(){
+  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
+  var currentUser = null;
+  var notifications = [];
+  var currentTab = 'all';
+
+  function $(id) { return document.getElementById(id); }
+  
+  function timeAgo(d) {
+    var s = Math.floor((Date.now() - new Date(d)) / 1000);
+    if (s < 60) return '刚刚';
+    if (s < 3600) return Math.floor(s / 60) + '分钟前';
+    if (s < 86400) return Math.floor(s / 3600) + '小时前';
+    if (s < 2592000) return Math.floor(s / 86400) + '天前';
+    return new Date(d).toLocaleDateString('zh-CN');
+  }
+
+  async function init() {
+    var s = sessionStorage.getItem('currentUser');
+    if (!s) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(s);
+    
+    $('loading').classList.add('hidden');
+    await loadNotifications();
+  }
+
+  async function loadNotifications() {
+    var res = await sb.from('notifications')
+      .select('*')
+      .eq('recipient_username', currentUser.username)
+      .order('created_at', {ascending: false});
+    
+    notifications = res.data || [];
+    render();
+  }
+
+  function render() {
+    var filtered = currentTab === 'unread' 
+      ? notifications.filter(function(n) { return !n.is_read; })
+      : notifications;
+    
+    // 更新未读数
+    var unreadCount = notifications.filter(function(n) { return !n.is_read; }).length;
+    $('unreadCount').textContent = unreadCount;
+    
+    var list = $('notificationList');
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>暂无消息</div></div>';
+      return;
+    }
+    
+    list.innerHTML = filtered.map(function(n) {
+      var iconClass = 'icon-' + n.type;
+      var icon = n.type === 'reply' ? '💬' : n.type === 'like' ? '❤️' : '@';
+      var title = n.type === 'reply' ? '收到回复' : n.type === 'like' ? '收到点赞' : '有人@你';
+      
+      return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="viewNotification(' + n.id + ',' + n.post_id + ')">' +
+        '<div class="notification-icon ' + iconClass + '">' + icon + '</div>' +
+        '<div class="notification-content">' +
+          '<div class="notification-title">' + title + '</div>' +
+          '<div class="notification-text">' + 
+            '<strong>' + (n.sender_nickname || n.sender_username) + '</strong> ' +
+            (n.type === 'reply' ? '回复了你的帖子' : n.type === 'like' ? '赞了你的帖子' : '在帖子中提到了你') +
+            '《' + n.post_title + '》' +
+            (n.content ? '：' + n.content.substring(0, 50) + (n.content.length > 50 ? '...' : '') : '') +
+          '</div>' +
+          '<div class="notification-time">' + timeAgo(n.created_at) + '</div>' +
+          (!n.is_read ? '<div class="notification-actions"><button class="btn btn-small" onclick="event.stopPropagation();markRead(' + n.id + ')">标记已读</button></div>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.showTab = function(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    $('tab' + (tab === 'all' ? 'All' : 'Unread')).classList.add('active');
+    render();
+  };
+
+  window.viewNotification = async function(id, postId) {
+    // 标记为已读
+    await sb.from('notifications').update({is_read: true}).eq('id', id);
+    // 跳转到帖子
+    window.location.href = 'post.html?id=' + postId;
+  };
+
+  window.markRead = async function(id) {
+    await sb.from('notifications').update({is_read: true}).eq('id', id);
+    var n = notifications.find(function(item) { return item.id === id; });
+    if (n) n.is_read = true;
+    render();
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+  </script>
+</body>
+</html>

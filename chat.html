@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>好友聊天 - 鹿城学院论坛</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:800px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;width:100%}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+    .nav-logo img{height:24px}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none}
+    .nav-link:hover{color:var(--text);background:rgba(255,255,255,0.06)}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer}
+    .chat-container{flex:1;max-width:800px;width:100%;margin:0 auto;display:flex;flex-direction:column;padding:16px;height:calc(100vh - 60px)}
+    .chat-header{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .chat-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;overflow:hidden}
+    .chat-avatar img{width:100%;height:100%;object-fit:cover}
+    .chat-info{flex:1}
+    .chat-name{font-weight:600;font-size:16px}
+    .chat-status{font-size:12px;color:var(--muted)}
+    .chat-messages{flex:1;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+    .message{max-width:75%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.5;word-wrap:break-word}
+    .message-sent{align-self:flex-end;background:linear-gradient(135deg,rgba(76,201,240,0.2),rgba(168,85,247,0.2));border:1px solid rgba(76,201,240,0.3)}
+    .message-received{align-self:flex-start;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)}
+    .message-time{font-size:11px;color:var(--muted);margin-top:4px}
+    .chat-input{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;gap:12px}
+    .chat-input textarea{flex:1;min-height:44px;max-height:120px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);font-size:14px;resize:none;font-family:inherit}
+    .chat-input textarea:focus{border-color:var(--acc);outline:none}
+    .btn-send{padding:12px 24px;background:linear-gradient(135deg,var(--acc),var(--purple));color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+    .btn-send:disabled{opacity:0.5;cursor:not-allowed}
+    .not-friend{text-align:center;padding:60px 20px;color:var(--muted)}
+    .not-friend-icon{font-size:64px;margin-bottom:16px}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+    .loading.hidden{display:none}
+    .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
+      <div class="nav-links">
+        <a href="messages.html" class="nav-link">← 返回好友列表</a>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="chat-container" id="chatContainer">
+    <div class="not-friend" id="notFriendMsg" style="display:none">
+      <div class="not-friend-icon">🚫</div>
+      <div>你们还不是好友，无法发送私信</div>
+      <a href="messages.html" class="btn" style="margin-top:20px">去添加好友</a>
+    </div>
+  </div>
+
+  <script>
+(function(){
+  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
+  var currentUser = null;
+  var chatUser = null;
+  var messages = [];
+  var isFriend = false;
+
+  function $(id) { return document.getElementById(id); }
+  
+  function timeAgo(d) {
+    var s = Math.floor((Date.now() - new Date(d)) / 1000);
+    if (s < 60) return '刚刚';
+    if (s < 3600) return Math.floor(s / 60) + '分钟前';
+    if (s < 86400) return Math.floor(s / 3600) + '小时前';
+    return new Date(d).toLocaleDateString('zh-CN') + ' ' + new Date(d).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+  }
+
+  async function init() {
+    var s = sessionStorage.getItem('currentUser');
+    if (!s) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(s);
+    
+    var params = new URLSearchParams(location.search);
+    chatUser = params.get('u');
+    
+    if (!chatUser) {
+      window.location.href = 'messages.html';
+      return;
+    }
+    
+    // 检查是否是好友
+    var friendRes = await sb.from('friendships')
+      .select('*')
+      .eq('status', 'accepted')
+      .or('and(requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + chatUser + '),and(requester_username.eq.' + chatUser + ',recipient_username.eq.' + currentUser.username + ')')
+      .maybeSingle();
+    
+    isFriend = !!friendRes.data;
+    
+    if (!isFriend) {
+      $('loading').classList.add('hidden');
+      $('notFriendMsg').style.display = 'block';
+      return;
+    }
+    
+    await loadMessages();
+    $('loading').classList.add('hidden');
+    renderChat();
+    
+    // 定期刷新消息
+    setInterval(async function() {
+      await loadMessages();
+      updateMessages();
+    }, 3000);
+  }
+
+  async function loadMessages() {
+    var res = await sb.from('messages')
+      .select('*')
+      .or('and(sender_username.eq.' + currentUser.username + ',recipient_username.eq.' + chatUser + '),and(sender_username.eq.' + chatUser + ',recipient_username.eq.' + currentUser.username + ')')
+      .order('created_at', {ascending: true});
+    
+    messages = res.data || [];
+    
+    // 标记为已读
+    var unreadIds = messages.filter(function(m) {
+      return m.recipient_username === currentUser.username && !m.is_read;
+    }).map(function(m) { return m.id; });
+    
+    if (unreadIds.length > 0) {
+      await sb.from('messages').update({is_read: true}).in('id', unreadIds);
+    }
+  }
+
+  function renderChat() {
+    $('chatContainer').innerHTML = 
+      '<div class="chat-header">' +
+        '<div class="chat-avatar">' + chatUser.charAt(0).toUpperCase() + '</div>' +
+        '<div class="chat-info">' +
+          '<div class="chat-name">' + chatUser + '</div>' +
+          '<div class="chat-status">@' + chatUser + ' · 好友</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="chat-messages" id="messageList"></div>' +
+      '<div class="chat-input">' +
+        '<textarea id="messageInput" placeholder="输入消息..." onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>' +
+        '<button class="btn-send" id="sendBtn" onclick="sendMessage()">发送</button>' +
+      '</div>';
+    
+    updateMessages();
+  }
+
+  function updateMessages() {
+    var list = $('messageList');
+    if (!list) return;
+    
+    var wasAtBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 50;
+    
+    list.innerHTML = messages.map(function(m) {
+      var isSent = m.sender_username === currentUser.username;
+      return '<div class="message ' + (isSent ? 'message-sent' : 'message-received') + '">' +
+        '<div>' + m.content + '</div>' +
+        '<div class="message-time">' + timeAgo(m.created_at) + (isSent && m.is_read ? ' ✓已读' : '') + '</div>' +
+      '</div>';
+    }).join('');
+    
+    if (wasAtBottom) {
+      list.scrollTop = list.scrollHeight;
+    }
+  }
+
+  window.sendMessage = async function() {
+    var content = $('messageInput').value.trim();
+    if (!content) return;
+    
+    $('sendBtn').disabled = true;
+    
+    var res = await sb.from('messages').insert({
+      sender_username: currentUser.username,
+      sender_nickname: currentUser.nickname,
+      recipient_username: chatUser,
+      content: content
+    });
+    
+    $('sendBtn').disabled = false;
+    
+    if (res.error) {
+      alert('发送失败：' + res.error.message);
+      return;
+    }
+    
+    $('messageInput').value = '';
+    
+    await loadMessages();
+    updateMessages();
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+  </script>
+</body>
+</html>

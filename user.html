@@ -132,11 +132,17 @@
       ? '<img src="' + esc(avatar) + '">' 
       : nn.charAt(0).toUpperCase();
     
+    // 检查是否是查看自己
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    var isSelf = currentUser.username === username;
+    var pmBtn = isSelf ? '' : '<button onclick="addFriend(\'' + esc(username) + '\')" style="display:inline-block;margin-top:12px;padding:8px 20px;background:linear-gradient(135deg,var(--acc),var(--purple));color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">➕ 加好友</button>';
+    
     $('profileCard').innerHTML = 
       '<div class="avatar-section">' +
         '<div class="avatar">' + avatarHtml + '</div>' +
         '<div class="nickname">' + esc(nn) + '</div>' +
         '<span class="role-tag role-' + role + '">' + (roleNames[role] || '学生') + '</span>' +
+        pmBtn +
         '<div class="stats">' +
           '<div class="stat"><div class="stat-num">' + postCount + '</div><div class="stat-label">发帖</div></div>' +
         '</div>' +
@@ -169,6 +175,53 @@
       '</div>';
     }).join('');
   }
+
+  window.addFriend = async function(username) {
+    if (!confirm('确定要添加 ' + username + ' 为好友吗？')) return;
+    
+    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+    
+    // 检查是否已经是好友或已有申请
+    var existingRes = await sb.from('friendships')
+      .select('*')
+      .or('and(requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + username + '),and(requester_username.eq.' + username + ',recipient_username.eq.' + currentUser.username + ')')
+      .maybeSingle();
+    
+    if (existingRes.data) {
+      if (existingRes.data.status === 'accepted') {
+        alert('你们已经是好友了，可以去发私信');
+        window.location.href = 'chat.html?u=' + encodeURIComponent(username);
+      } else if (existingRes.data.status === 'pending') {
+        alert('已经发送过申请了，请等待对方回应');
+      }
+      return;
+    }
+    
+    // 发送好友申请
+    var res = await sb.from('friendships').insert({
+      requester_username: currentUser.username,
+      recipient_username: username,
+      status: 'pending'
+    });
+    
+    if (res.error) {
+      alert('发送失败：' + res.error.message);
+      return;
+    }
+    
+    // 发送通知
+    await sb.from('notifications').insert({
+      recipient_username: username,
+      sender_username: currentUser.username,
+      sender_nickname: currentUser.nickname,
+      type: 'mention',
+      post_id: 0,
+      post_title: '好友申请',
+      content: currentUser.nickname + ' 请求添加你为好友'
+    });
+    
+    alert('好友申请已发送，请等待对方同意');
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

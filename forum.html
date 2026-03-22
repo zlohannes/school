@@ -33,6 +33,11 @@
     .role-student{background:rgba(76,201,240,0.2);color:var(--acc)}
     .role-teacher{background:rgba(34,197,94,0.2);color:#22c55e}
     .role-admin{background:rgba(239,68,68,0.2);color:#ef4444}
+    /* 通知图标 */
+    .notification-btn{position:relative;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all 0.2s;color:var(--muted)}
+    .notification-btn:hover{color:var(--text);background:rgba(255,255,255,0.06)}
+    .notification-btn.has-unread{color:var(--acc)}
+    .notification-badge{position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
     .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:14px;cursor:pointer;transition:all 0.2s}
     .btn:hover{border-color:var(--acc);background:rgba(76,201,240,0.1)}
     .btn-primary{background:linear-gradient(135deg,#0e3b5a,#0e1e2e);border-color:rgba(76,201,240,0.35)}
@@ -135,6 +140,11 @@
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link active">首页</a>
         <a href="profile.html" class="nav-link">我的主页</a>
+        <a href="messages.html" class="nav-link">私信</a>
+        <a href="notifications.html" class="notification-btn" id="notificationBtn">
+          🔔
+          <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+        </a>
         <div class="user-info" id="userInfo"></div>
         <button class="btn" id="logoutBtn">退出</button>
       </div>
@@ -265,10 +275,28 @@
         var repRes=await sb.from('replies').select('post_id').in('post_id',ids);
         (repRes.data||[]).forEach(function(r){replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1});
       }
+      // 检查未读通知
+      checkNotifications();
     }catch(e){alert('加载失败：'+e.message)}
     hideLoading();
     renderUserInfo();
     filterAndRender();
+  }
+  
+  // 检查未读通知
+  async function checkNotifications(){
+    var res=await sb.from('notifications').select('id',{count:'exact',head:true}).eq('recipient_username',currentUser.username).eq('is_read',false);
+    var count=res.count||0;
+    var badge=$('notificationBadge');
+    var btn=$('notificationBtn');
+    if(count>0){
+      badge.textContent=count>99?'99+':count;
+      badge.style.display='inline-block';
+      btn.classList.add('has-unread');
+    }else{
+      badge.style.display='none';
+      btn.classList.remove('has-unread');
+    }
   }
 
   function filterAndRender(){
