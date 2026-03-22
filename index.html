@@ -146,7 +146,15 @@
   </div>
   <script src="./config.js"></script>
 <script>
-(function(){
+// 等待 Supabase 加载完成
+document.addEventListener('DOMContentLoaded', function(){
+  // 检查 Supabase 是否加载成功
+  if(!window.supabase){
+    console.error('Supabase 加载失败');
+    alert('页面加载失败，请刷新重试');
+    return;
+  }
+  
   var SB_URL = window.SUPABASE_URL;
   var SB_KEY = window.SUPABASE_ANON_KEY;
   var sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -379,7 +387,7 @@
       alert('网络错误，请重试');
     }
   });
-})();
+});
   </script>
 </body>
 </html>
