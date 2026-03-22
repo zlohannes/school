@@ -4,7 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>鹿城学院论坛 - 登录注册</title>
+  <meta name="description" content="鹿城学院论坛 - 温州职业技术学院学生交流平台，分享学习心得、校园生活、二手交易、游戏组队">
+  <meta name="keywords" content="鹿城学院,温州职业技术学院,校园论坛,学生社区,学习交流,校园生活">
+  <meta name="author" content="鹿城学院">
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <meta property="og:title" content="鹿城学院论坛">
+  <meta property="og:description" content="温州职业技术学院学生交流平台">
+  <meta property="og:type" content="website">
   <script>sessionStorage.clear();</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -92,7 +98,18 @@
           <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码" required></div>
           <button type="submit" class="btn" id="loginBtn">登录</button>
         </form>
-        <div class="switch">没有账号？<a href="#" id="toRegisterBtn">注册</a></div>
+        <div class="switch">没有账号？<a href="#" id="toRegisterBtn">注册</a> | <a href="#" id="forgotPwdBtn">忘记密码</a></div>
+      </div>
+      <div id="resetBox" style="display:none;">
+        <h2>🔑 重置密码</h2>
+        <form id="resetForm">
+          <div class="form-group"><label>用户名</label><input type="text" id="resetUsername" placeholder="请输入用户名" required></div>
+          <div class="form-group"><label>真实姓名</label><input type="text" id="resetRealName" placeholder="注册时填写的真实姓名" required></div>
+          <div class="form-group"><label>新密码</label><input type="password" id="resetPassword" placeholder="6-20位新密码" required></div>
+          <div class="form-group"><label>确认新密码</label><input type="password" id="resetConfirm" placeholder="再次输入新密码" required></div>
+          <button type="submit" class="btn" id="resetBtn">重置密码</button>
+        </form>
+        <div class="switch"><a href="#" id="toLoginFromReset">返回登录</a></div>
       </div>
     </div>
   </div>
@@ -129,8 +146,9 @@
     return hash === ADMIN_CODE_HASH;
   }
 
-  function showLogin(){$('registerBox').style.display='none';$('loginBox').style.display='block'}
-  function showRegister(){$('loginBox').style.display='none';$('registerBox').style.display='block'}
+  function showLogin(){$('registerBox').style.display='none';$('loginBox').style.display='block';$('resetBox').style.display='none'}
+  function showRegister(){$('loginBox').style.display='none';$('registerBox').style.display='block';$('resetBox').style.display='none'}
+  function showReset(){$('registerBox').style.display='none';$('loginBox').style.display='none';$('resetBox').style.display='block'}
 
   // 角色切换
   document.querySelectorAll('input[name="role"]').forEach(function(radio){
@@ -261,6 +279,49 @@
 
   $('toLoginBtn').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
   $('toRegisterBtn').addEventListener('click', function(e){ e.preventDefault(); showRegister(); });
+  $('forgotPwdBtn').addEventListener('click', function(e){ e.preventDefault(); showReset(); });
+  $('toLoginFromReset').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
+
+  // 重置密码
+  $('resetForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var u = $('resetUsername').value.trim();
+    var rn = $('resetRealName').value.trim();
+    var p = $('resetPassword').value;
+    var c = $('resetConfirm').value;
+
+    if(p.length < 6 || p.length > 20){ alert('密码长度应为6-20位'); return }
+    if(p !== c){ alert('两次密码不一致'); return }
+
+    showLoading();
+    $('resetBtn').disabled = true;
+
+    try {
+      var res = await sb.from('users').select('*').eq('username', u).maybeSingle();
+      var user = res.data;
+      if(!user){ hideLoading(); $('resetBtn').disabled = false; alert('用户名不存在'); return }
+      if(user.real_name !== rn){ hideLoading(); $('resetBtn').disabled = false; alert('真实姓名不正确'); return }
+
+      var hashedPassword = await hashPassword(p);
+      var updateRes = await sb.from('users').update({password: hashedPassword}).eq('username', u);
+      
+      hideLoading();
+      $('resetBtn').disabled = false;
+      
+      if(updateRes.error){ alert('重置失败：' + updateRes.error.message); return }
+      alert('密码重置成功！请用新密码登录');
+      showLogin();
+      $('loginUsername').value = u;
+      $('resetUsername').value = '';
+      $('resetRealName').value = '';
+      $('resetPassword').value = '';
+      $('resetConfirm').value = '';
+    } catch(err) {
+      hideLoading();
+      $('resetBtn').disabled = false;
+      alert('网络错误，请重试');
+    }
+  });
 })();
   </script>
 </body>

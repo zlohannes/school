@@ -198,6 +198,27 @@ function render(){
   const isAuthor=p.author===currentUser.username;
   const isAdmin=currentUser.role==='admin';
   const canDelete=isAuthor||isAdmin;
+  
+  // 解析媒体数据
+  let mediaHtml='';
+  try{
+    const media=p.media?JSON.parse(p.media):[];
+    if(media&&media.length>0){
+      mediaHtml='<div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">';
+      media.forEach(m=>{
+        if(m.type==='image'){
+          // 兼容新旧格式：url(Storage) 或 data(base64)
+          const src=m.url||m.data;
+          mediaHtml+=`<img src="${src}" style="max-width:100%;border-radius:8px;cursor:pointer" onclick="window.open(this.src,'_blank')">`;
+        }else if(m.type==='video'){
+          const src=m.url||m.data;
+          mediaHtml+=`<video src="${src}" controls style="max-width:100%;border-radius:8px"></video>`;
+        }
+      });
+      mediaHtml+='</div>';
+    }
+  }catch(e){}
+  
   // 获取作者角色
   document.getElementById('mainContent').innerHTML=`
     <div class="post-card">
@@ -212,6 +233,7 @@ function render(){
         ${isAdmin&&!isAnonymous&&p.author!==currentUser.username?'<button onclick="toggleBanUser()" style="margin-left:auto;background:'+(p.author_banned?'#27ae60':'#e74c3c')+';color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer">'+(p.author_banned?'🔓 解封':'🔒 封号')+'</button>':''}
       </div>
       <div class="post-content">${esc(p.content)}</div>
+      ${mediaHtml}
       <div class="post-actions">
         <button class="action-btn ${liked?'liked':''}" onclick="toggleLike()">
           ${liked?'❤️':'🤍'} ${p.likes||0}

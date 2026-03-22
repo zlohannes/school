@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>鹿城学院论坛</title>
+  <title>鹿城学院论坛 - 校园交流社区</title>
+  <meta name="description" content="鹿城学院论坛 - 温州职业技术学院学生交流平台，分享学习心得、校园生活、二手交易、游戏组队，匿名发帖保护隐私">
+  <meta name="keywords" content="鹿城学院,温州职业技术学院,校园论坛,学生社区,学习交流,校园生活,二手交易,游戏搭子">
+  <meta name="author" content="鹿城学院">
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <meta property="og:title" content="鹿城学院论坛">
+  <meta property="og:description" content="温州职业技术学院学生交流平台">
+  <meta property="og:type" content="website">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
@@ -191,6 +197,17 @@
           </select>
         </div>
         <div class="form-group"><label>内容 *</label><textarea id="postContent" placeholder="请输入内容"></textarea></div>
+        <div class="form-group">
+          <label>图片/视频（可选）</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn" id="addImageBtn">📷 添加图片</button>
+            <button type="button" class="btn" id="addVideoBtn">🎬 添加视频</button>
+          </div>
+          <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
+          <input type="file" id="videoInput" accept="video/*" style="display:none">
+          <div id="mediaPreview" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
+          <div class="note" style="font-size:11px;color:var(--muted);margin-top:6px">图片限5张，每张≤2MB（自动压缩）；视频限1个，≤5MB</div>
+        </div>
         <div class="form-group" style="display:flex;align-items:center;gap:8px">
           <input type="checkbox" id="postAnonymous" style="width:18px;height:18px;accent-color:var(--acc)">
           <label for="postAnonymous" style="margin:0;font-weight:normal;cursor:pointer">🎭 匿名发帖（作者信息将隐藏）</label>
@@ -214,6 +231,8 @@
   
   var currentUser=null,userData=null,allPosts=[],replyCounts={};
   var currentCategory='',currentSort='latest',currentPage=1,searchKeyword='',searchTimer=null;
+  var selectedImages=[],selectedVideo=null;
+  var STORAGE_BUCKET='forum-media';
 
   function $(id){return document.getElementById(id)}
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -334,27 +353,147 @@
     var isAnonymous=$('postAnonymous').checked;
     if(!title||!cat||!content){alert('请填写完整');return}
     $('submitBtn').disabled=true;
+    
+    // 上传媒体文件到 Storage
+    var mediaUrls=[];
+    try{
+      for(var i=0;i<selectedImages.length;i++){
+        var compressedImg=await compressImage(selectedImages[i]);
+        var url=await uploadToStorage(compressedImg,'images');
+        mediaUrls.push({type:'image',url:url});
+      }
+      if(selectedVideo){
+        var videoUrl=await uploadToStorage(selectedVideo,'videos');
+        mediaUrls.push({type:'video',url:videoUrl});
+      }
+    }catch(e){
+      alert('媒体文件上传失败：'+e.message);
+      $('submitBtn').disabled=false;
+      return;
+    }
+    
     var postData={
       title:title,
       category:cat,
       content:content,
       author:currentUser.username,
       author_nickname:isAnonymous?'匿名用户':currentUser.nickname,
-      is_anonymous:isAnonymous
+      is_anonymous:isAnonymous,
+      media:mediaUrls.length>0?JSON.stringify(mediaUrls):null
     };
     var res=await sb.from('posts').insert(postData);
     $('submitBtn').disabled=false;
     if(res.error){alert('发布失败：'+res.error.message);return}
     $('postModal').classList.remove('active');
     $('postAnonymous').checked=false;
+    selectedImages=[];
+    selectedVideo=null;
+    $('mediaPreview').innerHTML='';
     var postsRes=await sb.from('posts').select('*').order('created_at',{ascending:false});
     allPosts=postsRes.data||[];
     currentPage=1;filterAndRender();
+  };
+
+  // 媒体文件处理 - 上传到 Supabase Storage
+  async function uploadToStorage(file,type){
+    var ext=file.name.split('.').pop();
+    var fileName=currentUser.username+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,9)+'.'+ext;
+    var filePath=type+'/'+fileName;
+    
+    var{data,error}=await sb.storage.from(STORAGE_BUCKET).upload(filePath,file);
+    if(error)throw new Error(error.message);
+    
+    var{data:urlData}=sb.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+    return urlData.publicUrl;
+  }
+
+  function compressImage(file,maxWidth=1200,quality=0.7){
+    return new Promise(function(resolve){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=new Image();
+        img.onload=function(){
+          var canvas=document.createElement('canvas');
+          var w=img.width,h=img.height;
+          if(w>maxWidth){
+            h=h*(maxWidth/w);
+            w=maxWidth;
+          }
+          canvas.width=w;
+          canvas.height=h;
+          var ctx=canvas.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          canvas.toBlob(function(blob){
+            resolve(new File([blob],file.name,{type:'image/jpeg'}));
+          },'image/jpeg',quality);
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderMediaPreview(){
+    var html='';
+    selectedImages.forEach(function(img,i){
+      html+='<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1)">'+
+        '<img src="'+URL.createObjectURL(img)+'" style="width:100%;height:100%;object-fit:cover">'+
+        '<button type="button" onclick="removeImage('+i+')" style="position:absolute;top:2px;right:2px;background:rgba(239,68,68,0.8);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px">×</button>'+
+      '</div>';
+    });
+    if(selectedVideo){
+      html+='<div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05)">'+
+        '<span style="font-size:24px">🎬</span>'+
+        '<button type="button" onclick="removeVideo()" style="position:absolute;top:2px;right:2px;background:rgba(239,68,68,0.8);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px">×</button>'+
+      '</div>';
+    }
+    $('mediaPreview').innerHTML=html;
+  }
+
+  window.removeImage=function(i){
+    selectedImages.splice(i,1);
+    renderMediaPreview();
+  };
+
+  window.removeVideo=function(){
+    selectedVideo=null;
+    renderMediaPreview();
+  };
+
+  $('addImageBtn').onclick=function(){$('imageInput').click()};
+  $('addVideoBtn').onclick=function(){if(selectedVideo){alert('视频只能上传一个');return}$('videoInput').click()};
+
+  $('imageInput').onchange=function(){
+    var files=Array.from(this.files);
+    if(selectedImages.length+files.length>5){alert('最多5张图片');return}
+    for(var i=0;i<files.length;i++){
+      if(files[i].size>2*1024*1024){alert(files[i].name+' 超过2MB');return}
+    }
+    selectedImages=selectedImages.concat(files);
+    renderMediaPreview();
+    this.value='';
+  };
+
+  $('videoInput').onchange=function(){
+    var file=this.files[0];
+    if(!file)return;
+    if(file.size>5*1024*1024){alert('视频不能超过5MB');return}
+    selectedVideo=file;
+    renderMediaPreview();
+    this.value='';
   };
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
   else init();
 })();
   </script>
+<!-- 百度自动推送 -->
+<script>
+(function(){
+  var bp = document.createElement('script');
+  bp.src = '//push.zhanzhang.baidu.com/push.js';
+  document.body.appendChild(bp);
+})();
+</script>
 </body>
 </html>
