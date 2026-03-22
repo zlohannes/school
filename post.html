@@ -6,57 +6,44 @@
   <title>帖子详情 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script>
-// Fallback SB_URL/SB_KEY for GitHub Pages
-if (typeof SB_URL === 'undefined') { var SB_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL') || ''; }
-if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY') || ''; }
-</script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
     .navbar{background:linear-gradient(135deg,#667eea,#764ba2);padding:12px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-    .nav-content{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .nav-content{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
     .nav-left{display:flex;align-items:center;gap:15px}
-    .back-btn{color:white;text-decoration:none;font-size:14px;display:flex;align-items:center;gap:5px;transition:opacity 0.2s}
-    .back-btn:hover{opacity:0.8}
+    .back-btn{color:white;text-decoration:none;font-size:14px}
     .nav-logo{color:white;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;text-decoration:none}
+    .nav-logo img{height:24px}
     .nav-links{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
-    .nav-link{color:rgba(255,255,255,0.9);text-decoration:none;font-size:14px;transition:opacity 0.2s}
-    .nav-link:hover{opacity:0.8}
-    .user-info{display:flex;align-items:center;gap:10px;color:white}
-    .user-nickname{font-weight:600;font-size:14px}
-    .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-    .role-student{background:rgba(255,255,255,0.2)}.role-teacher{background:#2196F3}.role-admin{background:#e74c3c}
-    .btn-logout{background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:background 0.2s}
-    .btn-logout:hover{background:rgba(255,255,255,0.3)}
+    .nav-link{color:rgba(255,255,255,0.9);text-decoration:none;font-size:14px}
+    .user-info{display:flex;align-items:center;gap:8px;color:white;font-size:14px}
+    .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.2)}
+    .btn-logout{background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
     .mobile-menu-btn{display:none;background:none;border:none;color:white;font-size:24px;cursor:pointer}
-    @media(max-width:768px){.mobile-menu-btn{display:block}.nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}.nav-links.active{display:flex}.nav-left{flex:1}}
-    .main{max-width:800px;margin:20px auto;padding:0 15px;padding-bottom:100px}
+    @media(max-width:768px){.mobile-menu-btn{display:block}.nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}.nav-links.active{display:flex}}
+    .main{max-width:800px;margin:20px auto;padding:0 15px 100px}
     .post-card{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px;margin-bottom:20px}
-    .post-header{display:flex;align-items:center;gap:12px;margin-bottom:15px;flex-wrap:wrap}
+    .post-header{display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
     .category-tag{padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:white}
-    .cat-learning{background:#4CAF50}.cat-campus{background:#2196F3}.cat-trade{background:#FF9800}.cat-job{background:#9C27B0}.cat-chat{background:#FF5722}.cat-notice{background:#f44336}
+    .tag-learning{background:#4CAF50}.tag-campus{background:#2196F3}.tag-trade{background:#FF9800}.tag-job{background:#9C27B0}.tag-chat{background:#FF5722}.tag-notice{background:#f44336}
+    .tag-anon{background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px}
+    .tag-pin{background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 10px;border-radius:10px;font-size:11px}
     .post-title{font-size:22px;font-weight:700;color:#333;margin-bottom:20px;line-height:1.4}
     .post-author{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #eee}
-    .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700;flex-shrink:0}
+    .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700}
     .author-info{flex:1}
-    .author-name{font-weight:600;color:#333;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .author-name{font-weight:600;color:#333;font-size:15px}
     .author-time{color:#999;font-size:13px;margin-top:2px}
-    .post-content{color:#333;font-size:15px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;margin-bottom:20px}
-    .post-actions{display:flex;gap:15px;flex-wrap:wrap}
-    .action-btn{background:none;border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+    .post-content{color:#333;font-size:15px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word}
+    .post-media{margin-top:16px}
+    .post-media img{max-width:100%;border-radius:8px;margin-bottom:10px;cursor:pointer}
+    .post-media video{max-width:100%;border-radius:8px}
+    .post-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .action-btn{background:none;border:1px solid #ddd;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;transition:all 0.2s}
     .action-btn:hover{background:#f5f5f5}
-    .action-btn.liked{color:#e74c3c}
-    .action-btn.liked:hover{background:#ffeaea}
-    .report-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
-    .report-modal.active{display:flex}
-    .report-box{background:white;border-radius:12px;width:100%;max-width:400px;padding:25px}
-    .report-title{font-size:18px;font-weight:600;margin-bottom:15px}
-    .report-textarea{width:100%;min-height:120px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit}
-    .report-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:15px}
-    .btn-cancel-r{background:#f5f5f5;color:#333;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer}
-    .btn-submit-r{background:#e74c3c;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+    .action-btn.liked{color:#e74c3c;border-color:#e74c3c}
+    .action-btn.danger{color:#e74c3c;border-color:#e74c3c}
     .replies-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px}
     .replies-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
     .replies-title{font-size:18px;font-weight:600;color:#333}
@@ -65,265 +52,259 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
     .reply-item:last-child{border-bottom:none}
     .reply-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
     .reply-floor{color:#999;font-size:13px;min-width:40px}
-    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;flex-shrink:0}
-    .reply-author{font-weight:600;color:#333;font-size:14px;display:flex;align-items:center;gap:6px}
+    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
+    .reply-author{font-weight:600;color:#333;font-size:14px}
     .reply-time{color:#999;font-size:12px}
     .reply-content{color:#333;font-size:14px;line-height:1.6;padding-left:48px;white-space:pre-wrap}
     .empty-replies{text-align:center;padding:40px;color:#999}
     .empty-icon{font-size:48px;margin-bottom:10px}
-    .reply-input-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:20px;margin-top:20px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:800px}
-    .reply-input-wrapper{display:flex;gap:12px;align-items:flex-end}
+    .reply-input-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:20px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:800px}
+    .reply-input-wrapper{display:flex;gap:12px}
     .reply-textarea{flex:1;min-height:60px;max-height:150px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none;font-family:inherit}
     .reply-textarea:focus{border-color:#667eea;outline:none}
-    .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s;flex-shrink:0}
-    .btn-send:hover{opacity:0.9}
+    .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
     .btn-send:disabled{opacity:0.5;cursor:not-allowed}
     .error-state{text-align:center;padding:80px 20px}
     .error-icon{font-size:64px;margin-bottom:20px}
     .error-text{font-size:18px;color:#666;margin-bottom:20px}
     .btn-back{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block}
-    .loading{text-align:center;padding:60px;color:#999}
-    .page-loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.92);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
-    .page-loading.show{display:flex}
-    .page-loading .msg{font-size:15px;color:#667eea;font-weight:600}
-    .page-loading .spinner2{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin .7s linear infinite}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
+    .loading.hidden{display:none}
+    .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading .msg{color:#667eea;font-size:15px;font-weight:600}
   </style>
 </head>
 <body>
+  <div class="loading" id="loading"><div class="spinner"></div><div class="msg">加载中...</div></div>
+  
   <nav class="navbar">
     <div class="nav-content">
       <div class="nav-left">
-        <a href="forum.html" class="back-btn">← 返回论坛</a>
-        <a href="forum.html" class="nav-logo">🏫 鹿城学院论坛</a>
+        <a href="forum.html" class="back-btn">← 返回</a>
+        <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
       </div>
-      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+      <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link">首页</a>
         <a href="profile.html" class="nav-link">我的主页</a>
         <div class="user-info" id="userInfo"></div>
-        <button class="btn-logout" onclick="logout()">退出登录</button>
+        <button class="btn-logout" onclick="logout()">退出</button>
       </div>
     </div>
   </nav>
-  <div class="page-loading" id="pageLoading"><div class="spinner2"></div><div class="msg">加载中，请稍候...</div></div>
-  <div id="announceBanner" style="background:#fff3cd;border-bottom:1px solid #ffeeba;padding:10px 20px;text-align:center;font-size:13px;color:#856404;display:none">
-    <span id="announceText"></span>
-    <button onclick="document.getElementById('announceBanner').style.display='none';localStorage.setItem('announceHidden','1')" style="background:none;border:none;font-size:16px;color:#856404;cursor:pointer;padding:0 0 0 8px;line-height:1">×</button>
-  </div>
+  
   <div class="main" id="mainContent"></div>
-  <div class="report-modal" id="reportModal">
-    <div class="report-box">
-      <div class="report-title">🚨 举报帖子</div>
-      <textarea class="report-textarea" id="reportReason" placeholder="请说明举报原因..."></textarea>
-      <div class="report-btns">
-        <button class="btn-cancel-r" onclick="closeReportModal()">取消</button>
-        <button class="btn-submit-r" onclick="submitReport()">提交举报</button>
-      </div>
-    </div>
-  </div>
+
   <script>
-const SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
-const SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
-
-let currentUser=null,userData=null,postData=null,replies=[];function showLoading(){$('#pageLoading').classList.add('show')}function hideLoading(){$('#pageLoading').classList.remove('show')}function $(s){return document.querySelector(s)}
-
-document.addEventListener('DOMContentLoaded',init);
-
-async function init(){
-  const s=sessionStorage.getItem('currentUser');
-  if(!s){window.location.href='index.html';return}
-  currentUser=JSON.parse(s);
-  showLoading();
-  const[userRes]=await Promise.all([
-    sb.from('users').select('*').eq('username',currentUser.username).maybeSingle()
-  ]);
-  userData=userRes.data;
-  renderUserInfo();
-  await loadPost();
-  hideLoading();
-  loadAnnouncement();
-}
-
-function renderUserInfo(){
-  const rc=`role-${currentUser.role}`;
-  const rt={student:'学生',teacher:'老师',admin:'管理员'}[currentUser.role]||'学生';
-  const nn=userData?(userData.nickname||currentUser.nickname):currentUser.nickname;
-  const av=userData&&(userData.avatar_data||userData.avatar_url);
-  let avatarHtml=av?`<img src="${esc(av)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5)">`:`<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">${(nn||'?').charAt(0).toUpperCase()}</span>`;
-  document.getElementById('userInfo').innerHTML=`<span style="display:flex;align-items:center;gap:8px">${avatarHtml}<span class="user-nickname">${esc(nn)}</span><span class="role-tag ${rc}">${rt}</span></span>`;
-}
-function toggleMobileMenu(){document.getElementById('navLinks').classList.toggle('active')}
-function logout(){sessionStorage.clear();window.location.href='index.html'}
-function loadAnnouncement(){var hide=localStorage.getItem('announceHidden');if(hide)return;var msg='⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。如有反馈和建议，请联系 13587769094（微信同号）';document.getElementById('announceText').textContent=msg;document.getElementById('announceBanner').style.display='block'}
-
-async function loadPost(){
-  const id=new URLSearchParams(location.search).get('id');
-  if(!id){showError('帖子不存在');return}
-  const{data:post,error:postErr}=await sb.from('posts').select('*').eq('id',id).maybeSingle();
-  if(postErr||!post){showError('帖子不存在');return}
-  // 并行获取作者信息和回复
-  const[{data:authorUser},{data:repliesData}]=await Promise.all([
-    sb.from('users').select('is_banned').eq('username',post.author).maybeSingle(),
-    sb.from('replies').select('*').eq('post_id',id).order('created_at',{ascending:true})
-  ]);
-  post.author_banned=authorUser&&authorUser.is_banned;
-  postData=post;
-  replies=repliesData||[];
-  render();
-}
-
-async function toggleBanUser(){
-  if(!postData||currentUser.role!=='admin')return;
-  const target=postData.author;
-  const ban=!postData.author_banned;
-  if(!confirm((ban?'封禁':'解封')+'用户 '+postData.author_nickname+' ？'))return;
-  const{error}=await sb.from('users').update({is_banned:ban}).eq('username',target);
-  if(error){alert('操作失败');return}
-  postData.author_banned=ban;
-  alert(ban?'已封禁该用户':'已解封该用户');
-  render();
-}
-
-async function loadReplies(){
-  const{data}=await sb.from('replies').select('*').eq('post_id',postData.id).order('created_at',{ascending:true});
-  replies=data||[];
-}
-
-function render(){
-  const p=postData;
-  const liked=(p.liked_by||[]).includes(currentUser.username);
-  const isAnonymous=p.is_anonymous;
-  const isAuthor=p.author===currentUser.username;
-  const isAdmin=currentUser.role==='admin';
-  const canDelete=isAuthor||isAdmin;
-  
-  // 解析媒体数据
-  let mediaHtml='';
-  try{
-    const media=p.media?JSON.parse(p.media):[];
-    if(media&&media.length>0){
-      mediaHtml='<div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">';
-      media.forEach(m=>{
-        if(m.type==='image'){
-          // 兼容新旧格式：url(Storage) 或 data(base64)
-          const src=m.url||m.data;
-          mediaHtml+=`<img src="${src}" style="max-width:100%;border-radius:8px;cursor:pointer" onclick="window.open(this.src,'_blank')">`;
-        }else if(m.type==='video'){
-          const src=m.url||m.data;
-          mediaHtml+=`<video src="${src}" controls style="max-width:100%;border-radius:8px"></video>`;
-        }
-      });
-      mediaHtml+='</div>';
-    }
-  }catch(e){}
-  
-  // 获取作者角色
-  document.getElementById('mainContent').innerHTML=`
-    <div class="post-card">
-      <div class="post-header">
-        <span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span>
-        ${isAnonymous?'<span style="background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">🎭 匿名</span>':''}
-        ${p.is_pinned?'<span style="background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">📌 置顶</span>':''}
-      </div>
-      <h1 class="post-title">${esc(p.title)}</h1>
-      <div class="post-author">
-        <div class="author-avatar">${isAnonymous?'🎭':(p.author_nickname||'?').charAt(0)}</div>
-        <div class="author-info">
-          <div class="author-name">${isAnonymous?'匿名用户':esc(p.author_nickname||'')}</div>
-          <div class="author-time">${timeAgo(p.created_at)}</div>
-        </div>
-        ${isAdmin&&!isAnonymous&&p.author!==currentUser.username?'<button onclick="toggleBanUser()" style="margin-left:auto;background:'+(p.author_banned?'#27ae60':'#e74c3c')+';color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer">'+(p.author_banned?'🔓 解封':'🔒 封号')+'</button>':''}
-      </div>
-      <div class="post-content">${esc(p.content)}</div>
-      ${mediaHtml}
-      <div class="post-actions">
-        <button class="action-btn ${liked?'liked':''}" onclick="toggleLike()">
-          ${liked?'❤️':'🤍'} ${p.likes||0}
-        </button>
-        <button class="action-btn" onclick="openReportModal()">🚩 举报</button>
-        ${isAdmin?'<button class="action-btn" onclick="togglePinPost()" style="color:#ef4444">'+(p.is_pinned?'📌 取消置顶':'📌 置顶')+'</button>':''}
-        ${canDelete&&!p.is_deleted?'<button class="action-btn" onclick="deletePost()" style="color:#e74c3c">🗑 删除帖子</button>':''}
-      </div>
-    </div>
-    <div class="replies-section">
-      <div class="replies-header"><span class="replies-title">回复</span><span class="replies-count">${replies.length}</span></div>
-      ${replies.length===0?'<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，快来抢沙发吧！</div></div>':
-      replies.map((r,i)=>`<div class="reply-item"><div class="reply-header"><span class="reply-floor">${i+1}楼</span><div class="reply-avatar">${(r.author_nickname||'?').charAt(0)}</div><span class="reply-author">${esc(r.author_nickname||'')}</span><span class="reply-time">${timeAgo(r.created_at)}</span></div><div class="reply-content">${esc(r.content)}</div></div>`).join('')}
-    </div>
-    <div class="reply-input-section">
-      <div class="reply-input-wrapper">
-        <textarea class="reply-textarea" id="replyContent" placeholder="写下你的回复..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitReply()}"></textarea>
-        <button class="btn-send" id="sendBtn" onclick="submitReply()">发送</button>
-      </div>
-    </div>`;
-}
-
-async function toggleLike(){
-  if(!postData)return;
-  const lb=[...(postData.liked_by||[])];
-  const u=currentUser.username;
-  const idx=lb.indexOf(u);
-  if(idx>-1)lb.splice(idx,1);else lb.push(u);
-  const likes=lb.length;
-  const{error}=await sb.from('posts').update({likes,liked_by:lb}).eq('id',postData.id);
-  if(error)return;
-  postData.likes=likes;postData.liked_by=lb;
-  render();
-}
-
-async function submitReply(){
-  const c=document.getElementById('replyContent').value.trim();
-  if(!c){alert('请输入回复内容');return}
-  document.getElementById('sendBtn').disabled=true;
-  const{error}=await sb.from('replies').insert({post_id:postData.id,content:c,author:currentUser.username,author_nickname:currentUser.nickname});
-  document.getElementById('sendBtn').disabled=false;
-  if(error){alert('发送失败：'+error.message);return}
-  render();
-}
-
-async function deletePost(){
-  if(!confirm('确定删除此帖子？删除后内容不再显示。'))return;
-  const{error}=await sb.from('posts').update({is_deleted:true}).eq('id',postData.id);
-  if(error){alert('删除失败');return}
-  alert('帖子已删除');
-  window.location.href='forum.html';
-}
-
-async function togglePinPost(){
-  const newPinState=!postData.is_pinned;
-  const{error}=await sb.from('posts').update({is_pinned:newPinState}).eq('id',postData.id);
-  if(error){alert('操作失败');return}
-  postData.is_pinned=newPinState;
-  render();
-}
-
-function openReportModal(){document.getElementById('reportModal').classList.add('active')}
-function closeReportModal(){document.getElementById('reportModal').classList.remove('active');document.getElementById('reportReason').value=''}
-function submitReport(){const r=document.getElementById('reportReason').value.trim();if(!r){alert('请输入举报原因');return}alert('举报已提交，感谢您的反馈！');closeReportModal()}
-
-function showError(msg){hideLoading();document.getElementById('mainContent').innerHTML=`<div class="error-state"><div class="error-icon">😕</div><div class="error-text">${msg}</div><a href="forum.html" class="btn-back">返回论坛</a></div>`;}
-
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function timeAgo(d){const s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<2592000)return Math.floor(s/86400)+'天前';return new Date(d).toLocaleDateString('zh-CN')}
-  </script>
-<script>
-// ensure supabase client for post page
 (function(){
- try{
- var url = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
- var key = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
- if(!url||!key) return;
- var sb = window.supabase.createClient(url, key);
- // if page relies on currentUser, enforce minimal state
- if(!sessionStorage.getItem('currentUser')){
- // allow read-only view but block write buttons if any
- var btn = document.querySelector('#reply-button, .reply-btn');
- if(btn) btn.disabled = true;
- }
- }catch(e){}
+  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  
+  var catNames = {
+    learning: '学习交流',
+    campus: '校园生活',
+    trade: '二手交易',
+    job: '游戏搭子',
+    chat: '闲聊灌水',
+    notice: '公告通知'
+  };
+  
+  var currentUser = null;
+  var postData = null;
+  var replies = [];
+
+  function $(id) { return document.getElementById(id); }
+  
+  function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+  
+  function timeAgo(d) {
+    var s = Math.floor((Date.now() - new Date(d)) / 1000);
+    if (s < 60) return '刚刚';
+    if (s < 3600) return Math.floor(s / 60) + '分钟前';
+    if (s < 86400) return Math.floor(s / 3600) + '小时前';
+    if (s < 2592000) return Math.floor(s / 86400) + '天前';
+    return new Date(d).toLocaleDateString('zh-CN');
+  }
+
+  function showLoading() { $('loading').classList.remove('hidden'); }
+  function hideLoading() { $('loading').classList.add('hidden'); }
+
+  async function init() {
+    var s = sessionStorage.getItem('currentUser');
+    if (!s) { window.location.href = 'index.html'; return; }
+    currentUser = JSON.parse(s);
+    showLoading();
+    await loadPost();
+    hideLoading();
+  }
+
+  async function loadPost() {
+    var id = new URLSearchParams(location.search).get('id');
+    if (!id) { showError('帖子不存在'); return; }
+    
+    var res = await sb.from('posts').select('*').eq('id', id).maybeSingle();
+    if (res.error || !res.data) { showError('帖子不存在'); return; }
+    postData = res.data;
+    
+    var repRes = await sb.from('replies').select('*').eq('post_id', id).order('created_at', {ascending: true});
+    replies = repRes.data || [];
+    
+    renderUserInfo();
+    render();
+  }
+
+  function renderUserInfo() {
+    var nn = currentUser.nickname || currentUser.username;
+    var rt = {student: '学生', teacher: '老师', admin: '管理员'}[currentUser.role] || '学生';
+    $('userInfo').innerHTML = '<span>' + esc(nn) + '</span><span class="role-tag">' + rt + '</span>';
+  }
+
+  function render() {
+    var p = postData;
+    var liked = (p.liked_by || []).indexOf(currentUser.username) > -1;
+    var isAnonymous = p.is_anonymous;
+    var isAuthor = p.author === currentUser.username;
+    var isAdmin = currentUser.role === 'admin';
+    var canDelete = isAuthor || isAdmin;
+    
+    var catClass = 'tag-' + (p.category || 'chat');
+    var catName = catNames[p.category] || '其他';
+    
+    var tagsHtml = '<span class="category-tag ' + catClass + '">' + catName + '</span>';
+    if (isAnonymous) tagsHtml += '<span class="tag-anon">🎭 匿名</span>';
+    if (p.is_pinned) tagsHtml += '<span class="tag-pin">📌 置顶</span>';
+    
+    var avatarChar = isAnonymous ? '🎭' : (p.author_nickname || '?').charAt(0);
+    var authorName = isAnonymous ? '匿名用户' : esc(p.author_nickname || '');
+    
+    var mediaHtml = '';
+    if (p.media) {
+      try {
+        var media = JSON.parse(p.media);
+        if (media && media.length > 0) {
+          mediaHtml = '<div class="post-media">';
+          for (var i = 0; i < media.length; i++) {
+            var m = media[i];
+            var src = m.url || m.data;
+            if (m.type === 'image') {
+              mediaHtml += '<img src="' + esc(src) + '" onclick="window.open(this.src,\'_blank\')">';
+            } else if (m.type === 'video') {
+              mediaHtml += '<video src="' + esc(src) + '" controls></video>';
+            }
+          }
+          mediaHtml += '</div>';
+        }
+      } catch (e) {}
+    }
+    
+    var actionsHtml = '<button class="action-btn' + (liked ? ' liked' : '') + '" onclick="toggleLike()">' + (liked ? '❤️' : '🤍') + ' ' + (p.likes || 0) + '</button>';
+    if (isAdmin) {
+      actionsHtml += '<button class="action-btn" onclick="togglePin()">' + (p.is_pinned ? '📌 取消置顶' : '📌 置顶') + '</button>';
+    }
+    if (canDelete && !p.is_deleted) {
+      actionsHtml += '<button class="action-btn danger" onclick="deletePost()">🗑 删除</button>';
+    }
+    
+    var repliesHtml = '';
+    if (replies.length === 0) {
+      repliesHtml = '<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，快来抢沙发吧！</div></div>';
+    } else {
+      for (var j = 0; j < replies.length; j++) {
+        var r = replies[j];
+        repliesHtml += '<div class="reply-item">' +
+          '<div class="reply-header">' +
+            '<span class="reply-floor">' + (j + 1) + '楼</span>' +
+            '<div class="reply-avatar">' + (r.author_nickname || '?').charAt(0) + '</div>' +
+            '<span class="reply-author">' + esc(r.author_nickname) + '</span>' +
+            '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
+          '</div>' +
+          '<div class="reply-content">' + esc(r.content) + '</div>' +
+        '</div>';
+      }
+    }
+    
+    $('mainContent').innerHTML = 
+      '<div class="post-card">' +
+        '<div class="post-header">' + tagsHtml + '</div>' +
+        '<h1 class="post-title">' + esc(p.title) + '</h1>' +
+        '<div class="post-author">' +
+          '<div class="author-avatar">' + avatarChar + '</div>' +
+          '<div class="author-info">' +
+            '<div class="author-name">' + authorName + '</div>' +
+            '<div class="author-time">' + timeAgo(p.created_at) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="post-content">' + esc(p.content) + '</div>' +
+        mediaHtml +
+        '<div class="post-actions">' + actionsHtml + '</div>' +
+      '</div>' +
+      '<div class="replies-section">' +
+        '<div class="replies-header"><span class="replies-title">回复</span><span class="replies-count">' + replies.length + '</span></div>' +
+        repliesHtml +
+      '</div>' +
+      '<div class="reply-input-section">' +
+        '<div class="reply-input-wrapper">' +
+          '<textarea class="reply-textarea" id="replyContent" placeholder="写下你的回复..."></textarea>' +
+          '<button class="btn-send" id="sendBtn" onclick="submitReply()">发送</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function showError(msg) {
+    hideLoading();
+    $('mainContent').innerHTML = '<div class="error-state"><div class="error-icon">😕</div><div class="error-text">' + esc(msg) + '</div><a href="forum.html" class="btn-back">返回论坛</a></div>';
+  }
+
+  window.toggleMenu = function() { $('navLinks').classList.toggle('active'); };
+  window.logout = function() { sessionStorage.clear(); window.location.href = 'index.html'; };
+  
+  window.toggleLike = async function() {
+    if (!postData) return;
+    var lb = postData.liked_by || [];
+    var idx = lb.indexOf(currentUser.username);
+    if (idx > -1) lb.splice(idx, 1); else lb.push(currentUser.username);
+    var res = await sb.from('posts').update({likes: lb.length, liked_by: lb}).eq('id', postData.id);
+    if (!res.error) { postData.likes = lb.length; postData.liked_by = lb; render(); }
+  };
+  
+  window.togglePin = async function() {
+    if (!postData) return;
+    var newState = !postData.is_pinned;
+    var res = await sb.from('posts').update({is_pinned: newState}).eq('id', postData.id);
+    if (!res.error) { postData.is_pinned = newState; render(); }
+  };
+  
+  window.deletePost = async function() {
+    if (!confirm('确定删除此帖子？')) return;
+    var res = await sb.from('posts').update({is_deleted: true}).eq('id', postData.id);
+    if (res.error) { alert('删除失败'); return; }
+    alert('帖子已删除');
+    window.location.href = 'forum.html';
+  };
+  
+  window.submitReply = async function() {
+    var c = $('replyContent').value.trim();
+    if (!c) { alert('请输入回复内容'); return; }
+    $('sendBtn').disabled = true;
+    var res = await sb.from('replies').insert({post_id: postData.id, content: c, author: currentUser.username, author_nickname: currentUser.nickname});
+    $('sendBtn').disabled = false;
+    if (res.error) { alert('发送失败：' + res.error.message); return; }
+    var repRes = await sb.from('replies').select('*').eq('post_id', postData.id).order('created_at', {ascending: true});
+    replies = repRes.data || [];
+    $('replyContent').value = '';
+    render();
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
-</script>
+  </script>
 </body>
 </html>
