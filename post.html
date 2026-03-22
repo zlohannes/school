@@ -161,6 +161,14 @@
     if (res.error || !res.data) { showError('帖子不存在'); return; }
     postData = res.data;
     
+    // 获取帖子作者的头像信息
+    if (postData.author && !postData.is_anonymous) {
+      var authorRes = await sb.from('users').select('avatar_data,avatar_url').eq('username', postData.author).maybeSingle();
+      if (authorRes.data) {
+        postData.author_avatar = authorRes.data.avatar_data || authorRes.data.avatar_url;
+      }
+    }
+    
     var repRes = await sb.from('replies').select('*').eq('post_id', id).order('created_at', {ascending: true});
     replies = repRes.data || [];
     
@@ -171,7 +179,16 @@
   function renderUserInfo() {
     var nn = currentUser.nickname || currentUser.username;
     var rt = {student: '学生', teacher: '老师', admin: '管理员'}[currentUser.role] || '学生';
-    $('userInfo').innerHTML = '<span>' + esc(nn) + '</span><span class="role-tag">' + rt + '</span>';
+    
+    // 头像处理
+    var avatarHtml = '';
+    if (currentUser.avatar) {
+      avatarHtml = '<img src="' + esc(currentUser.avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:4px">';
+    } else {
+      avatarHtml = '<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:4px">' + (nn || '?').charAt(0).toUpperCase() + '</span>';
+    }
+    
+    $('userInfo').innerHTML = avatarHtml + '<span>' + esc(nn) + '</span><span class="role-tag">' + rt + '</span>';
   }
 
   function render() {
@@ -189,8 +206,25 @@
     if (isAnonymous) tagsHtml += '<span class="tag-anon">🎭 匿名</span>';
     if (p.is_pinned) tagsHtml += '<span class="tag-pin">📌 置顶</span>';
     
-    var avatarChar = isAnonymous ? '🎭' : (p.author_nickname || '?').charAt(0);
-    var authorName = isAnonymous ? '匿名用户' : esc(p.author_nickname || '');
+    // 作者头像和名称（可点击跳转到用户主页）
+    var avatarChar, authorAvatarHtml, authorNameHtml;
+    
+    if (isAnonymous) {
+      // 匿名用户
+      avatarChar = '🎭';
+      authorAvatarHtml = '<div class="author-avatar">' + avatarChar + '</div>';
+      authorNameHtml = '<div class="author-name">匿名用户</div>';
+    } else {
+      // 真实用户
+      var authorAvatar = p.author_avatar;
+      if (authorAvatar) {
+        avatarChar = '<img src="' + esc(authorAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else {
+        avatarChar = (p.author_nickname || '?').charAt(0);
+      }
+      authorAvatarHtml = '<a href="user.html?u=' + esc(p.author) + '" style="text-decoration:none"><div class="author-avatar">' + avatarChar + '</div></a>';
+      authorNameHtml = '<a href="user.html?u=' + esc(p.author) + '" style="text-decoration:none;color:inherit"><div class="author-name">' + esc(p.author_nickname || '') + '</div></a>';
+    }
     
     var mediaHtml = '';
     if (p.media) {
@@ -243,9 +277,9 @@
         '<div class="post-header">' + tagsHtml + '</div>' +
         '<h1 class="post-title">' + esc(p.title) + '</h1>' +
         '<div class="post-author">' +
-          '<div class="author-avatar">' + avatarChar + '</div>' +
+          authorAvatarHtml +
           '<div class="author-info">' +
-            '<div class="author-name">' + authorName + '</div>' +
+            authorNameHtml +
             '<div class="author-time">' + timeAgo(p.created_at) + '</div>' +
           '</div>' +
         '</div>' +
