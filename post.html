@@ -141,6 +141,14 @@
     if (!s) { window.location.href = 'index.html'; return; }
     currentUser = JSON.parse(s);
     showLoading();
+    
+    // 获取用户完整信息（包括头像）
+    var userRes = await sb.from('users').select('*').eq('username', currentUser.username).maybeSingle();
+    if (userRes.data) {
+      currentUser.avatar = userRes.data.avatar_data || userRes.data.avatar_url;
+      currentUser.nickname = userRes.data.nickname || currentUser.nickname;
+    }
+    
     await loadPost();
     hideLoading();
   }
