@@ -7,12 +7,6 @@
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
   <script>sessionStorage.clear();</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script>
-// Fallback SB_URL/SB_KEY for GitHub Pages
-if (typeof SB_URL === 'undefined') { var SB_URL = window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL') || ''; }
-if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY') || ''; }
-</script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -25,6 +19,9 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
     .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
     .form-group input,.form-group select{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
     .form-group input:focus{border-color:#667eea;outline:none}
+    .form-group select{background:#2a2a3e;color:#fff}
+    .form-group select option{background:#2a2a3e;color:#fff}
+    .form-group select:disabled{background:#3a3a4e;color:#999}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .radio-group{display:flex;gap:12px;margin-top:6px}
     .radio-option{display:flex;align-items:center;gap:4px;font-size:13px}
@@ -42,7 +39,6 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
   </style>
 </head>
 <body>
-<div style="position:fixed;right:16px;top:16px;z-index:99"><a href="./forum.html" class="btn" style="padding:10px14px;border:1px solid #ccc;border-radius:8px;text-decoration:none">进入论坛 ▶</a></div>
   <div class="loading" id="loading"><div class="spinner"></div></div>
   <div class="container">
     <div class="card">
@@ -80,14 +76,14 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
           <div class="form-group">
             <label>角色</label>
             <div class="radio-group">
-              <label class="radio-option"><input type="radio" name="role" value="student" checked onclick="toggleMajor()"> 学生</label>
-              <label class="radio-option"><input type="radio" name="role" value="teacher" onclick="toggleMajor()"> 老师</label>
-              <label class="radio-option"><input type="radio" name="role" value="admin" onclick="checkAdmin()"> 管理员</label>
+              <label class="radio-option"><input type="radio" name="role" value="student" checked> 学生</label>
+              <label class="radio-option"><input type="radio" name="role" value="teacher"> 老师</label>
+              <label class="radio-option"><input type="radio" name="role" value="admin"> 管理员</label>
             </div>
           </div>
           <button type="submit" class="btn" id="regBtn">注册</button>
         </form>
-        <div class="switch">已有账号？<a href="#" onclick="showLogin()">点击登录</a></div>
+        <div class="switch">已有账号？<a href="#" id="toLoginBtn">点击登录</a></div>
       </div>
       <div id="loginBox" style="display:none;">
         <h2>🔐 用户登录</h2>
@@ -96,146 +92,176 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
           <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码" required></div>
           <button type="submit" class="btn" id="loginBtn">登录</button>
         </form>
-        <div class="switch">没有账号？<a href="#" onclick="showRegister()">注册</a></div>
+        <div class="switch">没有账号？<a href="#" id="toRegisterBtn">注册</a></div>
       </div>
     </div>
   </div>
-  <script>
-const SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-const SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-const sb = window.supabase.createClient(SB_URL, SB_KEY);
-const ADMIN_CODE = 'admin';
-
-function showLoading(v){document.getElementById('loading').classList.toggle('show',v)}
-
-function showLogin(){document.getElementById('registerBox').style.display='none';document.getElementById('loginBox').style.display='block'}
-function showRegister(){document.getElementById('loginBox').style.display='none';document.getElementById('registerBox').style.display='block'}
-
-function toggleMajor(){
-  const role=document.querySelector('input[name="role"]:checked').value;
-  const s=document.getElementById('regMajor');
-  s.disabled=role==='teacher';
-  if(role==='teacher')s.value='';
-}
-
-function checkAdmin(){
-  const code=prompt('请输入管理员注册码：');
-  if(code!==ADMIN_CODE){alert('注册码错误！只有管理员才能注册管理员账号。');document.querySelector('input[name="role"][value="student"]').checked=true;toggleMajor()}
-}
-
-document.getElementById('registerForm').onsubmit=async e=>{
-  e.preventDefault();
-  const u=document.getElementById('regUsername').value.trim();
-  const n=document.getElementById('regNickname').value.trim()||u;
-  const p=document.getElementById('regPassword').value;
-  const c=document.getElementById('regConfirm').value;
-  const rn=document.getElementById('regRealName').value.trim();
-  const m=document.getElementById('regMajor').value;
-  const g=document.getElementById('regGender').value;
-  const r=document.querySelector('input[name="role"]:checked').value;
-
-  if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
-  if(p!==c){alert('两次密码不一致');return}
-
-  showLoading(true);
-  document.getElementById('regBtn').disabled=true;
-
-  const{data:exists}=await sb.from('users').select('username').eq('username',u).maybeSingle();
-  if(exists){alert('用户名已存在');showLoading(false);document.getElementById('regBtn').disabled=false;return}
-
-  const{error}=await sb.from('users').insert({username:u,nickname:n,password:btoa(p+'lc'),real_name:rn,major:m,gender:g,role:r});
-  showLoading(false);
-  document.getElementById('regBtn').disabled=false;
-
-  if(error){alert('注册失败：'+error.message);return}
-  alert('注册成功！请登录');
-  showLogin();
-  document.getElementById('loginUsername').value=u;
-  document.getElementById('regUsername').value='';
-  document.getElementById('regPassword').value='';
-  document.getElementById('regConfirm').value='';
-};
-
-document.getElementById('loginForm').onsubmit=async e=>{
-  e.preventDefault();
-  const u=document.getElementById('loginUsername').value.trim();
-  const p=document.getElementById('loginPassword').value;
-
-  showLoading(true);
-  document.getElementById('loginBtn').disabled=true;
-
-  try {
-    const {data: user, error} = await sb.from('users').select('*').eq('username',u).maybeSingle();
-    showLoading(false);
-    document.getElementById('loginBtn').disabled=false;
-
-    if(error||!user){alert('用户名不存在');return}
-    if(user.password!==btoa(p+'lc')){alert('密码错误');return}
-    if(user.is_banned){alert('账号已被封禁，请联系管理员');return}
-
-    sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role,realName:user.real_name}));
-    window.location.href='forum.html';
-  } catch(e){
-    showLoading(false);
-    document.getElementById('loginBtn').disabled=false;
-    alert('网络连接失败，请检查网络后重试');
-  }
-};
-  </script>
+  <script src="./config.js"></script>
 <script>
-// Patch login/register to use Supabase anon and be resilient
 (function(){
- try{
- var sbClient = (function(){
- var url = (typeof SB_URL!=='undefined' && SB_URL) || window.SUPABASE_URL || localStorage.getItem('SUPABASE_URL');
- var key = (typeof SB_KEY!=='undefined' && SB_KEY) || window.SUPABASE_ANON_KEY || localStorage.getItem('SUPABASE_ANON_KEY');
- if(!url||!key){ console.warn('Supabase not configured'); return null; }
- return window.supabase.createClient(url, key);
- })();
- if(!sbClient) return;
- var loginForm = document.querySelector('form#login, form.login, #loginForm');
- var regForm = document.querySelector('form#register, form.register, #registerForm');
+  var SB_URL = window.SUPABASE_URL;
+  var SB_KEY = window.SUPABASE_ANON_KEY;
+  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var ADMIN_CODE_HASH = window.ADMIN_CODE_HASH;
+  var PASSWORD_SALT = window.PASSWORD_SALT || 'lc_forum_2026';
 
- async function findUserByName(username){
- const { data, error } = await sbClient.from('users').select('*').eq('username', username).limit(1).maybeSingle();
- if(error) throw error; return data;
- }
- function hashLike(p){ try { return btoa(String(p)+'lc'); } catch(e){ return String(p); } }
+  function $(id){return document.getElementById(id)}
+  function showLoading(){$('loading').classList.add('show')}
+  function hideLoading(){$('loading').classList.remove('show')}
 
- if(loginForm){
- loginForm.addEventListener('submit', async function(e){
- try{
- // tolerate pages that already call preventDefault
- if(e && typeof e.preventDefault==='function') e.preventDefault();
- var u = (document.querySelector('#login-username')||document.querySelector('input[name=username]')||{}).value || '';
- var p = (document.querySelector('#login-password')||document.querySelector('input[name=password]')||{}).value || '';
- if(!u||!p) return;
- const row = await findUserByName(u);
- if(!row){ alert('用户不存在'); return; }
- var ok = (row.password === hashLike(p)) || (row.password === p);
- if(!ok){ alert('密码错误'); return; }
- try{ sessionStorage.setItem('currentUser', JSON.stringify({ username: row.username, nickname: row.nickname||row.username, role: row.role||'student' })); }catch{}
- location.href = 'forum.html';
- }catch(err){ console.error(err); alert('登录失败：'+(err.message||err)); }
- }, true);
- }
+  // SHA-256 哈希函数
+  async function sha256(text) {
+    var encoder = new TextEncoder();
+    var data = encoder.encode(text);
+    var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    var hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+  }
 
- if(regForm){
- regForm.addEventListener('submit', async function(e){
- try{
- if(e && typeof e.preventDefault==='function') e.preventDefault();
- var u = (document.querySelector('#reg-username')||document.querySelector('input[name=username]')||{}).value || '';
- var p = (document.querySelector('#reg-password')||document.querySelector('input[name=password]')||{}).value || '';
- var nick = (document.querySelector('#reg-nickname')||document.querySelector('input[name=nickname]')||{}).value || '';
- if(u.length<3 || p.length<8){ alert('用户名≥3，密码≥8'); return; }
- const { error } = await sbClient.from('users').insert({ username: u, nickname: nick||u, password: hashLike(p), role: 'student' });
- if(error){ alert('注册失败：'+error.message); return; }
- alert('注册成功，请登录');
- }catch(err){ console.error(err); alert('注册失败：'+(err.message||err)); }
- }, true);
- }
- }catch(e){ console.warn('auth patch skipped', e); }
+  // 密码加密：SHA-256(密码 + 盐值)
+  async function hashPassword(password) {
+    return await sha256(password + PASSWORD_SALT);
+  }
+
+  // 验证管理员注册码
+  async function verifyAdminCode(code) {
+    var hash = await sha256(code);
+    return hash === ADMIN_CODE_HASH;
+  }
+
+  function showLogin(){$('registerBox').style.display='none';$('loginBox').style.display='block'}
+  function showRegister(){$('loginBox').style.display='none';$('registerBox').style.display='block'}
+
+  // 角色切换
+  document.querySelectorAll('input[name="role"]').forEach(function(radio){
+    radio.addEventListener('change', async function(){
+      var role = this.value;
+      var majorSelect = $('regMajor');
+      if(role === 'teacher' || role === 'admin'){
+        majorSelect.disabled = true;
+        majorSelect.value = '';
+      } else {
+        majorSelect.disabled = false;
+      }
+      if(role === 'admin'){
+        var code = prompt('请输入管理员注册码：');
+        if(!code) {
+          // 用户取消，重置为学生
+          document.querySelector('input[name="role"][value="student"]').checked = true;
+          $('regMajor').disabled = false;
+          return;
+        }
+        var valid = await verifyAdminCode(code);
+        if(!valid){
+          alert('注册码错误！');
+          document.querySelector('input[name="role"][value="student"]').checked = true;
+          $('regMajor').disabled = false;
+        }
+      }
+    });
+  });
+
+  // 注册
+  $('registerForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var u = $('regUsername').value.trim();
+    var n = $('regNickname').value.trim() || u;
+    var p = $('regPassword').value;
+    var c = $('regConfirm').value;
+    var rn = $('regRealName').value.trim();
+    var m = $('regMajor').value;
+    var g = $('regGender').value;
+    var r = document.querySelector('input[name="role"]:checked').value;
+
+    if(p.length < 6 || p.length > 20){ alert('密码长度应为6-20位'); return }
+    if(p !== c){ alert('两次密码不一致'); return }
+
+    showLoading();
+    $('regBtn').disabled = true;
+
+    try {
+      var checkRes = await sb.from('users').select('username').eq('username', u).maybeSingle();
+      if(checkRes.data){
+        hideLoading();
+        $('regBtn').disabled = false;
+        alert('用户名已存在');
+        return;
+      }
+
+      // 使用 SHA-256 加密密码
+      var hashedPassword = await hashPassword(p);
+
+      var insertRes = await sb.from('users').insert({
+        username: u,
+        nickname: n,
+        password: hashedPassword,
+        real_name: rn,
+        major: m,
+        gender: g,
+        role: r
+      });
+
+      hideLoading();
+      $('regBtn').disabled = false;
+
+      if(insertRes.error){
+        alert('注册失败：' + insertRes.error.message);
+        return;
+      }
+
+      alert('注册成功！请登录');
+      showLogin();
+      $('loginUsername').value = u;
+      $('regUsername').value = '';
+      $('regPassword').value = '';
+      $('regConfirm').value = '';
+    } catch(err) {
+      hideLoading();
+      $('regBtn').disabled = false;
+      alert('网络错误，请重试');
+    }
+  });
+
+  // 登录
+  $('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var u = $('loginUsername').value.trim();
+    var p = $('loginPassword').value;
+
+    showLoading();
+    $('loginBtn').disabled = true;
+
+    try {
+      var res = await sb.from('users').select('*').eq('username', u).maybeSingle();
+      hideLoading();
+      $('loginBtn').disabled = false;
+
+      var user = res.data;
+      if(!user){ alert('用户名不存在'); return }
+
+      // 使用 SHA-256 验证密码
+      var hashedInput = await hashPassword(p);
+      if(user.password !== hashedInput){ alert('密码错误'); return }
+
+      if(user.is_banned){ alert('账号已被封禁，请联系管理员'); return }
+
+      sessionStorage.setItem('currentUser', JSON.stringify({
+        username: user.username,
+        nickname: user.nickname,
+        role: user.role,
+        realName: user.real_name
+      }));
+      window.location.href = 'forum.html';
+    } catch(err) {
+      hideLoading();
+      $('loginBtn').disabled = false;
+      alert('网络连接失败，请重试');
+    }
+  });
+
+  $('toLoginBtn').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
+  $('toRegisterBtn').addEventListener('click', function(e){ e.preventDefault(); showRegister(); });
 })();
-</script>
+  </script>
 </body>
 </html>

@@ -125,7 +125,7 @@ if (typeof SB_KEY === 'undefined') { var SB_KEY = window.SUPABASE_ANON_KEY || lo
 const SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
 const SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'求职招聘',chat:'闲聊灌水',notice:'公告通知'};
+const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
 
 let currentUser=null,userData=null,postData=null,replies=[];function showLoading(){$('#pageLoading').classList.add('show')}function hideLoading(){$('#pageLoading').classList.remove('show')}function $(s){return document.querySelector(s)}
 
@@ -194,18 +194,22 @@ async function loadReplies(){
 function render(){
   const p=postData;
   const liked=(p.liked_by||[]).includes(currentUser.username);
+  const isAnonymous=p.is_anonymous;
+  const isAuthor=p.author===currentUser.username;
+  const isAdmin=currentUser.role==='admin';
+  const canDelete=isAuthor||isAdmin;
   // 获取作者角色
   document.getElementById('mainContent').innerHTML=`
     <div class="post-card">
-      <div class="post-header"><span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span></div>
+      <div class="post-header"><span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span>${isAnonymous?'<span style="background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">🎭 匿名</span>':''}</div>
       <h1 class="post-title">${esc(p.title)}</h1>
       <div class="post-author">
-        <div class="author-avatar">${(p.author_nickname||'?').charAt(0)}</div>
+        <div class="author-avatar">${isAnonymous?'🎭':(p.author_nickname||'?').charAt(0)}</div>
         <div class="author-info">
-          <div class="author-name">${esc(p.author_nickname||'')}</div>
+          <div class="author-name">${isAnonymous?'匿名用户':esc(p.author_nickname||'')}</div>
           <div class="author-time">${timeAgo(p.created_at)}</div>
         </div>
-        ${currentUser.role==='admin'&&p.author!==currentUser.username?'<button onclick="toggleBanUser()" style="margin-left:auto;background:'+(p.author_banned?'#27ae60':'#e74c3c')+';color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer">'+(p.author_banned?'🔓 解封':'🔒 封号')+'</button>':''}
+        ${isAdmin&&!isAnonymous&&p.author!==currentUser.username?'<button onclick="toggleBanUser()" style="margin-left:auto;background:'+(p.author_banned?'#27ae60':'#e74c3c')+';color:#fff;border:none;padding:4px 12px;border-radius:12px;font-size:12px;cursor:pointer">'+(p.author_banned?'🔓 解封':'🔒 封号')+'</button>':''}
       </div>
       <div class="post-content">${esc(p.content)}</div>
       <div class="post-actions">
@@ -213,7 +217,7 @@ function render(){
           ${liked?'❤️':'🤍'} ${p.likes||0}
         </button>
         <button class="action-btn" onclick="openReportModal()">🚩 举报</button>
-        ${currentUser.role==='admin'&&!p.is_deleted?'<button class="action-btn" onclick="adminDeletePost()" style="color:#e74c3c">🗑 删除帖子</button>':''}
+        ${canDelete&&!p.is_deleted?'<button class="action-btn" onclick="deletePost()" style="color:#e74c3c">🗑 删除帖子</button>':''}
       </div>
     </div>
     <div class="replies-section">
@@ -252,11 +256,12 @@ async function submitReply(){
   render();
 }
 
-async function adminDeletePost(){
+async function deletePost(){
   if(!confirm('确定删除此帖子？删除后内容不再显示。'))return;
   const{error}=await sb.from('posts').update({is_deleted:true}).eq('id',postData.id);
   if(error){alert('删除失败');return}
-  alert('帖子已删除');postData.is_deleted=true;render();
+  alert('帖子已删除');
+  window.location.href='forum.html';
 }
 
 function openReportModal(){document.getElementById('reportModal').classList.add('active')}
