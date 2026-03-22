@@ -5,7 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>帖子详情 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 性能优化：预连接关键域名 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
+  <!-- 性能优化：DNS 预解析 -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
+  <!-- 性能优化：异步加载 Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
@@ -100,7 +108,23 @@
 (function(){
   var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
   var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  // 数据库连接优化
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { 'X-Client-Info': 'school-forum' } },
+    db: { schema: 'public' }
+  });
+  
+  // 请求超时包装
+  async function withTimeout(promise, ms) {
+    ms = ms || 8000;
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject) {
+        setTimeout(function() { reject(new Error('请求超时')); }, ms);
+      })
+    ]);
+  }
   
   var catNames = {
     learning: '学习交流',
@@ -114,6 +138,7 @@
   var currentUser = null;
   var postData = null;
   var replies = [];
+  var isGuest = false;
 
   function $(id) { return document.getElementById(id); }
   
@@ -140,16 +165,32 @@
     var s = sessionStorage.getItem('currentUser');
     if (!s) { window.location.href = 'index.html'; return; }
     currentUser = JSON.parse(s);
-    showLoading();
+    // 检测游客模式
+    isGuest = (currentUser.role === 'guest' || currentUser.username === '__GUEST__');
     
-    // 获取用户完整信息（包括头像）
-    var userRes = await sb.from('users').select('*').eq('username', currentUser.username).maybeSingle();
-    if (userRes.data) {
-      currentUser.avatar = userRes.data.avatar_data || userRes.data.avatar_url;
-      currentUser.nickname = userRes.data.nickname || currentUser.nickname;
+    // 游客直接跳回首页
+    if (isGuest) {
+      alert('游客无法查看帖子详情，请先登录');
+      window.location.href = 'forum.html';
+      return;
     }
     
-    await loadPost();
+    showLoading();
+    
+    // 性能优化：并行加载用户信息和帖子
+    var userPromise = withTimeout(sb.from('users').select('avatar_data,avatar_url,nickname').eq('username', currentUser.username).maybeSingle(), 5000);
+    var postPromise = loadPost();
+    
+    try {
+      var userRes = await userPromise;
+      if (userRes.data) {
+        currentUser.avatar = userRes.data.avatar_data || userRes.data.avatar_url;
+        currentUser.nickname = userRes.data.nickname || currentUser.nickname;
+      }
+      await postPromise;
+    } catch(e) {
+      alert('加载失败：' + e.message + '\n请检查网络连接');
+    }
     hideLoading();
   }
 
@@ -157,23 +198,31 @@
     var id = new URLSearchParams(location.search).get('id');
     if (!id) { showError('帖子不存在'); return; }
     
-    var res = await sb.from('posts').select('*').eq('id', id).maybeSingle();
-    if (res.error || !res.data) { showError('帖子不存在'); return; }
-    postData = res.data;
-    
-    // 获取帖子作者的头像信息
-    if (postData.author && !postData.is_anonymous) {
-      var authorRes = await sb.from('users').select('avatar_data,avatar_url').eq('username', postData.author).maybeSingle();
-      if (authorRes.data) {
-        postData.author_avatar = authorRes.data.avatar_data || authorRes.data.avatar_url;
+    try {
+      // 性能优化：先加载帖子和回复，渲染页面
+      var res = await withTimeout(sb.from('posts').select('*').eq('id', id).maybeSingle(), 8000);
+      if (res.error || !res.data) { showError('帖子不存在'); return; }
+      postData = res.data;
+      
+      // 性能优化：限制回复数量为30条
+      var repRes = await withTimeout(sb.from('replies').select('*').eq('post_id', id).order('created_at', {ascending: true}).limit(30), 5000);
+      replies = repRes.data || [];
+      
+      renderUserInfo();
+      render();
+      
+      // 性能优化：异步加载作者头像，不阻塞页面渲染
+      if (postData.author && !postData.is_anonymous) {
+        withTimeout(sb.from('users').select('avatar_data,avatar_url').eq('username', postData.author).maybeSingle(), 3000).then(function(authorRes){
+          if (authorRes.data && $('authorAvatar')) {
+            postData.author_avatar = authorRes.data.avatar_data || authorRes.data.avatar_url;
+            $('authorAvatar').src = postData.author_avatar;
+          }
+        }).catch(function(){});
       }
+    } catch(e) {
+      showError('加载失败：' + e.message);
     }
-    
-    var repRes = await sb.from('replies').select('*').eq('post_id', id).order('created_at', {ascending: true});
-    replies = repRes.data || [];
-    
-    renderUserInfo();
-    render();
   }
 
   function renderUserInfo() {

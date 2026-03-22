@@ -11,7 +11,17 @@
   <meta property="og:title" content="鹿城学院论坛">
   <meta property="og:description" content="温州职业技术学院学生交流平台">
   <meta property="og:type" content="website">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 性能优化：预连接关键域名 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
+  <!-- 性能优化：DNS 预解析 -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
+  <!-- 性能优化：预加载关键资源 -->
+  <link rel="preload" href="./config.js" as="script">
+  <!-- 性能优化：异步加载 Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -120,6 +130,24 @@
     .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loading .msg{color:var(--muted);font-size:14px}
+
+    /* 二次确认弹窗 */
+    .confirm-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:600;padding:20px;backdrop-filter:blur(4px)}
+    .confirm-overlay.active{display:flex}
+    .confirm-box{background:#1a2332;border:1px solid rgba(239,68,68,0.3);border-radius:16px;width:100%;max-width:380px;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:confirmIn 0.2s ease}
+    @keyframes confirmIn{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
+    .confirm-icon{font-size:40px;text-align:center;margin-bottom:12px}
+    .confirm-title{font-size:17px;font-weight:700;color:var(--text);text-align:center;margin-bottom:8px}
+    .confirm-msg{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:6px}
+    .confirm-target{font-size:13px;color:#ef4444;text-align:center;font-weight:600;margin-bottom:20px;padding:8px 12px;background:rgba(239,68,68,0.08);border-radius:8px;word-break:break-all}
+    .confirm-step{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px;opacity:0.7}
+    .confirm-btns{display:flex;gap:10px}
+    .confirm-btns button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+    .confirm-cancel-btn{background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.1)!important}
+    .confirm-cancel-btn:hover{background:rgba(255,255,255,0.1);color:var(--text)}
+    .confirm-ok-btn{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff}
+    .confirm-ok-btn:hover{background:linear-gradient(135deg,#ef4444,#dc2626);transform:translateY(-1px)}
+    .confirm-ok-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
     
     /* 移动端菜单 */
     .mobile-menu{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px}
@@ -139,9 +167,9 @@
       <button class="mobile-menu" id="mobileMenuBtn">☰</button>
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link active">首页</a>
-        <a href="drafts.html" class="nav-link">📝 草稿箱</a>
-        <a href="profile.html" class="nav-link">我的主页</a>
-        <a href="messages.html" class="nav-link">私信</a>
+        <a href="drafts.html" class="nav-link" id="navDrafts">📝 草稿箱</a>
+        <a href="profile.html" class="nav-link" id="navProfile">我的主页</a>
+        <a href="messages.html" class="nav-link" id="navMessages">私信</a>
         <a href="notifications.html" class="notification-btn" id="notificationBtn">
           🔔
           <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
@@ -178,7 +206,13 @@
       <div class="card-header">📢 公告</div>
       <div class="card-body">
         <div class="announce-item">
-          <p>⚠️ 网站开发属于开始阶段，连接的是海外服务器，网络波动纯属正常，请耐心等待。</p>
+          <p>🚀 <strong>性能优化已上线</strong></p>
+          <p>• 数据缓存加速，减少等待时间</p>
+          <p>• 只加载最近7天帖子，提升速度</p>
+          <p>• 回复数按需加载，节省流量</p>
+        </div>
+        <div class="announce-item" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)">
+          <p>⚠️ 服务器位于海外，如遇加载缓慢请使用 WiFi 或耐心等待</p>
           <p>如有反馈和建议，请联系：</p>
           <p class="contact">📞 13587769094（微信同号）</p>
         </div>
@@ -232,11 +266,49 @@
     </div>
   </div>
 
+  <!-- 二次确认弹窗 -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <div class="confirm-icon" id="confirmIcon">⚠️</div>
+      <div class="confirm-title" id="confirmTitle">确认删除</div>
+      <div class="confirm-msg" id="confirmMsg">此操作不可撤销，请谨慎操作。</div>
+      <div class="confirm-target" id="confirmTarget"></div>
+      <div class="confirm-step" id="confirmStep"></div>
+      <div class="confirm-btns">
+        <button class="confirm-cancel-btn" id="confirmCancelBtn">取消</button>
+        <button class="confirm-ok-btn" id="confirmOkBtn">确认删除</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 (function(){
   var SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
   var SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb=window.supabase.createClient(SB_URL,SB_KEY);
+  // 数据库连接优化：增加超时和重试配置
+  var sb=window.supabase.createClient(SB_URL,SB_KEY,{
+    auth:{
+      persistSession:false,
+      autoRefreshToken:false
+    },
+    global:{
+      headers:{
+        'X-Client-Info':'school-forum'
+      }
+    },
+    db:{
+      schema:'public'
+    }
+  });
+  // 请求超时包装函数
+  async function withTimeout(promise,ms=8000){
+    return Promise.race([
+      promise,
+      new Promise(function(_,reject){
+        setTimeout(function(){reject(new Error('请求超时，请检查网络'))},ms);
+      })
+    ]);
+  }
   var PER_PAGE=10;
   var catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   var roleNames={student:'学生',teacher:'老师',admin:'管理员'};
@@ -245,6 +317,7 @@
   var currentCategory='',currentSort='latest',currentPage=1,searchKeyword='',searchTimer=null;
   var selectedImages=[],selectedVideo=null;
   var STORAGE_BUCKET='forum-media';
+  var isGuest=false; // 游客模式标记
 
   function $(id){return document.getElementById(id)}
   function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
@@ -256,30 +329,192 @@
   function renderUserInfo(){
     var role=currentUser.role||'student';
     var rt=roleNames[role]||'学生';
+    // 游客模式显示特殊标识
+    if(isGuest){
+      rt='游客';
+      role='guest';
+    }
     var nn=(userData&&userData.nickname)||currentUser.nickname||'?';
     var av=(userData&&(userData.avatar_data||userData.avatar_url))||'';
     var avatarHtml=av?'<img src="'+esc(av)+'">':esc(nn.charAt(0).toUpperCase());
     $('userInfo').innerHTML='<div class="avatar">'+avatarHtml+'</div><span>'+esc(nn)+'</span><span class="role-tag role-'+esc(role)+'">'+esc(rt)+'</span>';
   }
 
+  // 数据缓存
+  var postsCache=null,cacheTime=0,CACHE_TTL=60000; // 缓存1分钟
+  var USE_STATIC_JSON=true; // 启用静态JSON模式
+  
+  // 从静态JSON加载帖子（速度快）
+  async function loadPostsFromStatic(){
+    try{
+      var res=await fetch('./data/posts.json?v='+Date.now(),{cache:'no-cache'});
+      if(!res.ok)throw new Error('Static JSON not found');
+      var data=await res.json();
+      if(data.posts && data.posts.length>0){
+        // 转换回复数字段
+        data.posts.forEach(function(p){
+          replyCounts[p.id]=p.reply_count||0;
+        });
+        return data.posts;
+      }
+      return null;
+    }catch(e){
+      console.log('Static JSON load failed:',e);
+      return null;
+    }
+  }
+  
   async function init(){
     var s=sessionStorage.getItem('currentUser');
     if(!s){window.location.href='index.html';return}
     currentUser=JSON.parse(s);
+    // 检测游客模式
+    isGuest=(currentUser.role==='guest'||currentUser.username==='__GUEST__');
     showLoading();
+    
+    // 检查缓存
+    var now=Date.now();
+    if(postsCache && (now-cacheTime)<CACHE_TTL){
+      allPosts=postsCache;
+      hideLoading();
+      renderUserInfo();
+      filterAndRender();
+      return;
+    }
+    
+    // 优先从静态JSON加载（速度快）
+    if(USE_STATIC_JSON){
+      var staticPosts=await loadPostsFromStatic();
+      if(staticPosts && staticPosts.length>0){
+        allPosts=staticPosts;
+        postsCache=allPosts;
+        cacheTime=now;
+        hideLoading();
+        renderUserInfo();
+        filterAndRender();
+        // 后台静默刷新Supabase数据（不阻塞）
+        refreshFromSupabaseInBackground();
+        
+        // 游客模式UI调整
+        if(isGuest){
+          if($('fabBtn')) $('fabBtn').style.display='none';
+          if($('navDrafts')) $('navDrafts').style.display='none';
+          if($('navProfile')) $('navProfile').style.display='none';
+          if($('navMessages')) $('navMessages').style.display='none';
+          if($('notificationBtn')) $('notificationBtn').style.display='none';
+        }
+        return;
+      }
+    }
+    
+    // 静态JSON失败，回退到Supabase
     try{
-      var userRes=await sb.from('users').select('*').eq('username',currentUser.username).maybeSingle();
-      var postsRes=await sb.from('posts').select('*').order('created_at',{ascending:false});
-      userData=userRes.data;
-      allPosts=postsRes.data||[];
+      // 游客模式：简化加载，不查询用户信息
+      if(isGuest){
+        // 性能优化：只加载最近7天的帖子，限制50条，减少数据传输
+        var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
+        var postsRes=await withTimeout(sb.from('posts')
+          .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous')
+          .gte('created_at',sevenDaysAgo)
+          .eq('is_deleted',false)
+          .order('is_pinned',{ascending:false})
+          .order('created_at',{ascending:false})
+          .limit(50),8000);
+        allPosts=postsRes.data||[];
+        postsCache=allPosts;
+        cacheTime=now;
+        // 游客不显示发帖按钮
+        if($('fabBtn')) $('fabBtn').style.display='none';
+        // 游客隐藏导航栏功能按钮
+        if($('navDrafts')) $('navDrafts').style.display='none';
+        if($('navProfile')) $('navProfile').style.display='none';
+        if($('navMessages')) $('navMessages').style.display='none';
+        if($('notificationBtn')) $('notificationBtn').style.display='none';
+      }else{
+        // 性能优化：并行加载用户数据和帖子，带超时控制
+        var userPromise=withTimeout(sb.from('users')
+          .select('username,nickname,avatar_data,avatar_url,role')
+          .eq('username',currentUser.username)
+          .maybeSingle(),5000);
+        
+        // 性能优化：只加载最近7天的帖子，限制50条，减少字段
+        var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
+        var postsPromise=withTimeout(sb.from('posts')
+          .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted')
+          .gte('created_at',sevenDaysAgo)
+          .eq('is_deleted',false)
+          .order('is_pinned',{ascending:false})
+          .order('created_at',{ascending:false})
+          .limit(50),8000);
+        
+        var [userRes,postsRes]=await Promise.all([userPromise,postsPromise]);
+        userData=userRes.data;
+        allPosts=postsRes.data||[];
+        postsCache=allPosts;
+        cacheTime=now;
+        
+        // 性能优化：回复数改为按需查询，不在初始化时加载
+        // 只在渲染时查询当前页需要的回复数
+        
+        // 通知检查不阻塞页面加载
+        checkNotifications().catch(function(){});
+        checkDraftEdit();
+      }
+    }catch(e){
+      console.error('加载失败:',e);
+      if(postsCache){
+        // 使用缓存数据
+        allPosts=postsCache;
+        alert('网络较慢，显示缓存数据');
+      }else{
+        alert('加载失败：'+e.message+'\n请检查网络连接后刷新页面');
+      }
+    }
+    hideLoading();
+    renderUserInfo();
+    filterAndRender();
+  }
+  
+  // 后台静默刷新Supabase数据（不阻塞UI）
+  async function refreshFromSupabaseInBackground(){
+    if(isGuest)return; // 游客不刷新
+    try{
+      var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
+      var postsRes=await withTimeout(sb.from('posts')
+        .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted')
+        .gte('created_at',sevenDaysAgo)
+        .eq('is_deleted',false)
+        .order('is_pinned',{ascending:false})
+        .order('created_at',{ascending:false})
+        .limit(50),10000);
+      if(postsRes.data && postsRes.data.length>0){
+        // 检查是否有新数据
+        var currentIds=allPosts.map(function(p){return p.id}).sort().join(',');
+        var newIds=postsRes.data.map(function(p){return p.id}).sort().join(',');
+        if(currentIds!==newIds || postsRes.data.length!==allPosts.length){
+          // 有新数据，静默更新
+          allPosts=postsRes.data;
+          postsCache=allPosts;
+          cacheTime=Date.now();
+          filterAndRender();
+          console.log('数据已更新');
+        }
+      }
+    }catch(e){console.log('后台刷新失败',e);}
+  }
+  
+  // 后台刷新数据（旧函数，保留兼容）
+  async function refreshDataInBackground(){
+    refreshFromSupabaseInBackground();
+  }
+      // 性能优化：只在有帖子时批量查询回复数，限制查询数量
       if(allPosts.length>0){
-        var ids=allPosts.map(function(p){return p.id});
+        var ids=allPosts.slice(0,50).map(function(p){return p.id}); // 只查前50条的回复数
         var repRes=await sb.from('replies').select('post_id').in('post_id',ids);
         (repRes.data||[]).forEach(function(r){replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1});
       }
-      // 检查未读通知
-      checkNotifications();
-      // 检查是否从草稿箱跳转过来
+      
+      await notifPromise;
       checkDraftEdit();
     }catch(e){alert('加载失败：'+e.message)}
     hideLoading();
@@ -335,6 +570,24 @@
     renderPosts(filtered);
   }
 
+  // 按需加载回复数
+  async function loadReplyCountsForPage(postIds){
+    if(!postIds.length || isGuest)return;
+    try{
+      var res=await withTimeout(sb.from('replies')
+        .select('post_id')
+        .in('post_id',postIds),5000);
+      (res.data||[]).forEach(function(r){
+        replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1;
+      });
+      // 更新当前页显示
+      postIds.forEach(function(id){
+        var el=document.getElementById('reply-count-'+id);
+        if(el)el.textContent=replyCounts[id]||0;
+      });
+    }catch(e){console.log('回复数加载失败',e);}
+  }
+
   function renderPosts(posts){
     var c=$('postList');
     if(!posts.length){
@@ -345,23 +598,30 @@
     var total=Math.ceil(posts.length/PER_PAGE);
     var start=(currentPage-1)*PER_PAGE;
     var page=posts.slice(start,start+PER_PAGE);
-    var isAdmin=currentUser.role==='admin';
+    var isAdmin=!isGuest && currentUser.role==='admin';
+    var pagePostIds=[];
     
     c.innerHTML=page.map(function(p){
       var cn=catNames[p.category]||'其他';
-      var canDelete=isAdmin||(p.author===currentUser.username);
+      var canDelete=!isGuest && (isAdmin||(p.author===currentUser.username));
       var delBtn=canDelete?'<button class="admin-del" onclick="event.stopPropagation();doDeletePost('+p.id+')">🗑 删除</button>':'';
       var pinBtn=isAdmin?'<button class="admin-del" style="right:'+(canDelete?'70px':'12px')+'" onclick="event.stopPropagation();togglePin('+p.id+','+!!p.is_pinned+')">'+(p.is_pinned?'📌 取消置顶':'📌 置顶')+'</button>':'';
       var pinTag=p.is_pinned?'<span style="background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:6px">📌 置顶</span>':'';
+      pagePostIds.push(p.id);
       return'<div class="post-item" onclick="gotoPost('+p.id+')">'+delBtn+pinBtn+
         '<div class="post-title">'+pinTag+esc(p.title)+'</div>'+
         '<div class="post-preview">'+esc(p.content)+'</div>'+
         '<div class="post-meta"><span class="category-tag cat-'+esc(p.category)+'">'+esc(cn)+'</span>'+
         '<span>👤 '+esc(p.author_nickname||p.author)+'</span>'+
         '<span>⏱ '+timeAgo(p.created_at)+'</span>'+
-        '<span>💬 '+(replyCounts[p.id]||0)+'</span>'+
+        '<span>💬 <span id="reply-count-'+p.id+'">'+(replyCounts[p.id]||0)+'</span></span>'+
         '<span>👍 '+(p.likes||0)+'</span></div></div>';
     }).join('');
+    
+    // 异步加载当前页回复数
+    if(!isGuest && pagePostIds.length>0){
+      loadReplyCountsForPage(pagePostIds);
+    }
     
     // 分页
     var h='';
@@ -379,17 +639,95 @@
     $('pagination').innerHTML=h;
   }
 
-  window.gotoPost=function(id){window.location.href='post.html?id='+id};
+  window.gotoPost=function(id){
+    // 游客模式：点击帖子显示提示
+    if(isGuest){
+      showGuestAlert();
+      return;
+    }
+    window.location.href='post.html?id='+id;
+  };
+  
+  // 游客提示弹窗
+  function showGuestAlert(){
+    var overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)';
+    overlay.innerHTML='<div style="background:#1a2332;border:1px solid rgba(76,201,240,0.3);border-radius:16px;width:100%;max-width:360px;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5);">'+
+      '<div style="font-size:48px;margin-bottom:12px">🔒</div>'+
+      '<div style="font-size:17px;font-weight:700;color:#e9f0f6;margin-bottom:8px">需要登录</div>'+
+      '<div style="font-size:13px;color:#9fb2c3;line-height:1.6;margin-bottom:20px">您当前为游客模式，暂无法查看帖子详情<br>请注册或登录后体验完整功能</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<button onclick="this.closest(\'.guest-alert-overlay\').remove()" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:#9fb2c3">取消</button>'+
+        '<button onclick="window.location.href=\'index.html\'" style="flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff">去登录</button>'+
+      '</div>'+
+    '</div>';
+    overlay.className='guest-alert-overlay';
+    overlay.onclick=function(e){if(e.target===overlay)overlay.remove();};
+    document.body.appendChild(overlay);
+  }
   window.goPage=function(p){currentPage=p;filterAndRender();window.scrollTo({top:0,behavior:'smooth'})};
+
+  // ── 自定义二次确认弹窗 ──────────────────────────────────────────
+  // showConfirm(options) → Promise<boolean>
+  // options: { title, msg, target, okText, step1Text, step2Text }
+  function showConfirm(opts){
+    return new Promise(function(resolve){
+      var overlay=$('confirmOverlay');
+      $('confirmTitle').textContent=opts.title||'确认操作';
+      $('confirmMsg').textContent=opts.msg||'此操作不可撤销，请谨慎操作。';
+      $('confirmTarget').textContent=opts.target||'';
+      $('confirmOkBtn').textContent=opts.okText||'确认';
+      $('confirmStep').textContent=opts.step1Text||'第 1 步 / 共 2 步';
+
+      overlay.classList.add('active');
+      var step=1;
+
+      function cleanup(){
+        overlay.classList.remove('active');
+        $('confirmOkBtn').removeEventListener('click',onOk);
+        $('confirmCancelBtn').removeEventListener('click',onCancel);
+        overlay.removeEventListener('click',onBg);
+      }
+      function onCancel(){cleanup();resolve(false);}
+      function onBg(e){if(e.target===overlay){cleanup();resolve(false);}}
+      function onOk(){
+        if(step===1){
+          // 第一步确认 → 变为第二步
+          step=2;
+          $('confirmIcon').textContent='🗑️';
+          $('confirmTitle').textContent='再次确认删除';
+          $('confirmMsg').textContent='帖子删除后无法恢复，确定继续吗？';
+          $('confirmOkBtn').textContent=opts.step2OkText||'确定，永久删除';
+          $('confirmStep').textContent=opts.step2Text||'第 2 步 / 共 2 步';
+          // 按钮短暂禁用防误触
+          $('confirmOkBtn').disabled=true;
+          setTimeout(function(){$('confirmOkBtn').disabled=false;},800);
+        }else{
+          cleanup();resolve(true);
+        }
+      }
+      $('confirmOkBtn').addEventListener('click',onOk);
+      $('confirmCancelBtn').addEventListener('click',onCancel);
+      overlay.addEventListener('click',onBg);
+    });
+  }
+  // ────────────────────────────────────────────────────────────────
+
   window.doDeletePost=async function(id){
-    // 二次确认
     var post=allPosts.find(function(p){return p.id===id});
     var title=post?post.title:'该帖子';
-    if(!confirm('⚠️ 确定要删除帖子《'+title+'》？\n\n删除后无法恢复！'))return;
-    if(!confirm('再次确认：真的要删除吗？'))return;
-    
+    var confirmed=await showConfirm({
+      title:'删除帖子',
+      msg:'你正在删除以下帖子：',
+      target:'《'+title+'》',
+      okText:'删除',
+      step1Text:'第 1 步 / 共 2 步 — 点击确认继续',
+      step2Text:'第 2 步 / 共 2 步 — 最后确认',
+      step2OkText:'确定，永久删除'
+    });
+    if(!confirmed)return;
     var res=await sb.from('posts').update({is_deleted:true}).eq('id',id);
-    if(res.error){alert('删除失败');return}
+    if(res.error){alert('删除失败：'+res.error.message);return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_deleted:true}):p});
     filterAndRender();
   };
@@ -397,13 +735,6 @@
   window.togglePin=async function(id,isPinned){
     var action=isPinned?'取消置顶':'置顶';
     if(!confirm('确定'+action+'？'))return;
-    var res=await sb.from('posts').update({is_pinned:!isPinned}).eq('id',id);
-    if(res.error){alert('操作失败');return}
-    allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_pinned:!isPinned}):p});
-    filterAndRender();
-  };
-
-  window.togglePin=async function(id,isPinned){
     var res=await sb.from('posts').update({is_pinned:!isPinned}).eq('id',id);
     if(res.error){alert('操作失败');return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_pinned:!isPinned}):p});

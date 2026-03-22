@@ -11,8 +11,18 @@
   <meta property="og:title" content="鹿城学院论坛">
   <meta property="og:description" content="温州职业技术学院学生交流平台">
   <meta property="og:type" content="website">
+  <!-- 性能优化：预连接关键域名 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
+  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
+  <!-- 性能优化：DNS 预解析 -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
+  <!-- 性能优化：预加载关键资源 -->
+  <link rel="preload" href="./config.js" as="script">
   <script>sessionStorage.clear();</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- 性能优化：异步加载 Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -42,6 +52,12 @@
     .loading.show{display:flex}
     .loading .spinner{width:36px;height:36px;border:3px solid #ddd;border-top-color:#667eea;border-radius:50%;animation:spin .6s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
+    /* 游客按钮样式 */
+    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+    .guest-btn:hover{background:linear-gradient(135deg,#059669,#047857)}
+    .guest-divider{display:flex;align-items:center;margin:15px 0;color:#999;font-size:12px}
+    .guest-divider::before,.guest-divider::after{content:'';flex:1;height:1px;background:#ddd}
+    .guest-divider span{padding:0 10px}
   </style>
 </head>
 <body>
@@ -96,6 +112,9 @@
           <button type="submit" class="btn" id="regBtn">注册</button>
         </form>
         <div class="switch">已有账号？<a href="#" id="toLoginBtn">点击登录</a></div>
+        <div class="guest-divider"><span>或</span></div>
+        <button class="guest-btn" id="guestBtn">👀 游客浏览（仅查看）</button>
+        <div class="note" style="text-align:center;margin-top:8px">游客模式只能浏览帖子列表，无法查看详情和互动</div>
       </div>
       <div id="loginBox" style="display:none;">
         <h2>🔐 用户登录</h2>
@@ -105,6 +124,8 @@
           <button type="submit" class="btn" id="loginBtn">登录</button>
         </form>
         <div class="switch">没有账号？<a href="#" id="toRegisterBtn">注册</a> | <a href="#" id="forgotPwdBtn">忘记密码</a></div>
+        <div class="guest-divider"><span>或</span></div>
+        <button class="guest-btn" id="guestBtn2">👀 游客浏览（仅查看）</button>
       </div>
       <div id="resetBox" style="display:none;">
         <h2>🔑 重置密码</h2>
@@ -304,6 +325,19 @@
   $('toRegisterBtn').addEventListener('click', function(e){ e.preventDefault(); showRegister(); });
   $('forgotPwdBtn').addEventListener('click', function(e){ e.preventDefault(); showReset(); });
   $('toLoginFromReset').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
+
+  // 游客登录
+  function guestLogin(){
+    sessionStorage.setItem('currentUser', JSON.stringify({
+      username: '__GUEST__',
+      nickname: '游客',
+      role: 'guest',
+      realName: ''
+    }));
+    window.location.href = 'forum.html';
+  }
+  $('guestBtn').addEventListener('click', guestLogin);
+  if($('guestBtn2')) $('guestBtn2').addEventListener('click', guestLogin);
 
   // 重置密码
   $('resetForm').addEventListener('submit', async function(e){
