@@ -65,7 +65,7 @@
       
       try {
         const SUPABASE_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeG5uemN0ZWF2Y3Bvd3NiYXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQwMDAwMDAsImV4cCI6MTg5OTc2MDAwMH0.SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
         
         // 获取帖子
         const postsRes = await fetch(`${SUPABASE_URL}/rest/v1/posts?select=id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted&is_deleted=eq.false&order=is_pinned.desc,created_at.desc&limit=200`, {

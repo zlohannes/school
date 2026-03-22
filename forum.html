@@ -475,9 +475,13 @@
     filterAndRender();
   }
   
-  // 后台静默刷新Supabase数据（不阻塞UI）
+  // 后台静默刷新Supabase数据（不阻塞UI）- 限制频率避免触发速率限制
+  var lastRefreshTime=0,REFRESH_INTERVAL=300000; // 5分钟刷新一次
   async function refreshFromSupabaseInBackground(){
     if(isGuest)return; // 游客不刷新
+    var now=Date.now();
+    if(now-lastRefreshTime<REFRESH_INTERVAL)return; // 限制刷新频率
+    lastRefreshTime=now;
     try{
       var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
       var postsRes=await withTimeout(sb.from('posts')
@@ -500,7 +504,13 @@
           console.log('数据已更新');
         }
       }
-    }catch(e){console.log('后台刷新失败',e);}
+    }catch(e){
+      console.log('后台刷新失败',e);
+      if(e.message && e.message.includes('rate')){
+        console.log('触发速率限制，暂停后台刷新');
+        REFRESH_INTERVAL=600000; // 出错后延长到10分钟
+      }
+    }
   }
   
   // 后台刷新数据（旧函数，保留兼容）
@@ -641,9 +651,13 @@
 
   window.gotoPost=function(id){
     // 游客模式：点击帖子显示提示
-    if(isGuest){
-      showGuestAlert();
-      return;
+    var s=sessionStorage.getItem('currentUser');
+    if(s){
+      var user=JSON.parse(s);
+      if(user.role==='guest'||user.username==='__GUEST__'){
+        showGuestAlert();
+        return;
+      }
     }
     window.location.href='post.html?id='+id;
   };
