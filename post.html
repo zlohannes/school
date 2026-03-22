@@ -222,7 +222,11 @@ function render(){
   // 获取作者角色
   document.getElementById('mainContent').innerHTML=`
     <div class="post-card">
-      <div class="post-header"><span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span>${isAnonymous?'<span style="background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">🎭 匿名</span>':''}</div>
+      <div class="post-header">
+        <span class="category-tag cat-${p.category}">${catNames[p.category]||'其他'}</span>
+        ${isAnonymous?'<span style="background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">🎭 匿名</span>':''}
+        ${p.is_pinned?'<span style="background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px">📌 置顶</span>':''}
+      </div>
       <h1 class="post-title">${esc(p.title)}</h1>
       <div class="post-author">
         <div class="author-avatar">${isAnonymous?'🎭':(p.author_nickname||'?').charAt(0)}</div>
@@ -239,6 +243,7 @@ function render(){
           ${liked?'❤️':'🤍'} ${p.likes||0}
         </button>
         <button class="action-btn" onclick="openReportModal()">🚩 举报</button>
+        ${isAdmin?'<button class="action-btn" onclick="togglePinPost()" style="color:#ef4444">'+(p.is_pinned?'📌 取消置顶':'📌 置顶')+'</button>':''}
         ${canDelete&&!p.is_deleted?'<button class="action-btn" onclick="deletePost()" style="color:#e74c3c">🗑 删除帖子</button>':''}
       </div>
     </div>
@@ -284,6 +289,14 @@ async function deletePost(){
   if(error){alert('删除失败');return}
   alert('帖子已删除');
   window.location.href='forum.html';
+}
+
+async function togglePinPost(){
+  const newPinState=!postData.is_pinned;
+  const{error}=await sb.from('posts').update({is_pinned:newPinState}).eq('id',postData.id);
+  if(error){alert('操作失败');return}
+  postData.is_pinned=newPinState;
+  render();
 }
 
 function openReportModal(){document.getElementById('reportModal').classList.add('active')}

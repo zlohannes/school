@@ -279,6 +279,9 @@
       return true;
     });
     filtered.sort(function(a,b){
+      // 置顶帖优先
+      if(a.is_pinned&&!b.is_pinned)return -1;
+      if(!a.is_pinned&&b.is_pinned)return 1;
       if(currentSort==='latest')return new Date(b.created_at)-new Date(a.created_at);
       return (replyCounts[b.id]||0)-(replyCounts[a.id]||0);
     });
@@ -301,8 +304,10 @@
       var cn=catNames[p.category]||'其他';
       var canDelete=isAdmin||(p.author===currentUser.username);
       var delBtn=canDelete?'<button class="admin-del" onclick="event.stopPropagation();doDeletePost('+p.id+')">🗑 删除</button>':'';
-      return'<div class="post-item" onclick="gotoPost('+p.id+')">'+delBtn+
-        '<div class="post-title">'+esc(p.title)+'</div>'+
+      var pinBtn=isAdmin?'<button class="admin-del" style="right:'+(canDelete?'70px':'12px')+'" onclick="event.stopPropagation();togglePin('+p.id+','+!!p.is_pinned+')">'+(p.is_pinned?'📌 取消置顶':'📌 置顶')+'</button>':'';
+      var pinTag=p.is_pinned?'<span style="background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:6px">📌 置顶</span>':'';
+      return'<div class="post-item" onclick="gotoPost('+p.id+')">'+delBtn+pinBtn+
+        '<div class="post-title">'+pinTag+esc(p.title)+'</div>'+
         '<div class="post-preview">'+esc(p.content)+'</div>'+
         '<div class="post-meta"><span class="category-tag cat-'+esc(p.category)+'">'+esc(cn)+'</span>'+
         '<span>👤 '+esc(p.author_nickname||p.author)+'</span>'+
@@ -334,6 +339,22 @@
     var res=await sb.from('posts').update({is_deleted:true}).eq('id',id);
     if(res.error){alert('删除失败');return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_deleted:true}):p});
+    filterAndRender();
+  };
+
+  window.togglePin=async function(id,isPinned){
+    var action=isPinned?'取消置顶':'置顶';
+    if(!confirm('确定'+action+'？'))return;
+    var res=await sb.from('posts').update({is_pinned:!isPinned}).eq('id',id);
+    if(res.error){alert('操作失败');return}
+    allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_pinned:!isPinned}):p});
+    filterAndRender();
+  };
+
+  window.togglePin=async function(id,isPinned){
+    var res=await sb.from('posts').update({is_pinned:!isPinned}).eq('id',id);
+    if(res.error){alert('操作失败');return}
+    allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_pinned:!isPinned}):p});
     filterAndRender();
   };
 
