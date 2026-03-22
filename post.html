@@ -343,7 +343,10 @@
   };
   
   window.deletePost = async function() {
-    if (!confirm('确定删除此帖子？')) return;
+    // 二次确认
+    if (!confirm('⚠️ 确定要删除帖子《' + postData.title + '》？\n\n删除后无法恢复！')) return;
+    if (!confirm('再次确认：真的要删除吗？')) return;
+    
     var res = await sb.from('posts').update({is_deleted: true}).eq('id', postData.id);
     if (res.error) { alert('删除失败'); return; }
     alert('帖子已删除');

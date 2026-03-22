@@ -139,6 +139,7 @@
       <button class="mobile-menu" id="mobileMenuBtn">☰</button>
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link active">首页</a>
+        <a href="drafts.html" class="nav-link">📝 草稿箱</a>
         <a href="profile.html" class="nav-link">我的主页</a>
         <a href="messages.html" class="nav-link">私信</a>
         <a href="notifications.html" class="notification-btn" id="notificationBtn">
@@ -216,7 +217,7 @@
           <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
           <input type="file" id="videoInput" accept="video/*" style="display:none">
           <div id="mediaPreview" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"></div>
-          <div class="note" style="font-size:11px;color:var(--muted);margin-top:6px">图片限5张，每张≤2MB（自动压缩）；视频限1个，≤5MB</div>
+          <div class="note" style="font-size:11px;color:var(--muted);margin-top:6px">图片限5张，每张≤6MB（自动压缩）；视频限1个，≤30MB</div>
         </div>
         <div class="form-group" style="display:flex;align-items:center;gap:8px">
           <input type="checkbox" id="postAnonymous" style="width:18px;height:18px;accent-color:var(--acc)">
@@ -224,6 +225,7 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn" id="saveDraftBtn">💾 保存草稿</button>
         <button class="btn" id="modalCancel">取消</button>
         <button class="btn btn-primary" id="submitBtn">发布</button>
       </div>
@@ -277,10 +279,27 @@
       }
       // 检查未读通知
       checkNotifications();
+      // 检查是否从草稿箱跳转过来
+      checkDraftEdit();
     }catch(e){alert('加载失败：'+e.message)}
     hideLoading();
     renderUserInfo();
     filterAndRender();
+  }
+  
+  // 检查是否需要加载草稿
+  function checkDraftEdit(){
+    var editingDraft=sessionStorage.getItem('editingDraft');
+    if(editingDraft){
+      var draft=JSON.parse(editingDraft);
+      $('postTitle').value=draft.title||'';
+      $('postCategory').value=draft.category||'';
+      $('postContent').value=draft.content||'';
+      $('postAnonymous').checked=draft.is_anonymous||false;
+      $('postModal').classList.add('active');
+      // 清除标记
+      sessionStorage.removeItem('editingDraft');
+    }
   }
   
   // 检查未读通知
@@ -363,7 +382,12 @@
   window.gotoPost=function(id){window.location.href='post.html?id='+id};
   window.goPage=function(p){currentPage=p;filterAndRender();window.scrollTo({top:0,behavior:'smooth'})};
   window.doDeletePost=async function(id){
-    if(!confirm('确定删除？'))return;
+    // 二次确认
+    var post=allPosts.find(function(p){return p.id===id});
+    var title=post?post.title:'该帖子';
+    if(!confirm('⚠️ 确定要删除帖子《'+title+'》？\n\n删除后无法恢复！'))return;
+    if(!confirm('再次确认：真的要删除吗？'))return;
+    
     var res=await sb.from('posts').update({is_deleted:true}).eq('id',id);
     if(res.error){alert('删除失败');return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_deleted:true}):p});
@@ -516,7 +540,7 @@
     var files=Array.from(this.files);
     if(selectedImages.length+files.length>5){alert('最多5张图片');return}
     for(var i=0;i<files.length;i++){
-      if(files[i].size>2*1024*1024){alert(files[i].name+' 超过2MB');return}
+      if(files[i].size>6*1024*1024){alert(files[i].name+' 超过6MB');return}
     }
     selectedImages=selectedImages.concat(files);
     renderMediaPreview();
@@ -526,10 +550,90 @@
   $('videoInput').onchange=function(){
     var file=this.files[0];
     if(!file)return;
-    if(file.size>5*1024*1024){alert('视频不能超过5MB');return}
+    if(file.size>30*1024*1024){alert('视频不能超过30MB');return}
     selectedVideo=file;
     renderMediaPreview();
     this.value='';
+  };
+  
+  // 保存草稿
+  window.saveDraft=function(){
+    var title=$('postTitle').value.trim();
+    var cat=$('postCategory').value;
+    var content=$('postContent').value.trim();
+    var isAnonymous=$('postAnonymous').checked;
+    
+    if(!title&&!content){
+      alert('标题和内容不能都为空');
+      return;
+    }
+    
+    var draft={
+      title:title,
+      category:cat,
+      content:content,
+      is_anonymous:isAnonymous,
+      saved_at:new Date().toISOString()
+    };
+    
+    var drafts=JSON.parse(localStorage.getItem('postDrafts')||'[]');
+    // 更新或添加草稿
+    var existingIndex=drafts.findIndex(function(d){return d.category===cat});
+    if(existingIndex>=0){
+      drafts[existingIndex]=draft;
+    } else {
+      drafts.unshift(draft);
+    }
+    
+    localStorage.setItem('postDrafts',JSON.stringify(drafts.slice(0,10))); // 最多保存10个草稿
+    alert('草稿已保存');
+  };
+  
+  // 加载草稿到表单
+  window.loadDraft=function(draft){
+    $('postTitle').value=draft.title||'';
+    $('postCategory').value=draft.category||'';
+    $('postContent').value=draft.content||'';
+    $('postAnonymous').checked=draft.is_anonymous||false;
+    $('postModal').classList.add('active');
+  };
+  
+  // 发布时清空草稿
+  function clearForm(){
+    $('postTitle').value='';
+    $('postCategory').value='';
+    $('postContent').value='';
+    $('postAnonymous').checked=false;
+    selectedImages=[];
+    selectedVideo=null;
+    $('mediaPreview').innerHTML='';
+  }
+  
+  // 保存草稿按钮
+  $('saveDraftBtn').onclick=saveDraft;
+  
+  // 发布成功后清空表单和草稿
+  var originalSubmit=$('submitBtn').onclick;
+  $('submitBtn').onclick=async function(){
+    await originalSubmit();
+    // 清空草稿中已发布的内容
+    var cat=$('postCategory').value;
+    var drafts=JSON.parse(localStorage.getItem('postDrafts')||'[]');
+    drafts=drafts.filter(function(d){return d.category!==cat});
+    localStorage.setItem('postDrafts',JSON.stringify(drafts));
+  };
+  
+  // 取消时询问是否保存草稿
+  $('modalCancel').onclick=function(){
+    var title=$('postTitle').value.trim();
+    var content=$('postContent').value.trim();
+    if(title||content){
+      if(confirm('是否保存为草稿？')){
+        saveDraft();
+      }
+    }
+    $('postModal').classList.remove('active');
+    clearForm();
   };
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);

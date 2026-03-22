@@ -393,8 +393,14 @@
   };
 
   async function toggleBan(username,ban){
-    if(!confirm((ban?'封禁':'解封')+'用户 '+username+' ？'))return;
-    await sb.from('users').update({is_banned:ban}).eq('username',username);
+    // 二次确认
+    var action=ban?'封禁':'解封';
+    if(!confirm('⚠️ 确定要'+action+'用户 '+username+' ？'))return;
+    if(!confirm('再次确认：真的要'+action+'该用户吗？\n\n'+action+'后用户将'+(ban?'无法登录':'恢复登录')+'！'))return;
+    
+    var res=await sb.from('users').update({is_banned:ban}).eq('username',username);
+    if(res.error){alert('操作失败：'+res.error.message);return}
+    alert('已'+(ban?'封禁':'解封')+'用户 '+username);
     await loadProfile();
   }
 
