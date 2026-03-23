@@ -1,48 +1,5 @@
 {
-  "updated_at": "2026-03-23T12:50:00.000Z",
-  "count": 3,
-  "posts": [
-    {
-      "id": 1,
-      "title": "欢迎来到鹿城学院论坛",
-      "content": "这是学校论坛的第一条帖子！欢迎所有同学使用。",
-      "category": "campus",
-      "author": "admin",
-      "author_nickname": "管理员",
-      "created_at": "2026-03-23T04:00:00.000Z",
-      "likes": 5,
-      "is_pinned": true,
-      "is_anonymous": false,
-      "is_deleted": false,
-      "reply_count": 2
-    },
-    {
-      "id": 2,
-      "title": "二手交易：出售教科书",
-      "content": "出售大一到大三的计算机专业教科书，有意者请联系。",
-      "category": "trade",
-      "author": "student1",
-      "author_nickname": "小明同学",
-      "created_at": "2026-03-22T10:30:00.000Z",
-      "likes": 2,
-      "is_pinned": false,
-      "is_anonymous": false,
-      "is_deleted": false,
-      "reply_count": 0
-    },
-    {
-      "id": 3,
-      "title": "学习交流：Python入门",
-      "content": "有没有同学想一起学习Python？可以组个学习小组。",
-      "category": "learning",
-      "author": "student2",
-      "author_nickname": "小红",
-      "created_at": "2026-03-21T15:20:00.000Z",
-      "likes": 8,
-      "is_pinned": false,
-      "is_anonymous": true,
-      "is_deleted": false,
-      "reply_count": 3
-    }
-  ]
+  "updated_at": "2026-03-23T05:39:00.000Z",
+  "count": 0,
+  "posts": []
 }

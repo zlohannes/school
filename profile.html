@@ -2,528 +2,269 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>鹿城学院论坛 - 个人主页</title>
-  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 腾讯云 CloudBase SDK -->
-  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
-  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
-    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
     
-    /* 导航栏 */
-    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(11,15,20,0.9);border-bottom:1px solid rgba(255,255,255,0.06)}
     .nav-inner{max-width:800px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
-    .nav-logo img{height:24px}
-    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
-    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none;transition:all 0.2s}
-    .nav-link:hover,.nav-link.active{color:var(--text);background:rgba(255,255,255,0.06)}
-    .user-info{display:flex;align-items:center;gap:8px}
-    .avatar-sm{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden}
-    .avatar-sm img{width:100%;height:100%;object-fit:cover}
-    .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    .nav-logo{font-size:18px;font-weight:700;color:var(--text)}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    
+    .container{max-width:800px;margin:16px auto;padding:0 16px}
+    
+    .profile-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+    .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:70px;background:linear-gradient(135deg,rgba(76,201,240,0.15),rgba(168,85,247,0.15))}
+    
+    .avatar-section{position:relative;z-index:1;text-align:center;padding-top:35px}
+    .avatar-wrapper{display:inline-block;cursor:pointer;position:relative}
+    .avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;border:3px solid var(--card);box-shadow:0 4px 16px rgba(0,0,0,0.3);overflow:hidden;margin:0 auto}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .avatar-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);height:22px;display:flex;align-items:center;justify-content:center;border-radius:0 0 50% 50%;opacity:0;font-size:10px}
+    .avatar-wrapper:active .avatar-overlay{opacity:1}
+    .avatar-hint{font-size:10px;color:var(--muted);margin-top:6px}
+    
+    .nickname{font-size:18px;font-weight:700;margin-top:10px}
+    .role-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-top:6px}
     .role-student{background:rgba(76,201,240,0.2);color:var(--acc)}
     .role-teacher{background:rgba(34,197,94,0.2);color:#22c55e}
     .role-admin{background:rgba(239,68,68,0.2);color:#ef4444}
-    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.2s}
-    .btn:hover{border-color:var(--acc);background:rgba(76,201,240,0.1)}
     
-    /* 主内容 */
-    .container{max-width:800px;margin:20px auto;padding:0 16px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+    .info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px}
+    .info-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+    .info-value{font-size:13px;font-weight:600}
     
-    /* 个人资料卡片 */
-    .profile-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
-    .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(135deg,rgba(76,201,240,0.15),rgba(168,85,247,0.15))}
-    
-    .avatar-section{position:relative;z-index:1;text-align:center;padding-top:40px}
-    .avatar-wrapper{display:inline-block;cursor:pointer;position:relative}
-    .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;border:3px solid var(--card);box-shadow:0 4px 20px rgba(0,0,0,0.3);overflow:hidden;transition:transform 0.2s}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .avatar-wrapper:hover .avatar{transform:scale(1.05)}
-    .avatar-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);height:24px;display:flex;align-items:center;justify-content:center;border-radius:0 0 50% 50%;opacity:0;transition:opacity 0.2s;font-size:11px}
-    .avatar-wrapper:hover .avatar-overlay{opacity:1}
-    .avatar-hint{font-size:11px;color:var(--muted);margin-top:8px}
-    
-    .nickname{font-size:20px;font-weight:700;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px}
-    
-    .stats{display:flex;justify-content:center;gap:32px;margin-top:16px}
-    .stat{text-align:center}
-    .stat-num{font-size:22px;font-weight:700;color:var(--acc)}
-    .stat-label{font-size:12px;color:var(--muted);margin-top:2px}
-    
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;max-width:360px;margin-left:auto;margin-right:auto}
-    .info-item{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
-    .info-label{font-size:11px;color:var(--muted);margin-bottom:2px}
-    .info-value{font-size:14px}
-    
-    .edit-btn{position:absolute;top:12px;right:12px;z-index:2}
-    
-    /* 编辑表单 */
-    .edit-form{display:none;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06)}
-    .edit-form.show{display:block}
+    .edit-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;margin-bottom:12px;display:none}
+    .edit-card.active{display:block}
+    .edit-card h3{font-size:15px;margin-bottom:14px;color:var(--acc)}
     .form-group{margin-bottom:12px}
-    .form-group label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
-    .form-group input,.form-group select{width:100%;padding:10px 12px;background:#1a2332;color:var(--text);border:1px solid rgba(255,255,255,0.12);border-radius:8px;font-size:14px}
-    .form-group input:focus,.form-group select:focus{border-color:var(--acc);outline:none}
-    .form-group select option{background:#1a2332;color:var(--text)}
-    .btn-row{display:flex;gap:8px;margin-top:16px}
-    .btn-primary{background:linear-gradient(135deg,rgba(76,201,240,0.2),rgba(168,85,247,0.2));border-color:rgba(76,201,240,0.35)}
+    .form-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+    .form-group input,.form-group select{width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:14px}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--acc)}
+    .form-group select option{background:#1a2030}
+    .btn-row{display:flex;gap:10px;margin-top:14px}
+    .btn{flex:1;padding:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:14px;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,rgba(76,201,240,0.2),rgba(168,85,247,0.2));border-color:var(--acc)}
     
-    /* 标签页 */
-    .tabs{display:flex;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:16px;overflow:hidden}
-    .tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent}
-    .tab:hover{color:var(--text);background:rgba(255,255,255,0.02)}
-    .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-    
-    /* 列表 */
-    .list{display:flex;flex-direction:column;gap:10px}
-    .post-item,.reply-item{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s}
-    .post-item:hover{border-color:rgba(76,201,240,0.3);transform:translateY(-1px)}
-    .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;margin-bottom:6px}
-    .cat-learning{background:rgba(76,175,80,0.2);color:#4CAF50}
-    .cat-campus{background:rgba(33,150,243,0.2);color:#2196F3}
-    .cat-trade{background:rgba(255,152,0,0.2);color:#FF9800}
-    .cat-job{background:rgba(156,39,176,0.2);color:#9C27B0}
-    .cat-chat{background:rgba(255,87,34,0.2);color:#FF5722}
-    .cat-notice{background:rgba(244,67,54,0.2);color:#f44336}
-    .post-title{font-size:14px;font-weight:600;margin-bottom:4px}
-    .post-meta{font-size:12px;color:var(--muted);display:flex;gap:12px}
-    .reply-to{font-size:13px;color:var(--acc);margin-bottom:4px}
-    .reply-to a{color:var(--acc);text-decoration:none}
-    .reply-to a:hover{text-decoration:underline}
-    .reply-content{font-size:14px;color:var(--text);line-height:1.5;margin-bottom:6px}
-    .reply-meta{font-size:12px;color:var(--muted)}
-    
-    /* 空状态 */
-    .empty{text-align:center;padding:40px 20px;color:var(--muted)}
-    .empty-icon{font-size:48px;margin-bottom:10px}
-    
-    /* 头像弹窗 */
-    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:300;padding:20px}
-    .modal-overlay.active{display:flex}
-    .modal-box{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;width:100%;max-width:360px;padding:24px;text-align:center}
-    .modal-title{font-size:18px;font-weight:600;margin-bottom:16px}
-    .avatar-preview{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;overflow:hidden}
+    .avatar-upload{display:none}
+    .avatar-preview-area{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+    .avatar-preview{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
     .avatar-preview img{width:100%;height:100%;object-fit:cover}
-    .progress-bar{height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:12px;overflow:hidden;display:none}
-    .progress-bar .bar{height:100%;background:var(--acc);width:0;transition:width 0.3s}
-    .modal-btns{display:flex;gap:8px;margin-top:16px}
-    .btn-full{flex:1}
+    .avatar-upload-btn{flex:1}
     
-    /* 加载 */
-    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
-    .loading.hidden{display:none}
-    .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    .success-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;display:none}
     
-    /* 管理员用户管理 */
-    .user-item{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .user-info-left{flex:1;min-width:120px}
-    .user-name{font-weight:600;font-size:14px}
-    .user-meta{font-size:12px;color:var(--muted)}
-    .ban-btn{padding:4px 12px;font-size:12px}
-    .ban-btn.banned{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.3);color:#22c55e}
-    .ban-btn.not-banned{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#ef4444}
+    .notice-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:12px}
+    .notice-title{font-weight:600;font-size:14px;margin-bottom:10px}
+    .notice-text{font-size:12px;color:var(--muted);line-height:1.7}
+    .notice-phone{color:var(--acc)}
+    
+    .post-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
+    .post-item:last-child{border-bottom:none}
+    .post-title{font-size:13px;font-weight:600;margin-bottom:4px}
+    .post-preview{font-size:12px;color:var(--muted);margin:4px 0;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    .post-meta{font-size:11px;color:var(--muted);display:flex;gap:10px}
+    .empty-posts{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+    
+    @media(max-width:480px){
+      .container{padding:0 12px;margin:12px auto}
+      .profile-card,.edit-card,.notice-card{padding:16px;border-radius:12px}
+      .avatar{width:60px;height:60px;font-size:24px}
+      .nickname{font-size:16px}
+      .info-grid{gap:8px}
+      .info-item{padding:8px}
+      .info-value{font-size:12px}
+    }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div class="success-toast" id="toast">✅ 保存成功！</div>
   
   <nav class="navbar">
     <div class="nav-inner">
-      <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
-      <div class="nav-links">
-        <a href="forum.html" class="nav-link">首页</a>
-        <a href="profile.html" class="nav-link active">我的</a>
-        <div class="user-info" id="navUserInfo"></div>
-        <button class="btn" id="logoutBtn">退出</button>
-      </div>
+      <a href="forum.html" class="nav-logo">🏫 鹿城学院论坛</a>
+      <a href="forum.html" class="nav-link">← 返回</a>
     </div>
   </nav>
   
   <div class="container">
     <div class="profile-card">
-      <button class="btn edit-btn" id="editBtn">✏️ 编辑</button>
       <div class="avatar-section">
-        <div class="avatar-wrapper" id="avatarWrapper">
-          <div class="avatar" id="avatarEl"></div>
-          <div class="avatar-overlay">📷 换头像</div>
+        <div class="avatar-wrapper" onclick="openEdit()">
+          <div class="avatar" id="avatarDisplay"></div>
+          <div class="avatar-overlay">✏️</div>
         </div>
-        <div class="avatar-hint">点击更换头像</div>
-        <div class="nickname"><span id="displayName"></span><span class="role-tag" id="profileRole"></span></div>
-        <div class="stats">
-          <div class="stat"><div class="stat-num" id="postCount">0</div><div class="stat-label">发帖</div></div>
-          <div class="stat"><div class="stat-num" id="replyCount">0</div><div class="stat-label">回复</div></div>
-        </div>
-        <div class="info-grid">
-          <div class="info-item"><div class="info-label">性别</div><div class="info-value" id="infoGender">-</div></div>
-          <div class="info-item"><div class="info-label">注册时间</div><div class="info-value" id="infoJoined">-</div></div>
-        </div>
+        <div class="avatar-hint">点击头像编辑</div>
+        <div class="nickname" id="nicknameDisplay"></div>
+        <div id="roleDisplay"></div>
       </div>
-      <div class="edit-form" id="editForm">
-        <div class="form-group"><label>昵称</label><input type="text" id="editNickname"></div>
-        <div class="form-group"><label>性别</label>
-          <select id="editGender">
-            <option value="男">男</option>
-            <option value="女">女</option>
-          </select>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="saveBtn">保存</button>
-          <button class="btn" id="cancelBtn">取消</button>
-        </div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">用户名</div><div class="info-value" id="usernameDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">性别</div><div class="info-value" id="genderDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">专业</div><div class="info-value" id="majorDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">注册时间</div><div class="info-value" id="createdDisplay">-</div></div>
       </div>
     </div>
     
-    <div class="tabs">
-      <div class="tab active" id="tabPosts">📝 我的帖子</div>
-      <div class="tab" id="tabReplies">💬 我的回复</div>
-      <div class="tab" id="tabAdmin" style="display:none">⚙️ 用户管理</div>
+    <div class="edit-card" id="editCard">
+      <h3>✏️ 编辑资料</h3>
+      <div class="form-group">
+        <label>头像</label>
+        <div class="avatar-preview-area">
+          <div class="avatar-preview" id="avatarPreview"></div>
+          <div class="avatar-upload-btn">
+            <button class="btn" onclick="document.getElementById('avatarInput').click()" style="width:100%">📷 上传头像</button>
+            <input type="file" id="avatarInput" class="avatar-upload" accept="image/*" onchange="previewAvatar(this)">
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>昵称</label><input type="text" id="editNickname" placeholder="请输入昵称" maxlength="20"></div>
+      <div class="form-group"><label>性别</label>
+        <select id="editGender"><option value="">请选择</option><option value="男">男</option><option value="女">女</option></select>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeEdit()">取消</button>
+        <button class="btn btn-primary" onclick="saveProfile()">💾 保存</button>
+      </div>
     </div>
     
-    <div class="list" id="postsList"></div>
-    <div class="list" id="repliesList" style="display:none"></div>
-    <div class="list" id="adminList" style="display:none"></div>
-  </div>
-  
-  <!-- 头像弹窗 -->
-  <div class="modal-overlay" id="avatarModal">
-    <div class="modal-box">
-      <div class="modal-title">更换头像</div>
-      <div class="avatar-preview" id="avatarPreview"></div>
-      <div class="progress-bar" id="progressBar"><div class="bar"></div></div>
-      <div class="modal-btns">
-        <button class="btn btn-full" id="selectBtn">📷 选择图片</button>
-        <button class="btn btn-primary btn-full" id="uploadBtn" disabled>✅ 上传</button>
-      </div>
-      <button class="btn btn-full" id="cancelModalBtn" style="margin-top:10px">取消</button>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <div class="notice-card">
+      <div class="notice-title">📢 公告栏</div>
+      <div class="notice-text">网站处于起步阶段，很多功能未开发完全，敬请谅解。<br>如有反馈与建议请联系：<span class="notice-phone">13587769094（微信同号）</span></div>
+    </div>
+    
+    <div class="profile-card">
+      <div class="notice-title">📝 发布的帖子</div>
+      <div id="myPostsList"></div>
     </div>
   </div>
 
-  <script>
-(function(){
-  var app=tcb.init({env:window.CLOUDBASE_ENV});
-  var db=app.database();
-  var _=db.command;
-  var catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
-  var catBg={learning:'#4CAF50',campus:'#2196F3',trade:'#FF9800',job:'#9C27B0',chat:'#FF5722',notice:'#f44336'};
-  var roleNames={student:'学生',teacher:'老师',admin:'管理员'};
-  
-  var currentUser=null,userData=null,selectedFile=null;
-  var postsLoaded=false,repliesLoaded=false,adminLoaded=false;
+<script>
+const USERS_KEY = 'forum_users';
+const POSTS_KEY = 'forum_posts';
+let currentUser = null;
+let newAvatarData = null;
 
-  function $(id){return document.getElementById(id)}
-  function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
-  function timeAgo(d){var s=Math.floor((Date.now()-new Date(d))/1000);if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+'分钟前';if(s<86400)return Math.floor(s/3600)+'小时前';if(s<2592000)return Math.floor(s/86400)+'天前';return new Date(d).toLocaleDateString('zh-CN')}
+function $(id){return document.getElementById(id)}
 
-  async function init(){
-    var s=sessionStorage.getItem('currentUser');
-    if(!s){location.href='index.html';return}
-    currentUser=JSON.parse(s);
-    // 先显示基本信息，不等待加载
-    showBasicInfo();
-    $('loading').classList.add('hidden');
-    // 后台加载详细数据
-    loadProfile();
+function getUsers() {
+  const data = localStorage.getItem(USERS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function init() {
+  const str = sessionStorage.getItem('currentUser');
+  if (!str) { window.location.href = 'index.html'; return; }
+  currentUser = JSON.parse(str);
+  const users = getUsers();
+  const stored = users.find(u => u.username === currentUser.username);
+  if (stored) currentUser = Object.assign({}, currentUser, stored);
+  renderProfile();
+  loadMyPosts();
+}
+
+function renderProfile() {
+  const avatarEl = $('avatarDisplay');
+  if (currentUser.avatar) {
+    avatarEl.innerHTML = '<img src="' + currentUser.avatar + '">';
+  } else {
+    avatarEl.textContent = (currentUser.nickname || currentUser.username || '?').charAt(0).toUpperCase();
   }
+  $('nicknameDisplay').textContent = currentUser.nickname || currentUser.username;
+  const roleMap = {admin:['管理员','role-admin'],teacher:['老师','role-teacher'],student:['学生','role-student']};
+  const [roleName, roleClass] = roleMap[currentUser.role] || ['学生','role-student'];
+  $('roleDisplay').innerHTML = '<span class="role-tag ' + roleClass + '">' + roleName + '</span>';
+  $('usernameDisplay').textContent = currentUser.username || '-';
+  $('genderDisplay').textContent = currentUser.gender || '-';
+  $('majorDisplay').textContent = currentUser.major || '-';
+  $('createdDisplay').textContent = currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('zh-CN') : '-';
+}
 
-  // 快速显示基本信息（从 sessionStorage，无需网络请求）
-  function showBasicInfo(){
-    var nn = currentUser.nickname || currentUser.username;
-    var role = 'student';
-    $('avatarEl').textContent = nn.charAt(0).toUpperCase();
-    $('displayName').textContent = nn;
-    $('profileRole').textContent = '学生';
-    $('profileRole').className = 'role-tag role-student';
-    $('navUserInfo').innerHTML = '<div class="avatar-sm">'+nn.charAt(0).toUpperCase()+'</div><span class="role-tag role-student">学生</span>';
-    $('postsList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
+function openEdit() {
+  $('editCard').classList.add('active');
+  $('editNickname').value = currentUser.nickname || '';
+  $('editGender').value = currentUser.gender || '';
+  const previewEl = $('avatarPreview');
+  if (currentUser.avatar) {
+    previewEl.innerHTML = '<img src="' + currentUser.avatar + '">';
+  } else {
+    previewEl.textContent = (currentUser.nickname || '?').charAt(0).toUpperCase();
   }
+  $('editCard').scrollIntoView({behavior:'smooth'});
+}
 
-  async function loadProfile(){
-    // 并行请求用户信息 + 统计数据
-    var [userRes, postsCountRes, repliesCountRes] = await Promise.all([
-      db.collection('users').where({username:currentUser.username}).limit(1).get(),
-      db.collection('posts').where({author:currentUser.username,is_deleted:_.neq(true)}).count(),
-      db.collection('replies').where({author:currentUser.username,is_deleted:_.neq(true)}).count()
-    ]);
-    
-    userData = userRes.data && userRes.data[0] ? userRes.data[0] : null;
-    if(!userData) return;
-    
-    var nn = userData.nickname || currentUser.username;
-    var role = userData.role || 'student';
-    
-    // 头像
-    var av = userData.avatar_data || userData.avatar_url || '';
-    if(av){
-      $('avatarEl').innerHTML = '<img src="'+esc(av)+'">';
-    }else{
-      $('avatarEl').textContent = nn.charAt(0).toUpperCase();
-    }
-    
-    $('displayName').textContent = nn;
-    $('profileRole').textContent = roleNames[role] || '学生';
-    $('profileRole').className = 'role-tag role-'+role;
-    
-    $('infoGender').textContent = userData.gender || '男';
-    $('infoJoined').textContent = userData.created_at ? new Date(userData.created_at).toLocaleDateString('zh-CN') : '-';
-    
-    $('editNickname').value = nn;
-    $('editGender').value = userData.gender || '男';
-    
-    // 导航栏
-    var navAv = av ? '<img src="'+esc(av)+'">' : nn.charAt(0).toUpperCase();
-    $('navUserInfo').innerHTML = '<div class="avatar-sm">'+navAv+'</div><span class="role-tag role-'+role+'">'+(roleNames[role] || '学生')+'</span>';
-    
-    // 统计（已经并行加载完成）
-    $('postCount').textContent = postsCountRes.total || 0;
-    $('replyCount').textContent = repliesCountRes.total || 0;
-    
-    // 管理员：显示管理 tab（但不立即加载用户列表）
-    if(role === 'admin'){
-      $('tabAdmin').style.display = 'block';
-    }
-    
-    // 只加载当前显示的内容（默认是帖子列表）
-    loadPostsIfNeeded();
-  }
+function closeEdit() {
+  $('editCard').classList.remove('active');
+  newAvatarData = null;
+}
 
-  // 延迟加载：帖子列表
-  async function loadPostsIfNeeded(){
-    if(postsLoaded) return;
-    $('postsList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var myPostsRes = await db.collection('posts').where({author:currentUser.username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
-    renderPosts((myPostsRes.data||[]).map(function(p){return Object.assign({},p,{id:p._id});}));
-    postsLoaded = true;
-  }
-
-  // 延迟加载：回复列表
-  async function loadRepliesIfNeeded(){
-    if(repliesLoaded) return;
-    $('repliesList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var myRepliesRes = await db.collection('replies').where({author:currentUser.username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
-    renderReplies((myRepliesRes.data||[]).map(function(r){return Object.assign({},r,{id:r._id});}));
-    repliesLoaded = true;
-  }
-
-  // 延迟加载：管理员用户列表
-  async function loadAdminIfNeeded(){
-    if(adminLoaded) return;
-    $('adminList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var usersRes = await db.collection('users').orderBy('created_at','desc').limit(100).get();
-    renderAdmin(usersRes.data || []);
-    adminLoaded = true;
-  }
-
-  function renderPosts(posts){
-    if(!posts.length){
-      $('postsList').innerHTML='<div class="empty"><div class="empty-icon">📭</div><div>还没有发过帖子</div></div>';
-      return;
-    }
-    $('postsList').innerHTML=posts.map(function(p){
-      var cn=catNames[p.category]||'其他';
-      var bg=catBg[p.category]||'#999';
-      return'<div class="post-item" onclick="location.href=\'post.html?id='+p.id+'\'">'+
-        '<span class="cat-tag" style="background:'+bg+'20;color:'+bg+'">'+cn+'</span>'+
-        '<div class="post-title">'+esc(p.title)+'</div>'+
-        '<div class="post-meta"><span>👍 '+(p.likes||0)+'</span><span>'+timeAgo(p.created_at)+'</span></div></div>';
-    }).join('');
-  }
-
-  function renderReplies(replies){
-    if(!replies.length){
-      $('repliesList').innerHTML='<div class="empty"><div class="empty-icon">💬</div><div>还没有回复过</div></div>';
-      return;
-    }
-    $('repliesList').innerHTML=replies.map(function(r){
-      return'<div class="reply-item">'+
-        '<div class="reply-to">回复了 <a href="post.html?id='+r.post_id+'">查看帖子</a></div>'+
-        '<div class="reply-content">'+esc(r.content)+'</div>'+
-        '<div class="reply-meta">'+timeAgo(r.created_at)+'</div></div>';
-    }).join('');
-  }
-
-  function renderAdmin(users){
-    if(!users.length){
-      $('adminList').innerHTML='<div class="empty"><div class="empty-icon">👤</div><div>暂无用户</div></div>';
-      return;
-    }
-    $('adminList').innerHTML=users.map(function(u){
-      var nn=u.nickname||u.username;
-      var banned=u.is_banned;
-      return'<div class="user-item">'+
-        '<div class="user-info-left"><div class="user-name">'+esc(nn)+' <span style="color:var(--muted);font-size:12px">('+esc(u.username)+')</span></div>'+
-        '<div class="user-meta">'+(u.major||'')+' · '+(u.gender||'')+'</div></div>'+
-        '<span class="role-tag role-'+(u.role||'student')+'">'+(roleNames[u.role]||'学生')+'</span>'+
-        '<span style="font-size:11px;padding:2px 8px;border-radius:10px;'+(banned?'background:rgba(239,68,68,0.15);color:#ef4444':'background:rgba(34,197,94,0.15);color:#22c55e')+'">'+(banned?'🔒 已封禁':'✅ 正常')+'</span>'+
-        (u.username!==currentUser.username?
-          '<button class="btn" style="padding:4px 10px;font-size:12px;background:rgba(76,201,240,0.15);border-color:rgba(76,201,240,0.3)" onclick="resetUserPassword(\''+u.username+'\')">🔑 重置密码</button>'+
-          '<button class="btn ban-btn '+(banned?'banned':'not-banned')+'" data-user="'+u.username+'" data-banned="'+banned+'">'+(banned?'🔓 解封':'🔒 封号')+'</button>'
-        :'')+
-      '</div>';
-    }).join('');
-    
-    // 绑定封号按钮
-    $('adminList').querySelectorAll('.ban-btn').forEach(function(btn){
-      btn.onclick=function(){toggleBan(this.getAttribute('data-user'),this.getAttribute('data-banned')!=='true')};
-    });
-  }
-
-  window.resetUserPassword=async function(username){
-    var newPwd=prompt('请输入 '+username+' 的新密码（6-20位）：');
-    if(!newPwd)return;
-    if(newPwd.length<6||newPwd.length>20){alert('密码长度应为6-20位');return}
-    
-    var confirmed=confirm('确定将用户 '+username+' 的密码重置为：'+newPwd+'\n\n请将此密码告知用户！');
-    if(!confirmed)return;
-    
-    // SHA-256 加密新密码
-    var PASSWORD_SALT=window.PASSWORD_SALT||'lc_forum_2026_secure';
-    var encoder=new TextEncoder();
-    var data=encoder.encode(newPwd+PASSWORD_SALT);
-    var hashBuffer=await crypto.subtle.digest('SHA-256',data);
-    var hashArray=Array.from(new Uint8Array(hashBuffer));
-    var hashedPwd=hashArray.map(function(b){return b.toString(16).padStart(2,'0')}).join('');
-    
-    var userToReset = await db.collection('users').where({username:username}).limit(1).get();
-    if(!userToReset.data||!userToReset.data[0]){alert('用户不存在');return;}
-    var res=await db.collection('users').doc(userToReset.data[0]._id).update({password:hashedPwd});
-    if(res.updated===0){alert('重置失败');return}
-    alert('密码已重置！新密码：'+newPwd+'\n\n请告知用户！');
+function previewAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    newAvatarData = e.target.result;
+    $('avatarPreview').innerHTML = '<img src="' + newAvatarData + '">';
   };
+  reader.readAsDataURL(file);
+}
 
-  async function toggleBan(username,ban){
-    // 二次确认
-    var action=ban?'封禁':'解封';
-    if(!confirm('⚠️ 确定要'+action+'用户 '+username+' ？'))return;
-    if(!confirm('再次确认：真的要'+action+'该用户吗？\n\n'+action+'后用户将'+(ban?'无法登录':'恢复登录')+'！'))return;
-    
-    var userToBan = await db.collection('users').where({username:username}).limit(1).get();
-    if(!userToBan.data||!userToBan.data[0]){alert('用户不存在');return;}
-    var res=await db.collection('users').doc(userToBan.data[0]._id).update({is_banned:ban});
-    if(res.updated===0){alert('操作失败');return}
-    alert('已'+(ban?'封禁':'解封')+'用户 '+username);
-    await loadProfile();
+function saveProfile() {
+  const nickname = $('editNickname').value.trim();
+  const gender = $('editGender').value;
+  if (!nickname) { alert('昵称不能为空'); return; }
+  const users = getUsers();
+  const idx = users.findIndex(u => u.username === currentUser.username);
+  const updates = {nickname, gender};
+  if (newAvatarData) updates.avatar = newAvatarData;
+  if (idx >= 0) {
+    users[idx] = Object.assign({}, users[idx], updates);
+    saveUsers(users);
   }
+  currentUser = Object.assign({}, currentUser, updates);
+  sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  closeEdit();
+  renderProfile();
+  showToast();
+}
 
-  // 事件
-  $('logoutBtn').onclick=function(){sessionStorage.clear();location.href='index.html'};
-  
-  $('editBtn').onclick=function(){
-    var f=$('editForm');
-    var show=f.classList.toggle('show');
-    $('editBtn').textContent=show?'✕ 取消':'✏️ 编辑';
-  };
-  
-  $('cancelBtn').onclick=function(){$('editForm').classList.remove('show');$('editBtn').textContent='✏️ 编辑'};
-  
-  $('saveBtn').onclick=async function(){
-    var nn=$('editNickname').value.trim();
-    var gd=$('editGender').value;
-    if(!nn){alert('昵称不能为空');return}
-    $('saveBtn').disabled=true;
-    var userToEdit = await db.collection('users').where({username:currentUser.username}).limit(1).get();
-    if(userToEdit.data&&userToEdit.data[0]){
-      await db.collection('users').doc(userToEdit.data[0]._id).update({nickname:nn,gender:gd});
-    }
-    currentUser.nickname=nn;
-    sessionStorage.setItem('currentUser',JSON.stringify(currentUser));
-    $('editForm').classList.remove('show');
-    $('editBtn').textContent='✏️ 编辑';
-    $('saveBtn').disabled=false;
-    await loadProfile();
-  };
+function showToast() {
+  $('toast').style.display = 'block';
+  setTimeout(() => {$('toast').style.display = 'none';}, 2000);
+}
 
-  // 标签页（延迟加载）
-  $('tabPosts').onclick = function(){
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    this.classList.add('active');
-    $('postsList').style.display = 'flex';
-    $('repliesList').style.display = 'none';
-    $('adminList').style.display = 'none';
-    loadPostsIfNeeded();
-  };
-  $('tabReplies').onclick = function(){
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    this.classList.add('active');
-    $('postsList').style.display = 'none';
-    $('repliesList').style.display = 'flex';
-    $('adminList').style.display = 'none';
-    loadRepliesIfNeeded();
-  };
-  $('tabAdmin').onclick = function(){
-    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-    this.classList.add('active');
-    $('postsList').style.display = 'none';
-    $('repliesList').style.display = 'none';
-    $('adminList').style.display = 'flex';
-    loadAdminIfNeeded();
-  };
+function loadMyPosts() {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const myPosts = posts.filter(p => !p.is_deleted && p.author === currentUser.username);
+  const el = $('myPostsList');
+  if (myPosts.length === 0) {
+    el.innerHTML = '<div class="empty-posts">还没有发布过帖子</div>';
+    return;
+  }
+  el.innerHTML = myPosts.map(p => '<div class="post-item" onclick="window.location.href=\'post.html?id=' + p.id + '\'"><div class="post-title">' + p.title + '</div><div class="post-preview">' + p.content + '</div><div class="post-meta"><span>💬 ' + (p.reply_count || 0) + '</span><span>⏰ ' + timeAgo(p.created_at) + '</span></div></div>').join('');
+}
 
-  // 头像上传
-  $('avatarWrapper').onclick=function(){$('avatarModal').classList.add('active');selectedFile=null;$('uploadBtn').disabled=true;$('progressBar').style.display='none'};
-  $('cancelModalBtn').onclick=function(){$('avatarModal').classList.remove('active')};
-  $('selectBtn').onclick=function(){$('fileInput').click()};
-  
-  $('fileInput').onchange=function(){
-    var file=this.files[0];
-    if(!file)return;
-    if(!file.type.startsWith('image/')){alert('请选择图片');return}
-    if(file.size>5*1024*1024){alert('图片不能超过5MB');return}
-    selectedFile=file;
-    var reader=new FileReader();
-    reader.onload=function(e){
-      $('avatarPreview').innerHTML='<img src="'+e.target.result+'">';
-      $('uploadBtn').disabled=false;
-    };
-    reader.readAsDataURL(file);
-  };
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
 
-  $('uploadBtn').onclick=async function(){
-    if(!selectedFile)return;
-    $('uploadBtn').disabled=true;
-    $('progressBar').style.display='block';
-    $('progressBar').querySelector('.bar').style.width='30%';
-    
-    try{
-      var reader=new FileReader();
-      var base64=await new Promise(function(resolve,reject){
-        reader.onload=function(e){resolve(e.target.result)};
-        reader.onerror=reject;
-        reader.readAsDataURL(selectedFile);
-      });
-      
-      $('progressBar').querySelector('.bar').style.width='70%';
-      
-      var userToUpdate = await db.collection('users').where({username:currentUser.username}).limit(1).get();
-      if(userToUpdate.data&&userToUpdate.data[0]){
-        await db.collection('users').doc(userToUpdate.data[0]._id).update({avatar_data:base64});
-      }
-      
-      $('progressBar').querySelector('.bar').style.width='100%';
-      userData.avatar_data=base64;
-      $('avatarModal').classList.remove('active');
-      
-      var av=base64;
-      $('avatarEl').innerHTML='<img src="'+esc(av)+'">';
-      var navAv='<img src="'+esc(av)+'">';
-      $('navUserInfo').innerHTML='<div class="avatar-sm">'+navAv+'</div><span class="role-tag role-'+(userData.role||'student')+'">'+(roleNames[userData.role]||'学生')+'</span>';
-      
-      alert('头像更换成功！');
-    }catch(e){
-      alert('上传失败：'+e.message);
-      $('progressBar').style.display='none';
-      $('uploadBtn').disabled=false;
-    }
-  };
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);
-  else init();
-})();
-  </script>
+init();
+</script>
 </body>
 </html>

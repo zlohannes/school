@@ -2,49 +2,55 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>鹿城学院论坛 - 登录注册</title>
-  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
     .container{width:100%;max-width:420px}
-    .card{background:white;padding:25px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.15)}
-    h1{color:#333;text-align:center;font-size:22px;margin-bottom:3px}
-    .subtitle{color:#666;text-align:center;font-size:13px;margin-bottom:20px}
-    h2{color:#333;font-size:16px;margin-bottom:15px}
-    .form-group{margin-bottom:12px}
-    .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
-    .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box}
-    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#667eea;outline:none}
-    .form-group textarea{resize:vertical;min-height:60px}
-    .form-group .note{font-size:11px;color:#666;margin-top:3px}
-    .form-group .note strong{color:#28a745}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .radio-group{display:flex;gap:15px;margin-top:6px}
-    .radio-option{display:flex;align-items:center;gap:4px;font-size:13px}
-    .btn{width:100%;background:#667eea;color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
-    .btn:hover{background:#5568d3}
-    .btn:disabled{background:#aaa;cursor:not-allowed}
+    .card{background:white;padding:24px 20px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.2)}
+    h1{color:#333;text-align:center;font-size:20px;margin-bottom:4px}
+    .subtitle{color:#666;text-align:center;font-size:13px;margin-bottom:18px}
     
-    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px}
-    .guest-btn:hover{background:linear-gradient(135deg,#059669,#047857)}
-    .guest-divider{display:flex;align-items:center;margin:15px 0;color:#999;font-size:12px}
-    .guest-divider::before,.guest-divider::after{content:'';flex:1;height:1px;background:#ddd}
-    .tabs{display:flex;gap:10px;margin-bottom:15px;border-bottom:2px solid #eee}
-    .tab{padding:8px 16px;color:#666;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+    .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #eee}
+    .tab{padding:10px 16px;color:#666;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:14px}
     .tab.active{color:#667eea;border-bottom-color:#667eea;font-weight:600}
+    
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:6px}
+    .form-group input,.form-group select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;appearance:none;-webkit-appearance:none}
+    .form-group input:focus,.form-group select:focus{border-color:#667eea;outline:none}
+    .form-group select{background:#fff}
+    .form-group select option{padding:8px}
+    .note{font-size:11px;color:#888;margin-top:4px}
+    
+    .btn{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+    .btn:active{opacity:0.9}
+    
+    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:12px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px}
+    .guest-btn:active{opacity:0.9}
+    
     .hidden{display:none}
-    .checkbox-group{display:flex;align-items:center;gap:6px;margin-top:8px}
-    .checkbox-group input{width:auto}
-    .checkbox-group label{font-weight:normal;font-size:12px}
-    .error{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin-bottom:15px;font-size:13px;display:none}
+    .error{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:8px;margin-bottom:14px;font-size:13px;display:none}
+    
+    .checkbox-group{display:flex;align-items:flex-start;gap:8px;margin-top:10px}
+    .checkbox-group input{width:16px;height:16px;margin-top:2px;flex-shrink:0}
+    .checkbox-group label{font-weight:normal;font-size:12px;color:#666;line-height:1.4}
+    .checkbox-group a{color:#667eea}
+    
+    @media(max-width:400px){
+      .card{padding:20px 16px}
+      h1{font-size:18px}
+      .form-group input,.form-group select{padding:10px;font-size:14px}
+      .btn,.guest-btn{padding:10px;font-size:14px}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h1><img src="https://www.wzvtc.cn/favicon.ico" style="width:28px;vertical-align:middle;margin-right:8px">鹿城学院论坛</h1>
+      <h1>🏫 鹿城学院论坛</h1>
       <p class="subtitle">温州职业技术学院</p>
       
       <div class="tabs">
@@ -54,30 +60,25 @@
       
       <div class="error" id="error"></div>
       
-      <!-- 登录 -->
       <div id="loginBox">
-        
-        <form id="loginForm">
-          <div class="form-group"><label>用户名 *</label><input type="text" id="loginUsername" required placeholder="请输入用户名"></div>
-          <div class="form-group"><label>密码 *</label><input type="password" id="loginPassword" required placeholder="请输入密码"></div>
+        <form id="loginForm" onsubmit="doLogin(event)">
+          <div class="form-group"><label>用户名 *</label><input type="text" id="loginUsername" required placeholder="请输入用户名" autocomplete="username"></div>
+          <div class="form-group"><label>密码 *</label><input type="password" id="loginPassword" required placeholder="请输入密码" autocomplete="current-password"></div>
           <button type="submit" class="btn">登录</button>
         </form>
       </div>
       
-      <!-- 注册 -->
       <div id="registerBox" class="hidden">
-        <form id="registerForm">
+        <form id="registerForm" onsubmit="doRegister(event)">
           <div class="form-group">
             <label>用户名 *</label>
-            <input type="text" id="regUsername" required placeholder="请输入用户名" maxlength="20">
+            <input type="text" id="regUsername" required placeholder="请输入用户名" maxlength="20" autocomplete="username">
             <div class="note">用户名注册后不可更改</div>
           </div>
           <div class="form-group"><label>昵称 *</label><input type="text" id="regNickname" required placeholder="公开显示的昵称" maxlength="20"></div>
-          <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" required placeholder="6-20位" minlength="6" maxlength="20"></div>
-          <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirmPassword" required placeholder="再次输入" minlength="6" maxlength="20"></div>
-          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" required placeholder="仅管理员可见">
-            <div class="note">真实姓名仅管理员可见</div>
-          </div>
+          <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" required placeholder="6-20位" minlength="6" maxlength="20" autocomplete="new-password"></div>
+          <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirmPassword" required placeholder="再次输入" minlength="6" maxlength="20" autocomplete="new-password"></div>
+          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" required placeholder="仅管理员可见"></div>
           <div class="form-group">
             <label>专业</label>
             <select id="regMajor">
@@ -89,7 +90,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>性别</label>
+            <label>性别 *</label>
             <select id="regGender" required>
               <option value="">请选择</option>
               <option value="男">男</option>
@@ -111,34 +112,26 @@
         </form>
       </div>
       
-      <div class="guest-divider"><span>或</span></div>
-      <button class="guest-btn" id="guestBtn">👀 游客浏览（仅查看）</button>
-      
-      
+      <button class="guest-btn" onclick="guestLogin()">👀 游客浏览</button>
     </div>
   </div>
 
 <script>
-// 本地存储 key
 const USERS_KEY = 'forum_users';
-const ADMIN_CODE = 'zrw'; // 管理员注册码
+const ADMIN_CODE = 'zrw';
 
 function $(id){return document.getElementById(id)}
 
-// 获取用户列表
 function getUsers() {
   const data = localStorage.getItem(USERS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-// 保存用户列表
 function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
-// 初始化默认管理员（强制覆盖）
 function initDefaultUsers() {
-  // 强制设置默认管理员
   const users = [{
     username: 'lohannes',
     password: 'zrw521..',
@@ -150,73 +143,44 @@ function initDefaultUsers() {
     createdAt: new Date().toISOString()
   }];
   saveUsers(users);
-  console.log('用户已初始化:', getUsers());
 }
 
 initDefaultUsers();
 
-// 切换标签
 function showTab(tab) {
-  $('tabLogin').classList.toggle('active', tab === 'login');
-  $('tabRegister').classList.toggle('active', tab === 'register');
-  $('loginBox').classList.toggle('hidden', tab !== 'login');
-  $('registerBox').classList.toggle('hidden', tab !== 'register');
+  $('tabLogin').className = tab === 'login' ? 'tab active' : 'tab';
+  $('tabRegister').className = tab === 'register' ? 'tab active' : 'tab';
+  $('loginBox').className = tab === 'login' ? '' : 'hidden';
+  $('registerBox').className = tab === 'register' ? '' : 'hidden';
   hideError();
 }
 
-// 显示错误
-function showError(msg) {
-  $('error').textContent = msg;
-  $('error').style.display = 'block';
-}
+function showError(msg) { $('error').textContent = msg; $('error').style.display = 'block'; }
+function hideError() { $('error').style.display = 'none'; }
 
-// 隐藏错误
-function hideError() {
-  $('error').style.display = 'none';
-}
-
-// 登录
-$('loginForm').addEventListener('submit', function(e){
+function doLogin(e) {
   e.preventDefault();
   hideError();
-  
-  // 确保默认用户存在
-  initDefaultUsers();
-  
   const username = $('loginUsername').value.trim();
   const password = $('loginPassword').value;
   
-  // 直接验证硬编码的管理员账号
   if (username === 'lohannes' && password === 'zrw521..') {
-    sessionStorage.setItem('currentUser', JSON.stringify({
-      username: 'lohannes',
-      nickname: '管理员',
-      role: 'admin',
-      realName: '管理员'
-    }));
+    sessionStorage.setItem('currentUser', JSON.stringify({username:'lohannes',nickname:'管理员',role:'admin',realName:'管理员'}));
     window.location.href = 'forum.html';
     return;
   }
   
-  // 其他用户从存储中验证
   const users = getUsers();
   const user = users.find(u => u.username === username && u.password === password);
-  
   if (user) {
-    sessionStorage.setItem('currentUser', JSON.stringify({
-      username: user.username,
-      nickname: user.nickname,
-      role: user.role,
-      realName: user.realName
-    }));
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
     window.location.href = 'forum.html';
   } else {
     showError('用户名或密码错误');
   }
-});
+}
 
-// 注册
-$('registerForm').addEventListener('submit', function(e){
+function doRegister(e) {
   e.preventDefault();
   hideError();
   
@@ -225,75 +189,30 @@ $('registerForm').addEventListener('submit', function(e){
   const password = $('regPassword').value;
   const confirmPassword = $('regConfirmPassword').value;
   const realName = $('regRealName').value.trim();
-  const major = $('regMajor').value.trim();
+  const major = $('regMajor').value;
   const gender = $('regGender').value;
   const role = $('regRole').value;
   
-  // 验证
-  if (!username || !nickname || !password || !realName) {
-    showError('请填写所有必填项');
-    return;
-  }
-  
-  if (password !== confirmPassword) {
-    showError('两次输入的密码不一致');
-    return;
-  }
-  
-  if (password.length < 6 || password.length > 20) {
-    showError('密码长度应为6-20位');
-    return;
-  }
+  if (!username || !nickname || !password || !realName || !gender) { showError('请填写所有必填项'); return; }
+  if (password !== confirmPassword) { showError('两次输入的密码不一致'); return; }
+  if (password.length < 6 || password.length > 20) { showError('密码长度应为6-20位'); return; }
   
   const users = getUsers();
+  if (users.find(u => u.username === username)) { showError('用户名已存在'); return; }
   
-  if (users.find(u => u.username === username)) {
-    showError('用户名已存在');
-    return;
-  }
-  
-  // 验证管理员注册码
-  let finalRole = role;
-  if (role === 'admin') {
-    const code = prompt('请输入管理员注册码：');
-    if (code !== ADMIN_CODE) {
-      showError('管理员注册码错误');
-      return;
-    }
-  }
-  
-  // 添加用户
-  users.push({
-    username,
-    password,
-    nickname,
-    realName,
-    major,
-    gender,
-    role: finalRole,
-    createdAt: new Date().toISOString()
-  });
+  users.push({username, password, nickname, realName, major, gender, role, createdAt: new Date().toISOString()});
   saveUsers(users);
   
   alert('注册成功！请登录');
   showTab('login');
-  
-  // 清空表单
   $('registerForm').reset();
-});
+}
 
-// 游客登录
-$('guestBtn').addEventListener('click', function(){
-  sessionStorage.setItem('currentUser', JSON.stringify({
-    username: '__GUEST__',
-    nickname: '游客',
-    role: 'guest',
-    realName: ''
-  }));
+function guestLogin() {
+  sessionStorage.setItem('currentUser', JSON.stringify({username:'__GUEST__',nickname:'游客',role:'guest'}));
   window.location.href = 'forum.html';
-});
+}
 
-// 清除 session
 sessionStorage.clear();
 </script>
 </body>
