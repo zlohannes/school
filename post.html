@@ -406,6 +406,10 @@ function submitReply() {
   if (postIndex >= 0) {
     posts[postIndex].reply_count = (posts[postIndex].reply_count || 0) + 1;
     localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+    // 更新 currentPost 对象
+    currentPost.reply_count = posts[postIndex].reply_count;
+    // 同步到云端
+    syncPostsToCloud(posts).catch(() => {});
   }
   
   // 添加回复通知
@@ -456,6 +460,31 @@ async function syncNotificationsToCloud(notifications) {
     });
   } catch(e) {
     console.log('通知同步失败:', e);
+  }
+}
+
+async function syncPostsToCloud(posts) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: record.users || [],
+        posts: posts,
+        notifications: record.notifications || []
+      })
+    });
+  } catch(e) {
+    console.log('帖子同步失败:', e);
   }
 }
 

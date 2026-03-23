@@ -324,10 +324,31 @@ function loadPosts() {
     allPosts = postsData ? JSON.parse(postsData) : [];
     renderPosts();
     
-    // 后台从云端加载最新数据
+    // 后台从云端加载最新数据并合并
     loadPostsFromCloud().then(cloudPosts => {
       if (cloudPosts && cloudPosts.length > 0) {
-        allPosts = cloudPosts;
+        // 合并本地和云端数据，以本地 reply_count 和 likes 为准（如果有的话）
+        const mergedPosts = cloudPosts.map(cloudPost => {
+          const localPost = allPosts.find(p => p.id === cloudPost.id);
+          if (localPost) {
+            // 保留本地的 reply_count 和 likes（如果本地的更大）
+            return {
+              ...cloudPost,
+              reply_count: Math.max(localPost.reply_count || 0, cloudPost.reply_count || 0),
+              likes: Math.max(localPost.likes || 0, cloudPost.likes || 0)
+            };
+          }
+          return cloudPost;
+        });
+        
+        // 添加本地有但云端没有的帖子
+        allPosts.forEach(localPost => {
+          if (!mergedPosts.find(p => p.id === localPost.id)) {
+            mergedPosts.push(localPost);
+          }
+        });
+        
+        allPosts = mergedPosts;
         localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
         renderPosts();
       }
