@@ -295,9 +295,9 @@ async function renderUserInfo() {
     const name = currentUser.nickname || currentUser.username || '?';
     const initial = name.charAt(0).toUpperCase();
     if (currentUser.avatar) {
-      el.innerHTML = '<div class="avatar"><img src="' + currentUser.avatar + '"></div><span class="user-name">' + name + '</span>';
+      el.innerHTML = '<div class="avatar"><img src="' + currentUser.avatar + '"></div><span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
     } else {
-      el.innerHTML = '<div class="avatar">' + initial + '</div><span class="user-name">' + name + '</span>';
+      el.innerHTML = '<div class="avatar">' + initial + '</div><span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
     }
     
     const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
@@ -334,7 +334,11 @@ function filterCategory(cat) {
 function renderPosts() {
   let posts = allPosts.filter(p => !p.is_deleted);
   if (currentCategory !== 'all') posts = posts.filter(p => p.category === currentCategory);
-  posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  posts.sort((a, b) => {
+    // 置顶帖子优先显示
+    if (a.is_pinned !== b.is_pinned) return (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0);
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
   
   document.getElementById('postCount').textContent = posts.length + ' 条';
   
@@ -365,7 +369,11 @@ function renderPosts() {
       mediaHtml += '</div>';
     }
     const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
-    html.push('<div class="post-item" onclick="viewPost(' + p.id + ')">' +
+    const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+    const pinBtn = isAdmin ? '<button onclick="event.stopPropagation();togglePin(' + p.id + ')" style="padding:4px 8px;background:' + (p.is_pinned ? '#ef4444' : '#667eea') + ';color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">' + (p.is_pinned ? '取消置顶' : '置顶') + '</button>' : '';
+    
+    html.push('<div class="post-item" style="position:relative;cursor:pointer" onclick="viewPost(' + p.id + ')">' +
+      (p.is_pinned ? '<div style="position:absolute;top:8px;right:8px;background:#ef4444;color:white;padding:2px 8px;border-radius:4px;font-size:11px">📌 置顶</div>' : '') +
       '<div class="post-title">' + escapeHtml(p.title) + '</div>' +
       '<div class="post-preview">' + escapeHtml(p.content) + '</div>' +
       mediaHtml +
@@ -373,7 +381,10 @@ function renderPosts() {
         '<span>👤 ' + escapeHtml(authorName) + '</span>' +
         '<span>💬 ' + (p.reply_count || 0) + '</span>' +
         '<span>⏰ ' + timeAgo(p.created_at) + '</span>' +
-      '</div></div>');
+        '<button onclick="event.stopPropagation();toggleLike(' + p.id + ')" style="padding:4px 8px;background:' + (isLiked(p.id) ? '#ef4444' : '#667eea') + ';color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">❤️ ' + (p.likes || 0) + '</button>' +
+        pinBtn +
+      '</div>' +
+    '</div>');
   }
   
   // 添加加载更多按钮
@@ -384,9 +395,61 @@ function renderPosts() {
   document.getElementById('postList').innerHTML = html.join('');
 }
 
+function isLiked(postId) {
+  if (!currentUser) return false;
+  const likes = JSON.parse(localStorage.getItem('post_likes') || '{}');
+  const key = currentUser.username + '_' + postId;
+  return likes[key] === true;
+}
+
+function toggleLike(postId) {
+  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+    alert('请登录后点赞');
+    return;
+  }
+  
+  const likes = JSON.parse(localStorage.getItem('post_likes') || '{}');
+  const key = currentUser.username + '_' + postId;
+  const post = allPosts.find(p => p.id === postId);
+  
+  if (likes[key]) {
+    delete likes[key];
+    post.likes = (post.likes || 1) - 1;
+  } else {
+    likes[key] = true;
+    post.likes = (post.likes || 0) + 1;
+  }
+  
+  localStorage.setItem('post_likes', JSON.stringify(likes));
+  localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+  renderPosts();
+}
+
+function togglePin(postId) {
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  if (!isAdmin) {
+    alert('只有管理员可以置顶帖子');
+    return;
+  }
+  
+  const post = allPosts.find(p => p.id === postId);
+  if (post) {
+    post.is_pinned = !post.is_pinned;
+    localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+    renderPosts();
+  }
+}
+
 function loadMorePosts() {
   currentPage++;
   renderPosts();
+}
+
+function logout() {
+  if (confirm('确定要退出吗？')) {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+  }
 }
 
 function escapeHtml(s) {
@@ -407,6 +470,10 @@ function timeAgo(dateStr) {
 }
 
 function viewPost(id) {
+  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+    alert('游客无法查看帖子详情，请登录后查看');
+    return;
+  }
   window.location.href = 'post.html?id=' + id;
 }
 

@@ -89,7 +89,10 @@
   <nav class="navbar">
     <div class="nav-inner">
       <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
-      <a href="forum.html" class="nav-link">← 返回</a>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a href="forum.html" class="nav-link">← 返回</a>
+        <button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer">退出</button>
+      </div>
     </div>
   </nav>
   
@@ -181,6 +184,17 @@ function init() {
   if (!str) { window.location.href = 'index.html'; return; }
   currentUser = JSON.parse(str);
   
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    // 游客无法编辑，显示提示
+    document.querySelector('.avatar-hint').textContent = '游客无法编辑资料';
+    document.querySelector('.avatar-wrapper').style.cursor = 'not-allowed';
+    document.querySelector('.avatar-wrapper').onclick = () => {
+      alert('游客无法编辑资料，请登录后编辑');
+    };
+  }
+  
   // 从云端加载最新用户数据
   loadUsersFromCloud().then(cloudUsers => {
     if (cloudUsers) {
@@ -236,6 +250,13 @@ function renderProfile() {
 }
 
 function openEdit() {
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    alert('游客无法编辑资料，请登录后编辑');
+    return;
+  }
+  
   $('editCard').classList.add('active');
   $('editNickname').value = currentUser.nickname || '';
   $('editGender').value = currentUser.gender || '';
@@ -265,6 +286,13 @@ function previewAvatar(input) {
 }
 
 function saveProfile() {
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    alert('游客无法编辑资料，请登录后编辑');
+    return;
+  }
+  
   const nickname = $('editNickname').value.trim();
   const gender = $('editGender').value;
   if (!nickname) { alert('昵称不能为空'); return; }
@@ -325,6 +353,13 @@ function timeAgo(dateStr) {
   if (s < 86400) return Math.floor(s / 3600) + '小时前';
   if (s < 2592000) return Math.floor(s / 86400) + '天前';
   return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function logout() {
+  if (confirm('确定要退出吗？')) {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+  }
 }
 
 init();
