@@ -120,6 +120,7 @@
       <div class="nav-links">
         <div id="guestLoginBtn" style="display:none"><a href="index.html" class="nav-link">登录</a></div>
         <a href="notifications.html" class="nav-link">💬 消息</a>
+        <a href="admin.html" class="nav-link" id="adminLink" style="display:none;color:#ef4444">👨‍💼 管理</a>
         <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'"></div>
       </div>
     </div>
@@ -303,6 +304,10 @@ async function renderUserInfo() {
     
     const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
     document.getElementById('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
+    
+    // 显示管理员链接
+    const isAdmin = currentUser.role === 'admin' || currentUser.username === 'lohannes';
+    document.getElementById('adminLink').style.display = isAdmin ? 'block' : 'none';
     
     // 隐藏游客的发布按钮
     const fabBtn = document.querySelector('.fab');
