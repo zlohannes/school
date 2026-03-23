@@ -216,6 +216,8 @@ let allPosts = [];
 let currentCategory = 'all';
 let currentUser = null;
 let selectedMedia = [];
+let currentPage = 1;
+const POSTS_PER_PAGE = 10; // 每页10条帖子
 
 // JSONBin 云同步
 async function syncUsersToCloud(users) {
@@ -260,9 +262,6 @@ function init() {
 
 async function renderUserInfo() {
   try {
-    // 优先从云端加载用户数据
-    const cloudUsers = await loadUsersFromCloud();
-    
     const userStr = sessionStorage.getItem('currentUser');
     if (!userStr) {
       window.location.href = 'index.html';
@@ -271,18 +270,17 @@ async function renderUserInfo() {
     
     currentUser = JSON.parse(userStr);
     
-    // 获取用户信息（优先云端，其次本地）
-    const usersData = cloudUsers ? null : localStorage.getItem(USERS_KEY);
-    const users = cloudUsers || (usersData ? JSON.parse(usersData) : []);
+    // 从本地加载用户信息（不等云端）
+    const usersData = localStorage.getItem(USERS_KEY);
+    const users = usersData ? JSON.parse(usersData) : [];
     const storedUser = users.find(u => u.username === currentUser.username);
     if (storedUser) {
       currentUser = Object.assign({}, storedUser);
       sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-      // 同步本地存储
-      if (cloudUsers) {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-      }
     }
+    
+    // 后台异步同步云端（不阻塞UI）
+    loadUsersFromCloud().catch(() => {});
     
     // 更新用户显示
     const el = document.getElementById('userInfo');
@@ -320,6 +318,7 @@ function renderCategories() {
 
 function filterCategory(cat) {
   currentCategory = cat;
+  currentPage = 1; // 重置分页
   renderCategories();
   renderPosts();
 }
@@ -336,16 +335,21 @@ function renderPosts() {
     return;
   }
   
+  // 分页处理
+  const start = (currentPage - 1) * POSTS_PER_PAGE;
+  const end = start + POSTS_PER_PAGE;
+  const pagePosts = posts.slice(start, end);
+  
   const html = [];
-  for (let i = 0; i < posts.length; i++) {
-    const p = posts[i];
+  for (let i = 0; i < pagePosts.length; i++) {
+    const p = pagePosts[i];
     let mediaHtml = '';
     if (p.media && p.media.length > 0) {
       mediaHtml = '<div class="post-media-preview">';
-      for (let j = 0; j < Math.min(p.media.length, 3); j++) {
+      for (let j = 0; j < Math.min(p.media.length, 2); j++) {
         const m = p.media[j];
         if (m.type === 'image') {
-          mediaHtml += '<img src="' + m.data + '" class="media-thumb">';
+          mediaHtml += '<img src="' + m.data + '" class="media-thumb" loading="lazy">';
         } else {
           mediaHtml += '<div class="media-video">▶</div>';
         }
@@ -363,7 +367,18 @@ function renderPosts() {
         '<span>⏰ ' + timeAgo(p.created_at) + '</span>' +
       '</div></div>');
   }
+  
+  // 添加加载更多按钮
+  if (end < posts.length) {
+    html.push('<div style="text-align:center;padding:16px"><button onclick="loadMorePosts()" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer">加载更多</button></div>');
+  }
+  
   document.getElementById('postList').innerHTML = html.join('');
+}
+
+function loadMorePosts() {
+  currentPage++;
+  renderPosts();
 }
 
 function escapeHtml(s) {

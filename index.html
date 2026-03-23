@@ -186,42 +186,43 @@ function doLogin(e) {
   const username = $('loginUsername').value.trim();
   const password = $('loginPassword').value;
   
-  // 异步加载云端用户数据
-  loadUsersFromCloud().then(cloudUsers => {
-    const users = cloudUsers || getUsers();
-    let user = null;
-    
-    // 优先从 localStorage 查找用户（包括管理员）
-    user = users.find(u => u.username === username && u.password === password);
-    
-    if (!user && username === 'lohannes' && password === 'zrw521..') {
-      // 管理员特殊处理：从 localStorage 获取最新信息，如果没有则创建
-      user = users.find(u => u.username === 'lohannes');
-      if (!user) {
-        // 管理员首次登录，创建用户记录
-        user = {
-          username: 'lohannes',
-          password: 'zrw521..',
-          nickname: '管理员',
-          realName: '管理员',
-          role: 'admin',
-          gender: '',
-          avatar: '',
-          createdAt: new Date().toISOString()
-        };
-        users.push(user);
-        saveUsers(users);
-      }
+  // 先从本地查找
+  const users = getUsers();
+  let user = null;
+  
+  // 优先从 localStorage 查找用户（包括管理员）
+  user = users.find(u => u.username === username && u.password === password);
+  
+  if (!user && username === 'lohannes' && password === 'zrw521..') {
+    // 管理员特殊处理：从 localStorage 获取最新信息，如果没有则创建
+    user = users.find(u => u.username === 'lohannes');
+    if (!user) {
+      // 管理员首次登录，创建用户记录
+      user = {
+        username: 'lohannes',
+        password: 'zrw521..',
+        nickname: '管理员',
+        realName: '管理员',
+        role: 'admin',
+        gender: '',
+        avatar: '',
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+      saveUsers(users);
     }
-    
-    if (user) {
-      // 保存完整用户信息到 sessionStorage
-      sessionStorage.setItem('currentUser', JSON.stringify(user));
-      window.location.href = 'forum.html';
-    } else {
-      showError('用户名或密码错误');
-    }
-  });
+  }
+  
+  if (user) {
+    // 保存完整用户信息到 sessionStorage
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
+    window.location.href = 'forum.html';
+  } else {
+    showError('用户名或密码错误');
+  }
+  
+  // 后台异步同步云端（不阻塞登录）
+  loadUsersFromCloud().catch(() => {});
 }
 
 function doRegister(e) {

@@ -147,7 +147,7 @@ function init() {
   try {
     currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
     
-    // 从 localStorage 获取最新用户信息
+    // 从本地加载用户信息（不等云端）
     if (currentUser) {
       const usersData = localStorage.getItem('forum_users');
       if (usersData) {
