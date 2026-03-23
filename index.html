@@ -4,18 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>鹿城学院论坛 - 登录注册</title>
-  <meta name="description" content="鹿城学院论坛 - 温州职业技术学院学生交流平台，分享学习心得、校园生活、二手交易、游戏组队">
-  <meta name="keywords" content="鹿城学院,温州职业技术学院,校园论坛,学生社区,学习交流,校园生活">
-  <meta name="author" content="鹿城学院">
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <meta property="og:title" content="鹿城学院论坛">
-  <meta property="og:description" content="温州职业技术学院学生交流平台">
-  <meta property="og:type" content="website">
-  <!-- 腾讯云 CloudBase SDK -->
-  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
-  <link rel="preload" href="./config.js" as="script">
-  <script>sessionStorage.clear();</script>
-  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -26,236 +15,286 @@
     h2{color:#333;font-size:16px;margin-bottom:15px}
     .form-group{margin-bottom:12px}
     .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
-    .form-group input,.form-group select{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
-    .form-group input:focus{border-color:#667eea;outline:none}
-    .form-group select{background:#2a2a3e;color:#fff}
-    .form-group select option{background:#2a2a3e;color:#fff}
-    .form-group select:disabled{background:#3a3a4e;color:#999}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .radio-group{display:flex;gap:12px;margin-top:6px}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#667eea;outline:none}
+    .form-group textarea{resize:vertical;min-height:60px}
+    .form-group .note{font-size:11px;color:#666;margin-top:3px}
+    .form-group .note strong{color:#28a745}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .radio-group{display:flex;gap:15px;margin-top:6px}
     .radio-option{display:flex;align-items:center;gap:4px;font-size:13px}
     .btn{width:100%;background:#667eea;color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
     .btn:hover{background:#5568d3}
     .btn:disabled{background:#aaa;cursor:not-allowed}
-    .switch{text-align:center;margin-top:12px;color:#666;font-size:13px}
-    .switch a{color:#667eea;text-decoration:none;font-weight:600}
-    .note{font-size:11px;color:#666;margin-top:3px}
-    .note strong{color:#28a745}
-    .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.8);display:none;align-items:center;justify-content:center;z-index:999}
-    .loading.show{display:flex}
-    .loading .spinner{width:36px;height:36px;border:3px solid #ddd;border-top-color:#667eea;border-radius:50%;animation:spin .6s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    /* 游客按钮样式 */
-    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+    
+    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px}
     .guest-btn:hover{background:linear-gradient(135deg,#059669,#047857)}
     .guest-divider{display:flex;align-items:center;margin:15px 0;color:#999;font-size:12px}
     .guest-divider::before,.guest-divider::after{content:'';flex:1;height:1px;background:#ddd}
-    .guest-divider span{padding:0 10px}
+    .tabs{display:flex;gap:10px;margin-bottom:15px;border-bottom:2px solid #eee}
+    .tab{padding:8px 16px;color:#666;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
+    .tab.active{color:#667eea;border-bottom-color:#667eea;font-weight:600}
+    .hidden{display:none}
+    .checkbox-group{display:flex;align-items:center;gap:6px;margin-top:8px}
+    .checkbox-group input{width:auto}
+    .checkbox-group label{font-weight:normal;font-size:12px}
+    .error{background:#fee;border:1px solid #fcc;color:#c33;padding:10px;border-radius:6px;margin-bottom:15px;font-size:13px;display:none}
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
   <div class="container">
     <div class="card">
-      <h1><img src="https://www.wzvtc.cn/favicon.ico" style="height:28px;vertical-align:middle;"> 鹿城学院论坛</h1>
+      <h1><img src="https://www.wzvtc.cn/favicon.ico" style="width:28px;vertical-align:middle;margin-right:8px">鹿城学院论坛</h1>
       <p class="subtitle">温州职业技术学院</p>
-      <div id="registerBox">
-        <h2>📝 注册账号</h2>
+      
+      <div class="tabs">
+        <div class="tab active" id="tabLogin" onclick="showTab('login')">登录</div>
+        <div class="tab" id="tabRegister" onclick="showTab('register')">注册账号</div>
+      </div>
+      
+      <div class="error" id="error"></div>
+      
+      <!-- 登录 -->
+      <div id="loginBox">
+        
+        <form id="loginForm">
+          <div class="form-group"><label>用户名 *</label><input type="text" id="loginUsername" required placeholder="请输入用户名"></div>
+          <div class="form-group"><label>密码 *</label><input type="password" id="loginPassword" required placeholder="请输入密码"></div>
+          <button type="submit" class="btn">登录</button>
+        </form>
+      </div>
+      
+      <!-- 注册 -->
+      <div id="registerBox" class="hidden">
         <form id="registerForm">
-          <div class="form-group"><label>用户名 *</label><input type="text" id="regUsername" placeholder="请输入用户名" required></div>
-          <div class="form-group"><label>昵称</label><input type="text" id="regNickname" placeholder="公开显示的昵称"></div>
-          <div class="row">
-            <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" placeholder="6-20位" required></div>
-            <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirm" placeholder="再次输入" required></div>
+          <div class="form-group">
+            <label>用户名 *</label>
+            <input type="text" id="regUsername" required placeholder="请输入用户名" maxlength="20">
+            <div class="note">用户名注册后不可更改</div>
           </div>
-          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" placeholder="仅管理员可见" required><div class="note"><strong>隐私：</strong>真实姓名仅管理员可见</div></div>
-          <div class="row">
-            <div class="form-group">
-              <label>专业</label>
-              <select id="regMajor">
-                <option value="">请选择专业</option>
-                <option value="金融科技应用">金融科技应用</option>
-                <option value="大数据与会计">大数据与会计</option>
-                <option value="市场营销">市场营销</option>
-                <option value="国际商务">国际商务</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>性别</label>
-              <select id="regGender">
-                <option value="男">男</option>
-                <option value="女" selected>女</option>
-              </select>
-            </div>
+          <div class="form-group"><label>昵称 *</label><input type="text" id="regNickname" required placeholder="公开显示的昵称" maxlength="20"></div>
+          <div class="form-group"><label>密码 *</label><input type="password" id="regPassword" required placeholder="6-20位" minlength="6" maxlength="20"></div>
+          <div class="form-group"><label>确认密码 *</label><input type="password" id="regConfirmPassword" required placeholder="再次输入" minlength="6" maxlength="20"></div>
+          <div class="form-group"><label>真实姓名 *</label><input type="text" id="regRealName" required placeholder="仅管理员可见">
+            <div class="note">真实姓名仅管理员可见</div>
           </div>
           <div class="form-group">
-            <label>角色</label>
-            <div class="radio-group">
-              <label class="radio-option"><input type="radio" name="role" value="student" checked> 学生</label>
-              <label class="radio-option"><input type="radio" name="role" value="teacher"> 老师</label>
-              <label class="radio-option"><input type="radio" name="role" value="admin"> 管理员</label>
-            </div>
+            <label>专业</label>
+            <select id="regMajor">
+              <option value="">请选择专业</option>
+              <option value="金融科技应用">金融科技应用</option>
+              <option value="大数据与会计">大数据与会计</option>
+              <option value="国际商务">国际商务</option>
+              <option value="市场营销">市场营销</option>
+            </select>
           </div>
-          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:15px">
-            <input type="checkbox" id="agreeTerms" required style="width:18px;height:18px;accent-color:#667eea">
-            <label for="agreeTerms" style="margin:0;font-size:13px;cursor:pointer">
-              我已阅读并同意 <a href="agreement.html" target="_blank" style="color:#667eea;text-decoration:none;font-weight:600">《用户协议》</a>
-            </label>
+          <div class="form-group">
+            <label>性别</label>
+            <select id="regGender" required>
+              <option value="">请选择</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
           </div>
-          <button type="submit" class="btn" id="regBtn">注册</button>
+          <div class="form-group">
+            <label>角色 *</label>
+            <select id="regRole" required>
+              <option value="student">学生</option>
+              <option value="teacher">老师</option>
+            </select>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="agree" required>
+            <label for="agree">我已阅读并同意 <a href="agreement.html" target="_blank">《用户协议》</a></label>
+          </div>
+          <button type="submit" class="btn">注册</button>
         </form>
-        <div class="switch">已有账号？<a href="#" id="toLoginBtn">点击登录</a></div>
-        <div class="guest-divider"><span>或</span></div>
-        <button class="guest-btn" id="guestBtn">👀 游客浏览（仅查看）</button>
-        <div class="note" style="text-align:center;margin-top:8px">游客模式只能浏览帖子列表，无法查看详情和互动</div>
       </div>
-      <div id="loginBox" style="display:none;">
-        <h2>🔐 用户登录</h2>
-        <form id="loginForm">
-          <div class="form-group"><label>用户名</label><input type="text" id="loginUsername" placeholder="请输入用户名" required></div>
-          <div class="form-group"><label>密码</label><input type="password" id="loginPassword" placeholder="请输入密码" required></div>
-          <button type="submit" class="btn" id="loginBtn">登录</button>
-        </form>
-        <div class="switch">没有账号？<a href="#" id="toRegisterBtn">注册</a> | <a href="#" id="forgotPwdBtn">忘记密码</a></div>
-        <div class="guest-divider"><span>或</span></div>
-        <button class="guest-btn" id="guestBtn2">👀 游客浏览（仅查看）</button>
-      </div>
-      <div id="resetBox" style="display:none;">
-        <h2>🔑 重置密码</h2>
-        <form id="resetForm">
-          <div class="form-group"><label>用户名</label><input type="text" id="resetUsername" placeholder="请输入用户名" required></div>
-          <div class="form-group"><label>真实姓名</label><input type="text" id="resetRealName" placeholder="注册时填写的真实姓名" required></div>
-          <div class="form-group"><label>新密码</label><input type="password" id="resetPassword" placeholder="6-20位新密码" required></div>
-          <div class="form-group"><label>确认新密码</label><input type="password" id="resetConfirm" placeholder="再次输入新密码" required></div>
-          <button type="submit" class="btn" id="resetBtn">重置密码</button>
-        </form>
-        <div class="switch"><a href="#" id="toLoginFromReset">返回登录</a></div>
-      </div>
-      <div class="agreement" style="margin-top:20px;padding-top:15px;border-top:1px solid #eee;text-align:center;font-size:12px;color:#666">
-        使用本论坛即表示您同意 <a href="agreement.html" target="_blank" style="color:#667eea;text-decoration:none;font-weight:600">《用户协议》</a><br>
-        <span style="color:#999;font-size:11px">严禁发布违法违规、造谣、人身攻击等内容</span>
-      </div>
+      
+      <div class="guest-divider"><span>或</span></div>
+      <button class="guest-btn" id="guestBtn">👀 游客浏览（仅查看）</button>
+      
+      
     </div>
   </div>
-  <script src="./config.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  // 初始化 CloudBase
-  var app = tcb.init({ env: window.CLOUDBASE_ENV });
-  var db = app.database();
-  var ADMIN_CODE_HASH = window.ADMIN_CODE_HASH;
-  var PASSWORD_SALT = window.PASSWORD_SALT || 'lc_forum_2026';
+// 本地存储 key
+const USERS_KEY = 'forum_users';
+const ADMIN_CODE = 'zrw'; // 管理员注册码
 
-  function $(id){return document.getElementById(id)}
-  function showLoading(){$('loading').classList.add('show')}
-  function hideLoading(){$('loading').classList.remove('show')}
+function $(id){return document.getElementById(id)}
 
-  async function sha256(text) {
-    var encoder = new TextEncoder();
-    var data = encoder.encode(text);
-    var hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    var hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+// 获取用户列表
+function getUsers() {
+  const data = localStorage.getItem(USERS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+// 保存用户列表
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+// 初始化默认管理员（强制覆盖）
+function initDefaultUsers() {
+  // 强制设置默认管理员
+  const users = [{
+    username: 'lohannes',
+    password: 'zrw521..',
+    nickname: '管理员',
+    realName: '管理员',
+    role: 'admin',
+    gender: '女',
+    major: '金融科技应用',
+    createdAt: new Date().toISOString()
+  }];
+  saveUsers(users);
+  console.log('用户已初始化:', getUsers());
+}
+
+initDefaultUsers();
+
+// 切换标签
+function showTab(tab) {
+  $('tabLogin').classList.toggle('active', tab === 'login');
+  $('tabRegister').classList.toggle('active', tab === 'register');
+  $('loginBox').classList.toggle('hidden', tab !== 'login');
+  $('registerBox').classList.toggle('hidden', tab !== 'register');
+  hideError();
+}
+
+// 显示错误
+function showError(msg) {
+  $('error').textContent = msg;
+  $('error').style.display = 'block';
+}
+
+// 隐藏错误
+function hideError() {
+  $('error').style.display = 'none';
+}
+
+// 登录
+$('loginForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  hideError();
+  
+  // 确保默认用户存在
+  initDefaultUsers();
+  
+  const username = $('loginUsername').value.trim();
+  const password = $('loginPassword').value;
+  
+  // 直接验证硬编码的管理员账号
+  if (username === 'lohannes' && password === 'zrw521..') {
+    sessionStorage.setItem('currentUser', JSON.stringify({
+      username: 'lohannes',
+      nickname: '管理员',
+      role: 'admin',
+      realName: '管理员'
+    }));
+    window.location.href = 'forum.html';
+    return;
   }
-  async function hashPassword(p){ return await sha256(p + PASSWORD_SALT); }
-  async function verifyAdminCode(code){ return (await sha256(code)) === ADMIN_CODE_HASH; }
-
-  function showLogin(){$('registerBox').style.display='none';$('loginBox').style.display='block';$('resetBox').style.display='none'}
-  function showRegister(){$('loginBox').style.display='none';$('registerBox').style.display='block';$('resetBox').style.display='none'}
-  function showReset(){$('registerBox').style.display='none';$('loginBox').style.display='none';$('resetBox').style.display='block'}
-
-  document.querySelectorAll('input[name="role"]').forEach(function(radio){
-    radio.addEventListener('change', async function(){
-      var role = this.value;
-      var majorSelect = $('regMajor');
-      if(role==='teacher'||role==='admin'){majorSelect.disabled=true;majorSelect.value='';}
-      else{majorSelect.disabled=false;}
-      if(role==='admin'){
-        var code=prompt('请输入管理员注册码：');
-        if(!code){document.querySelector('input[name="role"][value="student"]').checked=true;$('regMajor').disabled=false;return;}
-        var valid=await verifyAdminCode(code);
-        if(!valid){alert('注册码错误！');document.querySelector('input[name="role"][value="student"]').checked=true;$('regMajor').disabled=false;}
-      }
-    });
-  });
-
-  // 注册
-  $('registerForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-    var u=$('regUsername').value.trim(), n=$('regNickname').value.trim()||u;
-    var p=$('regPassword').value, c=$('regConfirm').value;
-    var rn=$('regRealName').value.trim(), m=$('regMajor').value;
-    var g=$('regGender').value, r=document.querySelector('input[name="role"]:checked').value;
-    if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
-    if(p!==c){alert('两次密码不一致');return}
-    if(!$('agreeTerms').checked){alert('请阅读并同意用户协议');return}
-    showLoading(); $('regBtn').disabled=true;
-    try{
-      var exist=await db.collection('users').where({username:u}).get();
-      if(exist.data.length){hideLoading();$('regBtn').disabled=false;alert('用户名已存在');return;}
-      var nameExist=await db.collection('users').where({real_name:rn}).get();
-      if(nameExist.data.length){
-        hideLoading();$('regBtn').disabled=false;
-        alert('该真实姓名已注册过账号，请直接登录');
-        showLogin();$('loginUsername').value=nameExist.data[0].username;return;
-      }
-      var hp=await hashPassword(p);
-      await db.collection('users').add({username:u,nickname:n,password:hp,real_name:rn,major:m,gender:g,role:r,is_banned:false,created_at:new Date().toISOString()});
-      hideLoading();$('regBtn').disabled=false;
-      alert('注册成功！请登录');showLogin();$('loginUsername').value=u;
-    }catch(err){hideLoading();$('regBtn').disabled=false;alert('网络错误：'+err.message);}
-  });
-
-  // 登录
-  $('loginForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-    var u=$('loginUsername').value.trim(), p=$('loginPassword').value;
-    showLoading();$('loginBtn').disabled=true;
-    try{
-      var res=await db.collection('users').where({username:u}).get();
-      hideLoading();$('loginBtn').disabled=false;
-      if(!res.data.length){alert('用户名不存在');return;}
-      var user=res.data[0];
-      var hp=await hashPassword(p);
-      if(user.password!==hp){alert('密码错误');return;}
-      if(user.is_banned){alert('账号已被封禁，请联系管理员');return;}
-      sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role,realName:user.real_name,id:user._id}));
-      window.location.href='forum.html';
-    }catch(err){hideLoading();$('loginBtn').disabled=false;alert('网络连接失败：'+err.message);}
-  });
-
-  $('toLoginBtn').addEventListener('click',function(e){e.preventDefault();showLogin();});
-  $('toRegisterBtn').addEventListener('click',function(e){e.preventDefault();showRegister();});
-  $('forgotPwdBtn').addEventListener('click',function(e){e.preventDefault();showReset();});
-  $('toLoginFromReset').addEventListener('click',function(e){e.preventDefault();showLogin();});
-
-  function guestLogin(){
-    sessionStorage.setItem('currentUser',JSON.stringify({username:'__GUEST__',nickname:'游客',role:'guest',realName:''}));
-    window.location.href='forum.html';
+  
+  // 其他用户从存储中验证
+  const users = getUsers();
+  const user = users.find(u => u.username === username && u.password === password);
+  
+  if (user) {
+    sessionStorage.setItem('currentUser', JSON.stringify({
+      username: user.username,
+      nickname: user.nickname,
+      role: user.role,
+      realName: user.realName
+    }));
+    window.location.href = 'forum.html';
+  } else {
+    showError('用户名或密码错误');
   }
-  $('guestBtn').addEventListener('click',guestLogin);
-  if($('guestBtn2'))$('guestBtn2').addEventListener('click',guestLogin);
-
-  // 重置密码
-  $('resetForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-    var u=$('resetUsername').value.trim(), rn=$('resetRealName').value.trim();
-    var p=$('resetPassword').value, c=$('resetConfirm').value;
-    if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
-    if(p!==c){alert('两次密码不一致');return}
-    showLoading();$('resetBtn').disabled=true;
-    try{
-      var res=await db.collection('users').where({username:u}).get();
-      if(!res.data.length){hideLoading();$('resetBtn').disabled=false;alert('用户名不存在');return;}
-      var user=res.data[0];
-      if(user.real_name!==rn){hideLoading();$('resetBtn').disabled=false;alert('真实姓名不正确');return;}
-      var hp=await hashPassword(p);
-      await db.collection('users').doc(user._id).update({password:hp});
-      hideLoading();$('resetBtn').disabled=false;
-      alert('密码重置成功！请用新密码登录');showLogin();$('loginUsername').value=u;
-    }catch(err){hideLoading();$('resetBtn').disabled=false;alert('网络错误：'+err.message);}
-  });
 });
+
+// 注册
+$('registerForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  hideError();
+  
+  const username = $('regUsername').value.trim();
+  const nickname = $('regNickname').value.trim();
+  const password = $('regPassword').value;
+  const confirmPassword = $('regConfirmPassword').value;
+  const realName = $('regRealName').value.trim();
+  const major = $('regMajor').value.trim();
+  const gender = $('regGender').value;
+  const role = $('regRole').value;
+  
+  // 验证
+  if (!username || !nickname || !password || !realName) {
+    showError('请填写所有必填项');
+    return;
+  }
+  
+  if (password !== confirmPassword) {
+    showError('两次输入的密码不一致');
+    return;
+  }
+  
+  if (password.length < 6 || password.length > 20) {
+    showError('密码长度应为6-20位');
+    return;
+  }
+  
+  const users = getUsers();
+  
+  if (users.find(u => u.username === username)) {
+    showError('用户名已存在');
+    return;
+  }
+  
+  // 验证管理员注册码
+  let finalRole = role;
+  if (role === 'admin') {
+    const code = prompt('请输入管理员注册码：');
+    if (code !== ADMIN_CODE) {
+      showError('管理员注册码错误');
+      return;
+    }
+  }
+  
+  // 添加用户
+  users.push({
+    username,
+    password,
+    nickname,
+    realName,
+    major,
+    gender,
+    role: finalRole,
+    createdAt: new Date().toISOString()
+  });
+  saveUsers(users);
+  
+  alert('注册成功！请登录');
+  showTab('login');
+  
+  // 清空表单
+  $('registerForm').reset();
+});
+
+// 游客登录
+$('guestBtn').addEventListener('click', function(){
+  sessionStorage.setItem('currentUser', JSON.stringify({
+    username: '__GUEST__',
+    nickname: '游客',
+    role: 'guest',
+    realName: ''
+  }));
+  window.location.href = 'forum.html';
+});
+
+// 清除 session
+sessionStorage.clear();
 </script>
 </body>
 </html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 测试版</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0b0f14;color:#e9f0f6;min-height:100vh}
+    .navbar{position:sticky;top:0;z-index:100;background:rgba(11,15,20,0.9);border-bottom:1px solid rgba(255,255,255,0.1);padding:12px 16px}
+    .nav-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;color:#fff;text-decoration:none}
+    .main{max-width:1080px;margin:16px auto;padding:0 16px}
+    .card{background:#121821;border:1px solid rgba(255,255,255,0.1);border-radius:14px;margin-bottom:16px}
+    .card-header{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600}
+    .post-item{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .post-title{font-size:15px;font-weight:600;margin-bottom:6px}
+    .post-preview{color:#9fb2c3;font-size:13px;margin-bottom:8px}
+    .post-meta{display:flex;gap:12px;font-size:12px;color:#9fb2c3}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:#0b0f14;display:flex;align-items:center;justify-content:center;z-index:500;font-size:18px}
+    .loading.hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">正在加载...</div>
+  
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">🦌 鹿城学院论坛</a>
+    </div>
+  </nav>
+  
+  <main class="main">
+    <div class="card">
+      <div class="card-header">📢 帖子列表</div>
+      <div id="postList">加载中...</div>
+    </div>
+  </main>
+
+<script>
+console.log('=== 测试页面开始 ===');
+
+async function loadPosts() {
+  try {
+    console.log('开始加载帖子数据...');
+    const res = await fetch('./data/posts.json');
+    console.log('响应状态:', res.status);
+    
+    if (!res.ok) {
+      throw new Error('HTTP ' + res.status);
+    }
+    
+    const data = await res.json();
+    console.log('数据:', data);
+    
+    const posts = data.posts || [];
+    console.log('帖子数:', posts.length);
+    
+    if (posts.length === 0) {
+      document.getElementById('postList').innerHTML = '<div style="padding:40px;text-align:center">暂无帖子</div>';
+    } else {
+      const html = posts.map(p => `
+        <div class="post-item">
+          <div class="post-title">${p.title}</div>
+          <div class="post-preview">${p.content.substring(0, 100)}...</div>
+          <div class="post-meta">
+            <span>👤 ${p.author_nickname}</span>
+            <span>💬 ${p.reply_count || 0}</span>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('postList').innerHTML = html;
+    }
+  } catch(e) {
+    console.error('加载失败:', e);
+    document.getElementById('postList').innerHTML = '<div style="padding:40px;text-align:center;color:red">加载失败: ' + e.message + '</div>';
+  }
+  
+  document.getElementById('loading').classList.add('hidden');
+}
+
+loadPosts();
+</script>
+</body>
+</html>
