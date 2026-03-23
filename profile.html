@@ -222,15 +222,22 @@ function saveProfile() {
   let idx = users.findIndex(u => u.username === currentUser.username);
   const updates = {nickname, gender};
   if (newAvatarData) updates.avatar = newAvatarData;
+  
   if (idx >= 0) {
+    // 更新 localStorage 中的用户
     users[idx] = Object.assign({}, users[idx], updates);
   } else {
     // 如果用户不存在，创建新用户记录
     users.push(Object.assign({}, currentUser, updates));
   }
   saveUsers(users);
+  
+  // 更新 currentUser 对象
   currentUser = Object.assign({}, currentUser, updates);
+  
+  // 更新 sessionStorage（重要！）
   sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  
   closeEdit();
   renderProfile();
   showToast();

@@ -131,22 +131,6 @@ function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 }
 
-function initDefaultUsers() {
-  const users = [{
-    username: 'lohannes',
-    password: 'zrw521..',
-    nickname: '管理员',
-    realName: '管理员',
-    role: 'admin',
-    gender: '女',
-    major: '金融科技应用',
-    createdAt: new Date().toISOString()
-  }];
-  saveUsers(users);
-}
-
-initDefaultUsers();
-
 function showTab(tab) {
   $('tabLogin').className = tab === 'login' ? 'tab active' : 'tab';
   $('tabRegister').className = tab === 'register' ? 'tab active' : 'tab';
@@ -164,15 +148,34 @@ function doLogin(e) {
   const username = $('loginUsername').value.trim();
   const password = $('loginPassword').value;
   
-  if (username === 'lohannes' && password === 'zrw521..') {
-    sessionStorage.setItem('currentUser', JSON.stringify({username:'lohannes',nickname:'管理员',role:'admin',realName:'管理员'}));
-    window.location.href = 'forum.html';
-    return;
+  const users = getUsers();
+  let user = null;
+  
+  // 优先从 localStorage 查找用户（包括管理员）
+  user = users.find(u => u.username === username && u.password === password);
+  
+  if (!user && username === 'lohannes' && password === 'zrw521..') {
+    // 管理员特殊处理：从 localStorage 获取最新信息，如果没有则创建
+    user = users.find(u => u.username === 'lohannes');
+    if (!user) {
+      // 管理员首次登录，创建用户记录
+      user = {
+        username: 'lohannes',
+        password: 'zrw521..',
+        nickname: '管理员',
+        realName: '管理员',
+        role: 'admin',
+        gender: '',
+        avatar: '',
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+      saveUsers(users);
+    }
   }
   
-  const users = getUsers();
-  const user = users.find(u => u.username === username && u.password === password);
   if (user) {
+    // 保存完整用户信息到 sessionStorage
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     window.location.href = 'forum.html';
   } else {
@@ -200,20 +203,19 @@ function doRegister(e) {
   const users = getUsers();
   if (users.find(u => u.username === username)) { showError('用户名已存在'); return; }
   
-  users.push({username, password, nickname, realName, major, gender, role, createdAt: new Date().toISOString()});
+  const newUser = {username, password, nickname, realName, major, gender, role, createdAt: new Date().toISOString()};
+  users.push(newUser);
   saveUsers(users);
   
-  alert('注册成功！请登录');
-  showTab('login');
-  $('registerForm').reset();
+  // 注册后自动登录
+  sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+  window.location.href = 'forum.html';
 }
 
 function guestLogin() {
   sessionStorage.setItem('currentUser', JSON.stringify({username:'__GUEST__',nickname:'游客',role:'guest'}));
   window.location.href = 'forum.html';
 }
-
-sessionStorage.clear();
 </script>
 </body>
 </html>
