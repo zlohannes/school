@@ -64,6 +64,14 @@
   <div class="container">
     <div class="page-title">👨‍💼 用户管理</div>
     
+    <div style="background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="password" id="adminKeyInput" placeholder="输入管理员密钥以查看用户密码" style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--text);font-size:14px">
+        <button onclick="unlockUserData()" style="padding:10px 16px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">解锁</button>
+      </div>
+      <div style="color:var(--muted);font-size:12px;margin-top:8px">💡 输入管理员密钥后才能查看用户密码</div>
+    </div>
+    
     <div class="search-box">
       <input type="text" id="searchInput" placeholder="搜索用户名、昵称或邮箱...">
       <button onclick="searchUsers()">搜索</button>
@@ -76,7 +84,7 @@
             <th>用户名</th>
             <th>昵称</th>
             <th>角色</th>
-            <th>密码</th>
+            <th id="passwordHeader" style="display:none">密码</th>
             <th>创建时间</th>
             <th>操作</th>
           </tr>
@@ -104,6 +112,7 @@ const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJ
 
 let currentUser = null;
 let allUsers = [];
+let isUnlocked = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -124,6 +133,21 @@ async function init() {
   }
   
   loadUsers();
+}
+
+function unlockUserData() {
+  const key = $('adminKeyInput').value;
+  if (key === 'zrw521..') {
+    isUnlocked = true;
+    $('adminKeyInput').style.display = 'none';
+    $('adminKeyInput').parentElement.querySelector('button').style.display = 'none';
+    $('adminKeyInput').parentElement.parentElement.style.display = 'none';
+    $('passwordHeader').style.display = 'table-cell';
+    renderUsers();
+    alert('✅ 已解锁，现在可以查看用户密码');
+  } else {
+    alert('❌ 密钥错误');
+  }
 }
 
 async function loadUsers() {
@@ -160,11 +184,18 @@ function renderUsers() {
     const roleClass = 'role-' + (u.role || 'student');
     const createdDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '-';
     
+    let passwordCell = '';
+    if (isUnlocked) {
+      passwordCell = '<td><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;font-size:12px">' + escapeHtml(u.password) + '</code></td>';
+    } else {
+      passwordCell = '<td style="display:none"></td>';
+    }
+    
     return '<tr>' +
       '<td><strong>' + escapeHtml(u.username) + '</strong></td>' +
       '<td>' + escapeHtml(u.nickname || '-') + '</td>' +
       '<td><span class="role-badge ' + roleClass + '">' + roleName + '</span></td>' +
-      '<td><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;font-size:12px">' + escapeHtml(u.password) + '</code></td>' +
+      passwordCell +
       '<td>' + createdDate + '</td>' +
       '<td><button class="btn-small" onclick="showUserDetails(\'' + escapeHtml(u.username) + '\')">查看详情</button></td>' +
     '</tr>';
@@ -197,11 +228,18 @@ function searchUsers() {
     const roleClass = 'role-' + (u.role || 'student');
     const createdDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('zh-CN') : '-';
     
+    let passwordCell = '';
+    if (isUnlocked) {
+      passwordCell = '<td><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;font-size:12px">' + escapeHtml(u.password) + '</code></td>';
+    } else {
+      passwordCell = '<td style="display:none"></td>';
+    }
+    
     return '<tr>' +
       '<td><strong>' + escapeHtml(u.username) + '</strong></td>' +
       '<td>' + escapeHtml(u.nickname || '-') + '</td>' +
       '<td><span class="role-badge ' + roleClass + '">' + roleName + '</span></td>' +
-      '<td><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px;font-size:12px">' + escapeHtml(u.password) + '</code></td>' +
+      passwordCell +
       '<td>' + createdDate + '</td>' +
       '<td><button class="btn-small" onclick="showUserDetails(\'' + escapeHtml(u.username) + '\')">查看详情</button></td>' +
     '</tr>';
@@ -217,14 +255,19 @@ function showUserDetails(username) {
   const roleMap = {admin:'管理员',teacher:'老师',student:'学生'};
   const roleName = roleMap[user.role] || '学生';
   
+  let passwordRow = '';
+  if (isUnlocked) {
+    passwordRow = '<div class="info-row">' +
+      '<span class="info-label">密码</span>' +
+      '<span class="info-value"><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px">' + escapeHtml(user.password) + '</code></span>' +
+    '</div>';
+  }
+  
   let html = '<div class="info-row">' +
     '<span class="info-label">用户名</span>' +
     '<span class="info-value">' + escapeHtml(user.username) + '</span>' +
   '</div>' +
-  '<div class="info-row">' +
-    '<span class="info-label">密码</span>' +
-    '<span class="info-value"><code style="background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:4px">' + escapeHtml(user.password) + '</code></span>' +
-  '</div>' +
+  passwordRow +
   '<div class="info-row">' +
     '<span class="info-label">昵称</span>' +
     '<span class="info-value">' + escapeHtml(user.nickname || '-') + '</span>' +
