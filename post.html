@@ -272,6 +272,11 @@ function renderPost() {
   const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
   
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  const isAuthor = currentUser && currentUser.username === p.author;
+  const canDelete = isAdmin || isAuthor;
+  const deleteBtn = canDelete ? '<button class="action-btn" onclick="deletePost(' + p.id + ')" style="background:#ef4444">🗑️ 删除</button>' : '';
+  
   let mediaHtml = '';
   if (p.media && p.media.length > 0) {
     mediaHtml = '<div class="post-media">';
@@ -322,6 +327,7 @@ function renderPost() {
       '<div class="post-actions">' +
         '<button class="action-btn" onclick="toggleLike(' + p.id + ')" style="background:' + (isLiked(p.id) ? '#ef4444' : '#ddd') + ';color:' + (isLiked(p.id) ? 'white' : '#333') + '">❤️ ' + (p.likes || 0) + ' 点赞</button>' +
         '<button class="action-btn" onclick="openShareModal()">🔗 分享</button>' +
+        deleteBtn +
       '</div>' +
     '</div>' +
     
@@ -371,9 +377,27 @@ function submitReply() {
     localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
   }
   
+  // 添加回复通知
+  if (currentPost.author && currentPost.author !== currentUser.username) {
+    addNotification({
+      type: 'reply',
+      from_user: currentUser.nickname || currentUser.username,
+      to_user: currentPost.author,
+      post_id: currentPost.id,
+      post_title: currentPost.title,
+      created_at: new Date().toISOString()
+    });
+  }
+  
   document.getElementById('replyInput').value = '';
   renderPost();
   showToast('回复成功！');
+}
+
+function addNotification(notif) {
+  const notifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+  notifications.push(notif);
+  localStorage.setItem('forum_notifications', JSON.stringify(notifications));
 }
 
 function openShareModal() {
@@ -414,6 +438,31 @@ function logout() {
   if (confirm('确定要退出吗？')) {
     sessionStorage.removeItem('currentUser');
     window.location.href = 'index.html';
+  }
+}
+
+function deletePost(postId) {
+  const postsData = localStorage.getItem('forum_posts');
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const post = posts.find(p => p.id === postId);
+  
+  if (!post) return;
+  
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  const isAuthor = currentUser && currentUser.username === post.author;
+  
+  if (!isAdmin && !isAuthor) {
+    alert('你没有权限删除这个帖子');
+    return;
+  }
+  
+  if (confirm('确定要删除这个帖子吗？')) {
+    post.is_deleted = true;
+    localStorage.setItem('forum_posts', JSON.stringify(posts));
+    showToast('删除成功！');
+    setTimeout(() => {
+      window.location.href = 'forum.html';
+    }, 1500);
   }
 }
 
