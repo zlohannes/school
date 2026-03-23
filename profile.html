@@ -154,13 +154,25 @@ let newAvatarData = null;
 
 async function syncUsersToCloud(users) {
   try {
+    // 先读取云端现有数据，避免覆盖其他字段
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
     await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-ACCESS-KEY': JSONBIN_KEY
       },
-      body: JSON.stringify({users: users})
+      body: JSON.stringify({
+        users: users,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
     });
   } catch(e) {
     console.log('云同步失败:', e);
@@ -175,8 +187,11 @@ function getUsers() {
 }
 
 function saveUsers(users) {
+  // 先保存到本地
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  syncUsersToCloud(users); // 同步到云端
+  
+  // 同步到云端（合并模式）
+  syncUsersToCloud(users).catch(() => {});
 }
 
 function init() {

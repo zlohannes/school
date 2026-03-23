@@ -151,25 +151,69 @@ function unlockUserData() {
 }
 
 async function loadUsers() {
-  // 先从本地加载
-  const usersData = localStorage.getItem(USERS_KEY);
-  allUsers = usersData ? JSON.parse(usersData) : [];
-  renderUsers();
+  // 合并本地和云端用户数据
+  let localUsers = [];
+  let cloudUsers = [];
   
-  // 后台从云端加载最新数据
+  // 1. 从本地加载
+  const usersData = localStorage.getItem(USERS_KEY);
+  if (usersData) {
+    try {
+      localUsers = JSON.parse(usersData);
+    } catch(e) {}
+  }
+  
+  // 2. 从云端加载
   try {
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
     });
     const data = await res.json();
     if (data.record && data.record.users) {
-      allUsers = data.record.users;
-      localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
-      renderUsers();
+      cloudUsers = data.record.users;
     }
   } catch(e) {
     console.log('云端加载失败:', e);
   }
+  
+  // 3. 合并两个列表（去重，优先使用云端数据）
+  const mergedUsers = [...cloudUsers];
+  localUsers.forEach(localUser => {
+    if (!mergedUsers.find(u => u.username === localUser.username)) {
+      mergedUsers.push(localUser);
+    }
+  });
+  
+  // 4. 保存合并结果到本地和云端
+  allUsers = mergedUsers;
+  localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
+  
+  // 5. 同步到云端确保一致
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: allUsers,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
+    });
+  } catch(e) {
+    console.log('云端同步失败:', e);
+  }
+  
+  renderUsers();
 }
 
 function renderUsers() {

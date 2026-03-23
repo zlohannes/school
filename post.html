@@ -222,23 +222,91 @@ function loadPost(id) {
     renderPost();
     document.getElementById('loading').classList.add('hidden');
     
-    // 后台从云端加载回复并合并
-    loadRepliesFromCloud(id).then(cloudReplies => {
-      if (cloudReplies && cloudReplies.length > 0) {
-        // 合并本地和云端回复
-        const allReplies = JSON.parse(localStorage.getItem(REPLIES_KEY) || '[]');
-        cloudReplies.forEach(cloudReply => {
-          if (!allReplies.find(r => r.id === cloudReply.id)) {
-            allReplies.push(cloudReply);
-          }
-        });
-        localStorage.setItem(REPLIES_KEY, JSON.stringify(allReplies));
-        replies = allReplies.filter(r => r.post_id === id && !r.is_deleted);
-        renderPost();
-      }
-    }).catch(() => {});
+    // 强制从云端加载回复（不管本地有没有）
+    loadAndMergeReplies(id);
   } catch(e) {
     showError('加载失败，请刷新重试');
+  }
+}
+
+async function loadAndMergeReplies(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    const cloudReplies = record.replies || [];
+    
+    // 获取本地回复
+    const localRepliesData = localStorage.getItem(REPLIES_KEY);
+    const localReplies = localRepliesData ? JSON.parse(localRepliesData) : [];
+    
+    // 合并去重（根据 id）
+    const mergedReplies = [...cloudReplies];
+    localReplies.forEach(localReply => {
+      if (!mergedReplies.find(r => r.id === localReply.id)) {
+        mergedReplies.push(localReply);
+      }
+    });
+    
+    // 保存合并结果到本地
+    localStorage.setItem(REPLIES_KEY, JSON.stringify(mergedReplies));
+    
+    // 同步合并结果到云端
+    await syncAllToCloud({ replies: mergedReplies });
+    
+    // 更新显示
+    replies = mergedReplies.filter(r => r.post_id === postId && !r.is_deleted);
+    renderPost();
+    
+    // 更新帖子回复数
+    updatePostReplyCount(postId, replies.length);
+    
+  } catch(e) {
+    console.log('云端回复加载失败:', e);
+  }
+}
+
+function updatePostReplyCount(postId, count) {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const postIndex = posts.findIndex(p => p.id === postId);
+  if (postIndex >= 0) {
+    posts[postIndex].reply_count = count;
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+    currentPost.reply_count = count;
+    syncAllToCloud({ posts: posts }).catch(() => {});
+  }
+}
+
+async function syncAllToCloud(data) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const cloudData = await res.json();
+    const record = cloudData.record || {};
+    
+    const body = {
+      users: record.users || [],
+      posts: data.posts || record.posts || [],
+      replies: data.replies || record.replies || [],
+      notifications: record.notifications || []
+    };
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify(body)
+    });
+    
+    console.log('云端同步成功');
+  } catch(e) {
+    console.log('云端同步失败:', e);
   }
 }
 
@@ -427,21 +495,9 @@ function submitReply() {
     created_at: new Date().toISOString()
   };
   
+  // 添加到本地列表
   replies.unshift(reply);
   localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
-  
-  // 更新帖子回复数
-  const postsData = localStorage.getItem(POSTS_KEY);
-  const posts = JSON.parse(postsData || '[]');
-  const postIndex = posts.findIndex(p => p.id === currentPost.id);
-  if (postIndex >= 0) {
-    posts[postIndex].reply_count = (posts[postIndex].reply_count || 0) + 1;
-    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
-    // 更新 currentPost 对象
-    currentPost.reply_count = posts[postIndex].reply_count;
-    // 同步到云端
-    syncPostsToCloud(posts).catch(() => {});
-  }
   
   // 添加回复通知
   if (currentPost.author && currentPost.author !== currentUser.username) {
@@ -455,12 +511,16 @@ function submitReply() {
     });
   }
   
-  // 同步回复到云端
-  syncRepliesToCloud().catch(() => {});
-  
-  document.getElementById('replyInput').value = '';
-  renderPost();
-  showToast('回复成功！');
+  // 同步所有数据到云端
+  syncAllToCloud({ replies: replies }).then(() => {
+    document.getElementById('replyInput').value = '';
+    renderPost();
+    showToast('回复成功！');
+  }).catch(() => {
+    document.getElementById('replyInput').value = '';
+    renderPost();
+    showToast('回复成功！（同步中）');
+  });
 }
 
 function addNotification(notif) {
@@ -469,18 +529,23 @@ function addNotification(notif) {
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
   
   // 同步到云端
-  syncNotificationsToCloud(notifications).catch(() => {});
+  syncAllToCloud({ notifications: notifications }).catch(() => {});
 }
 
-async function syncRepliesToCloud() {
+async function syncAllToCloud(data) {
   try {
-    const allReplies = JSON.parse(localStorage.getItem(REPLIES_KEY) || '[]');
-    
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
     });
-    const data = await res.json();
-    const record = data.record || {};
+    const cloudData = await res.json();
+    const record = cloudData.record || {};
+    
+    const body = {
+      users: record.users || [],
+      posts: data.posts || record.posts || [],
+      replies: data.replies || record.replies || [],
+      notifications: data.notifications || record.notifications || []
+    };
     
     await fetch(JSONBIN_URL, {
       method: 'PUT',
@@ -488,68 +553,22 @@ async function syncRepliesToCloud() {
         'Content-Type': 'application/json',
         'X-ACCESS-KEY': JSONBIN_KEY
       },
-      body: JSON.stringify({
-        users: record.users || [],
-        posts: record.posts || [],
-        replies: allReplies,
-        notifications: record.notifications || []
-      })
+      body: JSON.stringify(body)
     });
+    
+    console.log('云端同步成功');
   } catch(e) {
-    console.log('回复同步失败:', e);
+    console.log('云端同步失败:', e);
   }
 }
 
-async function syncNotificationsToCloud(notifications) {
-  try {
-    const res = await fetch(JSONBIN_URL, {
-      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
-    });
-    const data = await res.json();
-    const record = data.record || {};
-    
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-ACCESS-KEY': JSONBIN_KEY
-      },
-      body: JSON.stringify({
-        users: record.users || [],
-        posts: record.posts || [],
-        replies: record.replies || [],
-        notifications: notifications
-      })
-    });
-  } catch(e) {
-    console.log('通知同步失败:', e);
-  }
-}
-
-async function syncPostsToCloud(posts) {
-  try {
-    const res = await fetch(JSONBIN_URL, {
-      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
-    });
-    const data = await res.json();
-    const record = data.record || {};
-    
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-ACCESS-KEY': JSONBIN_KEY
-      },
-      body: JSON.stringify({
-        users: record.users || [],
-        posts: posts,
-        replies: record.replies || [],
-        notifications: record.notifications || []
-      })
-    });
-  } catch(e) {
-    console.log('帖子同步失败:', e);
-  }
+function addNotification(notif) {
+  const notifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+  notifications.push(notif);
+  localStorage.setItem('forum_notifications', JSON.stringify(notifications));
+  
+  // 同步到云端
+  syncAllToCloud({ notifications: notifications }).catch(() => {});
 }
 
 function openShareModal() {

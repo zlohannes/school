@@ -95,10 +95,14 @@
       .post-item{padding:12px 14px}
       .post-title{font-size:14px}
       .post-preview{font-size:12px}
-      .post-meta{font-size:11px;gap:8px}
+      .post-meta{font-size:11px;gap:8px;flex-wrap:wrap}
+      .post-meta button{padding:3px 6px;font-size:11px}
       .categories{margin-bottom:12px}
       .category-tag{padding:6px 12px;font-size:12px}
       .fab{bottom:20px;right:20px;width:50px;height:50px;font-size:24px}
+      .nav-links{gap:4px}
+      .nav-links a{padding:4px 8px;font-size:12px}
+      .nav-links button{padding:4px 8px;font-size:12px}
     }
     
     @media(max-width:480px){
@@ -107,6 +111,7 @@
       .card-header{padding:10px 14px;font-size:14px}
       .post-item{padding:10px 14px}
       .post-title{font-size:13px}
+      .nav-links a.nav-link:not(#adminLink){display:none}
     }
   </style>
 </head>
@@ -272,34 +277,36 @@ async function renderUserInfo() {
     
     currentUser = JSON.parse(userStr);
     
-    // 强制从云端加载最新用户数据
-    const cloudUsers = await loadUsersFromCloud();
-    if (cloudUsers) {
-      const storedUser = cloudUsers.find(u => u.username === currentUser.username);
-      if (storedUser) {
-        currentUser = Object.assign({}, storedUser);
-        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        localStorage.setItem(USERS_KEY, JSON.stringify(cloudUsers));
-      }
-    } else {
-      // 云端加载失败，使用本地
-      const usersData = localStorage.getItem(USERS_KEY);
-      const users = usersData ? JSON.parse(usersData) : [];
-      const storedUser = users.find(u => u.username === currentUser.username);
-      if (storedUser) {
-        currentUser = Object.assign({}, storedUser);
-        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-      }
-    }
+    // 先用 sessionStorage 的数据渲染（最快）
+    updateUserDisplay();
     
-    // 更新用户显示
-    const el = document.getElementById('userInfo');
-    const name = currentUser.nickname || currentUser.username || '?';
-    const initial = name.charAt(0).toUpperCase();
-    if (currentUser.avatar) {
-      el.innerHTML = '<div class="avatar"><img src="' + currentUser.avatar + '"></div><span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
-    } else {
-      el.innerHTML = '<div class="avatar">' + initial + '</div><span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
+    // 从云端加载最新用户数据
+    try {
+      const res = await fetch(JSONBIN_URL, { headers: {'X-ACCESS-KEY': JSONBIN_KEY} });
+      const data = await res.json();
+      if (data.record && data.record.users) {
+        const cloudUsers = data.record.users;
+        localStorage.setItem(USERS_KEY, JSON.stringify(cloudUsers));
+        const storedUser = cloudUsers.find(u => u.username === currentUser.username);
+        if (storedUser) {
+          // 合并：云端数据优先，但保留 sessionStorage 中有而云端没有的字段
+          currentUser = Object.assign({}, currentUser, storedUser);
+          sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+          updateUserDisplay();
+        }
+      }
+    } catch(e) {
+      // 云端失败，从本地 localStorage 加载
+      const usersData = localStorage.getItem(USERS_KEY);
+      if (usersData) {
+        const users = JSON.parse(usersData);
+        const storedUser = users.find(u => u.username === currentUser.username);
+        if (storedUser) {
+          currentUser = Object.assign({}, currentUser, storedUser);
+          sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+          updateUserDisplay();
+        }
+      }
     }
     
     const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
@@ -315,6 +322,17 @@ async function renderUserInfo() {
   } catch(e) {
     console.error('用户信息加载失败:', e);
   }
+}
+
+function updateUserDisplay() {
+  const el = document.getElementById('userInfo');
+  if (!el) return;
+  const name = currentUser.nickname || currentUser.username || '?';
+  const initial = name.charAt(0).toUpperCase();
+  const avatarHtml = currentUser.avatar
+    ? '<div class="avatar"><img src="' + currentUser.avatar + '"></div>'
+    : '<div class="avatar">' + initial + '</div>';
+  el.innerHTML = avatarHtml + '<span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
 }
 
 function loadPosts() {
@@ -504,16 +522,23 @@ function addNotification(notif) {
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
   
   // 同步到云端
-  syncNotificationsToCloud(notifications).catch(() => {});
+  syncAllToCloud({ notifications: notifications }).catch(() => {});
 }
 
-async function syncNotificationsToCloud(notifications) {
+async function syncAllToCloud(data) {
   try {
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
     });
-    const data = await res.json();
-    const record = data.record || {};
+    const cloudData = await res.json();
+    const record = cloudData.record || {};
+    
+    const body = {
+      users: data.users || record.users || [],
+      posts: data.posts || record.posts || [],
+      replies: record.replies || [],
+      notifications: data.notifications || record.notifications || []
+    };
     
     await fetch(JSONBIN_URL, {
       method: 'PUT',
@@ -521,14 +546,10 @@ async function syncNotificationsToCloud(notifications) {
         'Content-Type': 'application/json',
         'X-ACCESS-KEY': JSONBIN_KEY
       },
-      body: JSON.stringify({
-        users: record.users || [],
-        posts: record.posts || [],
-        notifications: notifications
-      })
+      body: JSON.stringify(body)
     });
   } catch(e) {
-    console.log('通知同步失败:', e);
+    console.log('云端同步失败:', e);
   }
 }
 
@@ -716,6 +737,10 @@ async function syncPostsToCloud(posts) {
     const data = await res.json();
     const record = data.record || {};
     
+    // 获取本地回复数据
+    const localReplies = localStorage.getItem('forum_replies');
+    const replies = localReplies ? JSON.parse(localReplies) : [];
+    
     await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: {
@@ -725,7 +750,7 @@ async function syncPostsToCloud(posts) {
       body: JSON.stringify({
         users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'), 
         posts: posts,
-        replies: record.replies || [],
+        replies: replies,
         notifications: record.notifications || []
       })
     });

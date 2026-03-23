@@ -128,13 +128,25 @@ const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
 
 async function syncUsersToCloud(users) {
   try {
+    // 先读取云端现有数据，避免覆盖其他字段
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
     await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-ACCESS-KEY': JSONBIN_KEY
       },
-      body: JSON.stringify({users: users})
+      body: JSON.stringify({
+        users: users,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
     });
   } catch(e) {
     console.log('云同步失败:', e);
@@ -242,16 +254,49 @@ function doRegister(e) {
   if (password !== confirmPassword) { showError('两次输入的密码不一致'); return; }
   if (password.length < 6 || password.length > 20) { showError('密码长度应为6-20位'); return; }
   
+  // 从本地获取现有用户
   const users = getUsers();
   if (users.find(u => u.username === username)) { showError('用户名已存在'); return; }
   
   const newUser = {username, password, nickname, realName, major, gender, role, createdAt: new Date().toISOString()};
   users.push(newUser);
+  
+  // 保存到本地
   saveUsers(users);
   
   // 注册后自动登录
   sessionStorage.setItem('currentUser', JSON.stringify(newUser));
   window.location.href = 'forum.html';
+}
+
+async function saveUsers(users) {
+  // 先保存到本地
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  
+  // 同步到云端（合并模式）
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: users,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
+    });
+  } catch(e) {
+    console.log('云同步失败:', e);
+  }
 }
 
 function guestLogin() {
