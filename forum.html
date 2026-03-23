@@ -6,59 +6,83 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>鹿城学院论坛 - 校园交流社区</title>
-  <meta name="description" content="鹿城学院论坛 - 温州职业技术学院学生交流平台">
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
     a{color:var(--acc);text-decoration:none}
     
-    /* 导航栏 */
     .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(11,15,20,0.9);border-bottom:1px solid rgba(255,255,255,0.06)}
     .nav-inner{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    .nav-logo{font-size:18px;font-weight:700;color:var(--text);white-space:nowrap}
+    .nav-logo{font-size:18px;font-weight:700;color:var(--text);white-space:nowrap;display:flex;align-items:center;gap:8px}
     .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
-    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;cursor:pointer}
+    .nav-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
     .user-info{display:flex;align-items:center;gap:8px;cursor:pointer}
     .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
     .avatar img{width:100%;height:100%;object-fit:cover}
     .user-name{font-size:14px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     
-    /* 主布局 */
     .main{max-width:1080px;margin:16px auto;padding:0 16px;display:grid;grid-template-columns:1fr 280px;gap:16px}
     
-    /* 分类 */
     .categories{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
     .category-tag{padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);transition:all 0.2s;white-space:nowrap;flex-shrink:0}
     .category-tag.active{background:rgba(76,201,240,0.2);border-color:var(--acc);color:var(--acc)}
     
-    /* 卡片 */
     .card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:14px;overflow:hidden}
     .card-header{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:600;display:flex;justify-content:space-between;align-items:center}
     .post-count{font-weight:normal;font-size:13px;color:var(--muted)}
     
-    /* 帖子列表 */
-    .post-item{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.15s;active{background:rgba(255,255,255,0.03)}}
+    .post-item{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:background 0.15s}
+    .post-item:hover{background:rgba(255,255,255,0.03)}
     .post-item:last-child{border-bottom:none}
     .post-title{font-size:15px;font-weight:600;margin-bottom:6px;line-height:1.4}
     .post-preview{color:var(--muted);font-size:13px;margin-bottom:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .post-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+    .post-media-preview{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    .media-thumb{width:60px;height:60px;border-radius:8px;object-fit:cover;cursor:pointer;opacity:0;transition:opacity 0.3s}
+.media-thumb.loaded{opacity:1}
+    .media-video{width:120px;height:60px;border-radius:8px;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:24px}
     
-    /* 侧边栏 */
     .sidebar{display:flex;flex-direction:column;gap:16px}
     .sidebar-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px}
     .sidebar-card h3{font-size:14px;margin-bottom:12px;color:var(--muted)}
     .notice-text{font-size:12px;color:var(--muted);line-height:1.8}
     .notice-phone{color:var(--acc);font-size:13px}
     
-    /* 加载 */
     .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500;font-size:16px}
     .loading.hidden{display:none}
-    
-    /* 空状态 */
     .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
     
-    /* 移动端适配 */
+    .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:50%;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(102,126,234,0.4);z-index:99}
+    
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+    .modal-overlay.active{display:flex}
+    .modal{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;padding:24px}
+    .modal-title{font-size:18px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer}
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);font-size:14px}
+    .form-group textarea{min-height:120px;resize:vertical;font-family:inherit}
+    .form-group input:focus,.form-group textarea:focus{border-color:var(--acc);outline:none}
+    .form-group select option{background:#1a2030}
+    .checkbox-group{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+    .checkbox-group input{width:18px;height:18px}
+    .checkbox-group label{font-size:13px;color:var(--muted)}
+    .btn-row{display:flex;gap:10px;margin-top:16px}
+    .btn{flex:1;padding:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:14px;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);border:none;color:white;font-weight:600}
+    
+    .media-upload{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    .media-upload-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px dashed rgba(255,255,255,0.2)}
+    .media-upload-item img,.media-upload-item video{width:100%;height:100%;object-fit:cover}
+    .media-upload-remove{position:absolute;top:2px;right:2px;width:20px;height:20px;background:#ef4444;color:white;border:none;border-radius:50%;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .media-upload-add{width:80px;height:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:11px;cursor:pointer;border:2px dashed rgba(255,255,255,0.2);border-radius:8px}
+    
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
+    .toast.error{background:#ef4444}
+    
     @media(max-width:768px){
       .main{grid-template-columns:1fr;padding:0 12px;margin:12px auto}
       .sidebar{display:none}
@@ -71,6 +95,7 @@
       .post-meta{font-size:11px;gap:8px}
       .categories{margin-bottom:12px}
       .category-tag{padding:6px 12px;font-size:12px}
+      .fab{bottom:20px;right:20px;width:50px;height:50px;font-size:24px}
     }
     
     @media(max-width:480px){
@@ -84,10 +109,11 @@
 </head>
 <body>
   <div class="loading" id="loading">正在加载...</div>
+  <div class="toast" id="toast"></div>
   
   <nav class="navbar">
     <div class="nav-inner">
-      <a href="forum.html" class="nav-logo">🏫 鹿城学院论坛</a>
+      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
       <div class="nav-links">
         <div id="guestLoginBtn" style="display:none"><a href="index.html" class="nav-link">登录</a></div>
         <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'"></div>
@@ -117,6 +143,56 @@
       </div>
     </aside>
   </main>
+  
+  <button class="fab" onclick="openPostModal()" title="发布帖子">+</button>
+  
+  <div class="modal-overlay" id="postModal">
+    <div class="modal">
+      <div class="modal-title">
+        <span>📝 发布帖子</span>
+        <button class="modal-close" onclick="closePostModal()">×</button>
+      </div>
+      <form id="postForm" onsubmit="submitPost(event)">
+        <div class="form-group">
+          <label>标题 *</label>
+          <input type="text" id="postTitle" required placeholder="输入帖子标题" maxlength="100">
+        </div>
+        <div class="form-group">
+          <label>分类 *</label>
+          <select id="postCategory" required>
+            <option value="">选择分类</option>
+            <option value="campus">校园生活</option>
+            <option value="learning">学习交流</option>
+            <option value="trade">二手交易</option>
+            <option value="job">游戏搭子</option>
+            <option value="chat">闲聊灌水</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>内容 *</label>
+          <textarea id="postContent" required placeholder="输入帖子内容" maxlength="5000"></textarea>
+        </div>
+        <div class="form-group">
+          <label>上传图片/视频</label>
+          <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="handleMediaSelect(this)">
+          <div class="media-upload" id="mediaPreview">
+            <div class="media-upload-add" onclick="document.getElementById('mediaInput').click()">
+              <span>📷</span>
+              <span>添加媒体</span>
+            </div>
+          </div>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="isAnonymous">
+          <label for="isAnonymous">🔒 匿名发布（作者显示为"匿名"）</label>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn" onclick="closePostModal()">取消</button>
+          <button type="submit" class="btn btn-primary">发布</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 <script>
 const CATEGORIES = [
@@ -129,44 +205,61 @@ const CATEGORIES = [
 ];
 
 const USERS_KEY = 'forum_users';
+const POSTS_KEY = 'forum_posts';
 let allPosts = [];
 let currentCategory = 'all';
+let currentUser = null;
+let selectedMedia = [];
 
 function init() {
-  const userStr = sessionStorage.getItem('currentUser');
-  if (!userStr) { window.location.href = 'index.html'; return; }
-  
-  let user = JSON.parse(userStr);
-  const usersData = localStorage.getItem(USERS_KEY);
-  if (usersData) {
-    const users = JSON.parse(usersData);
-    const storedUser = users.find(u => u.username === user.username);
-    if (storedUser) user = Object.assign({}, user, storedUser);
+  try {
+    const userStr = sessionStorage.getItem('currentUser');
+    if (!userStr) {
+      window.location.href = 'index.html';
+      return;
+    }
+    
+    currentUser = JSON.parse(userStr);
+    
+    // 用户信息
+    const usersData = localStorage.getItem(USERS_KEY);
+    if (usersData) {
+      const users = JSON.parse(usersData);
+      const storedUser = users.find(u => u.username === currentUser.username);
+      if (storedUser) currentUser = Object.assign({}, currentUser, storedUser);
+    }
+    
+    // 更新用户显示
+    const el = document.getElementById('userInfo');
+    const name = currentUser.nickname || currentUser.username || '?';
+    const initial = name.charAt(0).toUpperCase();
+    if (currentUser.avatar) {
+      el.innerHTML = '<div class="avatar"><img src="' + currentUser.avatar + '"></div><span class="user-name">' + name + '</span>';
+    } else {
+      el.innerHTML = '<div class="avatar">' + initial + '</div><span class="user-name">' + name + '</span>';
+    }
+    
+    // 游客显示
+    const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+    document.getElementById('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
+    
+    renderCategories();
+    loadPosts();
+    hideLoading();
+  } catch(e) {
+    console.error('初始化错误:', e);
+    document.getElementById('loading').innerHTML = '<div style="color:#ef4444;padding:40px;text-align:center">加载失败<br><br><button onclick="location.reload()" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer">点击重试</button></div>';
   }
-  
-  const el = document.getElementById('userInfo');
-  if (user.avatar) {
-    el.innerHTML = '<div class="avatar"><img src="' + user.avatar + '"></div><span class="user-name">' + (user.nickname || user.username) + '</span>';
-  } else {
-    el.innerHTML = '<div class="avatar">' + (user.nickname || user.username || '?').charAt(0).toUpperCase() + '</div><span class="user-name">' + (user.nickname || user.username) + '</span>';
-  }
-  
-  document.getElementById('guestLoginBtn').style.display = (user.role === 'guest' || user.username === '__GUEST__') ? 'block' : 'none';
-  
-  renderCategories();
-  loadPosts();
-  hideLoading();
 }
 
-async function loadPosts() {
+function loadPosts() {
   try {
-    const res = await fetch('./data/posts.json');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    allPosts = data.posts || [];
+    const postsData = localStorage.getItem(POSTS_KEY);
+    allPosts = postsData ? JSON.parse(postsData) : [];
     renderPosts();
   } catch(e) {
-    document.getElementById('postList').innerHTML = '<div class="empty">加载失败</div>';
+    allPosts = [];
+    renderPosts();
   }
 }
 
@@ -183,31 +276,49 @@ function filterCategory(cat) {
 }
 
 function renderPosts() {
-  let posts = allPosts;
+  let posts = allPosts.filter(p => !p.is_deleted);
   if (currentCategory !== 'all') posts = posts.filter(p => p.category === currentCategory);
-  posts.sort((a, b) => (b.is_pinned ? 1 : 0) - (a.is_pinned ? 1 : 0));
+  posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   
   document.getElementById('postCount').textContent = posts.length + ' 条';
   
   if (posts.length === 0) {
-    document.getElementById('postList').innerHTML = '<div class="empty">暂无帖子</div>';
+    document.getElementById('postList').innerHTML = '<div class="empty">暂无帖子，发表第一篇吧！</div>';
     return;
   }
   
-  document.getElementById('postList').innerHTML = posts.map(p => 
-    '<div class="post-item" onclick="viewPost(' + p.id + ')">' +
-      '<div class="post-title">' + (p.is_pinned ? '📌 ' : '') + escapeHtml(p.title) + '</div>' +
+  const html = [];
+  for (let i = 0; i < posts.length; i++) {
+    const p = posts[i];
+    let mediaHtml = '';
+    if (p.media && p.media.length > 0) {
+      mediaHtml = '<div class="post-media-preview">';
+      for (let j = 0; j < Math.min(p.media.length, 3); j++) {
+        const m = p.media[j];
+        if (m.type === 'image') {
+          mediaHtml += '<img src="' + m.data + '" class="media-thumb">';
+        } else {
+          mediaHtml += '<div class="media-video">▶</div>';
+        }
+      }
+      mediaHtml += '</div>';
+    }
+    const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+    html.push('<div class="post-item" onclick="viewPost(' + p.id + ')">' +
+      '<div class="post-title">' + escapeHtml(p.title) + '</div>' +
       '<div class="post-preview">' + escapeHtml(p.content) + '</div>' +
+      mediaHtml +
       '<div class="post-meta">' +
-        '<span>👤 ' + escapeHtml(p.author_nickname || p.author || '匿名') + '</span>' +
+        '<span>👤 ' + escapeHtml(authorName) + '</span>' +
         '<span>💬 ' + (p.reply_count || 0) + '</span>' +
         '<span>⏰ ' + timeAgo(p.created_at) + '</span>' +
-      '</div>' +
-    '</div>'
-  ).join('');
+      '</div></div>');
+  }
+  document.getElementById('postList').innerHTML = html.join('');
 }
 
 function escapeHtml(s) {
+  if (!s) return '';
   const div = document.createElement('div');
   div.textContent = s;
   return div.innerHTML;
@@ -223,7 +334,101 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('zh-CN');
 }
 
-function viewPost(id) { window.location.href = 'post.html?id=' + id; }
+function viewPost(id) {
+  window.location.href = 'post.html?id=' + id;
+}
+
+function openPostModal() {
+  document.getElementById('postModal').classList.add('active');
+  document.getElementById('postForm').reset();
+  selectedMedia = [];
+  renderMediaPreview();
+}
+
+function closePostModal() {
+  document.getElementById('postModal').classList.remove('active');
+}
+
+function handleMediaSelect(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedMedia.push({
+        type: file.type.startsWith('video') ? 'video' : 'image',
+        data: e.target.result,
+        name: file.name
+      });
+      renderMediaPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderMediaPreview() {
+  let html = '';
+  selectedMedia.forEach((m, i) => {
+    html += '<div class="media-upload-item">';
+    if (m.type === 'image') {
+      html += '<img src="' + m.data + '">';
+    } else {
+      html += '<video src="' + m.data + '"></video>';
+    }
+    html += '<button class="media-upload-remove" onclick="removeMedia(' + i + ')">×</button></div>';
+  });
+  html += '<div class="media-upload-add" onclick="document.getElementById(\'mediaInput\').click()"><span>📷</span><span>添加</span></div>';
+  document.getElementById('mediaPreview').innerHTML = html;
+}
+
+function removeMedia(index) {
+  selectedMedia.splice(index, 1);
+  renderMediaPreview();
+}
+
+function submitPost(e) {
+  e.preventDefault();
+  
+  const title = document.getElementById('postTitle').value.trim();
+  const category = document.getElementById('postCategory').value;
+  const content = document.getElementById('postContent').value.trim();
+  const isAnonymous = document.getElementById('isAnonymous').checked;
+  
+  if (!title || !category || !content) {
+    showToast('请填写完整信息', 'error');
+    return;
+  }
+  
+  const post = {
+    id: Date.now(),
+    title: title,
+    category: category,
+    content: content,
+    author: currentUser.username,
+    author_nickname: isAnonymous ? null : (currentUser.nickname || currentUser.username),
+    is_anonymous: isAnonymous,
+    is_deleted: false,
+    created_at: new Date().toISOString(),
+    reply_count: 0,
+    media: selectedMedia
+  };
+  
+  allPosts.unshift(post);
+  localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+  
+  closePostModal();
+  renderPosts();
+  showToast('发布成功！');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
 function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
 
 init();

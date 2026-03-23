@@ -2,12 +2,8 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>帖子详情 - 鹿城学院论坛</title>
-  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 腾讯云 CloudBase SDK -->
-  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
-  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
@@ -16,12 +12,10 @@
     .nav-left{display:flex;align-items:center;gap:15px}
     .back-btn{color:white;text-decoration:none;font-size:14px}
     .nav-logo{color:white;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;text-decoration:none}
-    .nav-logo img{height:24px}
     .nav-links{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
     .nav-link{color:rgba(255,255,255,0.9);text-decoration:none;font-size:14px}
-    .user-info{display:flex;align-items:center;gap:8px;color:white;font-size:14px}
-    .role-tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.2)}
-    .btn-logout{background:rgba(255,255,255,0.2);color:white;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+    .btn-share{background:rgba(255,255,255,0.2);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+    .btn-login{background:white;color:#667eea;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
     .mobile-menu-btn{display:none;background:none;border:none;color:white;font-size:24px;cursor:pointer}
     @media(max-width:768px){.mobile-menu-btn{display:block}.nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}.nav-links.active{display:flex}}
     .main{max-width:800px;margin:20px auto;padding:0 15px 100px}
@@ -29,8 +23,7 @@
     .post-header{display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
     .category-tag{padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:white}
     .tag-learning{background:#4CAF50}.tag-campus{background:#2196F3}.tag-trade{background:#FF9800}.tag-job{background:#9C27B0}.tag-chat{background:#FF5722}.tag-notice{background:#f44336}
-    .tag-anon{background:rgba(168,85,247,0.2);color:#a855f7;padding:2px 10px;border-radius:10px;font-size:11px}
-    .tag-pin{background:rgba(239,68,68,0.2);color:#ef4444;padding:2px 10px;border-radius:10px;font-size:11px}
+    .tag-anon{background:rgba(168,85,247,0.2);color:#a855f7;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600}
     .post-title{font-size:22px;font-weight:700;color:#333;margin-bottom:20px;line-height:1.4}
     .post-author{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #eee}
     .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700}
@@ -38,14 +31,12 @@
     .author-name{font-weight:600;color:#333;font-size:15px}
     .author-time{color:#999;font-size:13px;margin-top:2px}
     .post-content{color:#333;font-size:15px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word}
-    .post-media{margin-top:16px}
-    .post-media img{max-width:100%;border-radius:8px;margin-bottom:10px;cursor:pointer}
-    .post-media video{max-width:100%;border-radius:8px}
+    .post-media{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px}
+    .post-media img{max-width:100%;border-radius:8px;cursor:pointer;max-height:400px;object-fit:contain}
+    .post-media video{max-width:100%;border-radius:8px;max-height:400px}
     .post-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
     .action-btn{background:none;border:1px solid #ddd;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;transition:all 0.2s}
     .action-btn:hover{background:#f5f5f5}
-    .action-btn.liked{color:#e74c3c;border-color:#e74c3c}
-    .action-btn.danger{color:#e74c3c;border-color:#e74c3c}
     .replies-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px}
     .replies-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
     .replies-title{font-size:18px;font-weight:600;color:#333}
@@ -66,362 +57,370 @@
     .reply-textarea:focus{border-color:#667eea;outline:none}
     .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
     .btn-send:disabled{opacity:0.5;cursor:not-allowed}
-    .error-state{text-align:center;padding:80px 20px}
-    .error-icon{font-size:64px;margin-bottom:20px}
-    .error-text{font-size:18px;color:#666;margin-bottom:20px}
-    .btn-back{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 30px;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block}
     .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
     .loading.hidden{display:none}
     .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loading .msg{color:#667eea;font-size:15px;font-weight:600}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
+    .toast.error{background:#ef4444}
+    .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
+    .login-box{background:white;border-radius:16px;padding:32px;max-width:360px;width:100%;text-align:center}
+    .login-icon{font-size:64px;margin-bottom:16px}
+    .login-title{font-size:20px;font-weight:700;color:#333;margin-bottom:8px}
+    .login-desc{color:#666;font-size:14px;margin-bottom:20px}
+    .login-btn{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:14px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+    .share-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:400;padding:20px}
+    .share-modal.active{display:flex}
+    .share-content{background:white;border-radius:16px;padding:24px;max-width:400px;width:100%}
+    .share-title{font-size:18px;font-weight:700;margin-bottom:16px;text-align:center}
+    .share-url{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:12px;word-break:break-all}
+    .share-btns{display:flex;gap:10px}
+    .share-btn{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:white;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+    .share-btn.primary{background:#667eea;color:white;border-color:#667eea}
+    .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:500}
+    .image-viewer.active{display:flex}
+    .image-viewer img{max-width:95%;max-height:95%;object-fit:contain}
+    .image-viewer .close-btn{position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:32px;cursor:pointer}
   </style>
 </head>
 <body>
   <div class="loading" id="loading"><div class="spinner"></div><div class="msg">加载中...</div></div>
+  <div class="toast" id="toast"></div>
+  
+  <div class="login-overlay" id="loginOverlay" style="display:none">
+    <div class="login-box">
+      <div class="login-icon">🔐</div>
+      <div class="login-title">登录后查看详情</div>
+      <div class="login-desc">登录后即可查看帖子详情、参与讨论</div>
+      <button class="login-btn" onclick="goToLogin()">前往登录</button>
+    </div>
+  </div>
+  
+  <div class="share-modal" id="shareModal">
+    <div class="share-content">
+      <div class="share-title">分享帖子</div>
+      <input type="text" class="share-url" id="shareUrl" readonly>
+      <div class="share-btns">
+        <button class="share-btn" onclick="copyShareUrl()">📋 复制链接</button>
+        <button class="share-btn primary" onclick="closeShareModal()">完成</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="image-viewer" id="imageViewer">
+    <button class="close-btn" onclick="closeImageViewer()">×</button>
+    <img id="viewerImage" src="" alt="">
+  </div>
   
   <nav class="navbar">
     <div class="nav-content">
       <div class="nav-left">
         <a href="forum.html" class="back-btn">← 返回</a>
-        <a href="forum.html" class="nav-logo"><img src="https://www.wzvtc.cn/favicon.ico"> 鹿城学院论坛</a>
+        <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
       </div>
       <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
       <div class="nav-links" id="navLinks">
         <a href="forum.html" class="nav-link">首页</a>
         <a href="profile.html" class="nav-link">我的主页</a>
-        <div class="user-info" id="userInfo"></div>
-        <button class="btn-logout" onclick="logout()">退出</button>
+        <button class="btn-share" onclick="openShareModal()">🔗 分享</button>
+        <button class="btn-login" id="loginBtn" onclick="goToLogin()" style="display:none">登录</button>
       </div>
     </div>
   </nav>
   
   <div class="main" id="mainContent"></div>
 
-  <script>
-(function(){
-  var app=tcb.init({env:window.CLOUDBASE_ENV});
-  var db=app.database();
-  var _=db.command;
-    db: { schema: 'public' }
-  
-  // 请求超时包装
-  async function withTimeout(promise, ms) {
-    ms = ms || 8000;
-    return Promise.race([
-      promise,
-      new Promise(function(_, reject) {
-        setTimeout(function() { reject(new Error('请求超时')); }, ms);
-      })
-    ]);
-  }
-  
-  var catNames = {
-    learning: '学习交流',
-    campus: '校园生活',
-    trade: '二手交易',
-    job: '游戏搭子',
-    chat: '闲聊灌水',
-    notice: '公告通知'
-  };
-  
-  var currentUser = null;
-  var postData = null;
-  var replies = [];
-  var isGuest = false;
+<script>
+const POSTS_KEY = 'forum_posts';
+const REPLIES_KEY = 'forum_replies';
+const USERS_KEY = 'forum_users';
 
-  function $(id) { return document.getElementById(id); }
-  
-  function esc(s) {
-    if (!s) return '';
-    var d = document.createElement('div');
-    d.textContent = s;
-    return d.innerHTML;
-  }
-  
-  function timeAgo(d) {
-    var s = Math.floor((Date.now() - new Date(d)) / 1000);
-    if (s < 60) return '刚刚';
-    if (s < 3600) return Math.floor(s / 60) + '分钟前';
-    if (s < 86400) return Math.floor(s / 3600) + '小时前';
-    if (s < 2592000) return Math.floor(s / 86400) + '天前';
-    return new Date(d).toLocaleDateString('zh-CN');
-  }
+let currentPost = null;
+let currentUser = null;
+let replies = [];
 
-  function showLoading() { $('loading').classList.remove('hidden'); }
-  function hideLoading() { $('loading').classList.add('hidden'); }
-
-  async function init() {
-    var s = sessionStorage.getItem('currentUser');
-    if (!s) { window.location.href = 'index.html'; return; }
-    currentUser = JSON.parse(s);
-    // 检测游客模式
-    isGuest = (currentUser.role === 'guest' || currentUser.username === '__GUEST__');
+function init() {
+  try {
+    currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
     
-    // 游客直接跳回首页
-    if (isGuest) {
-      alert('游客无法查看帖子详情，请先登录');
-      window.location.href = 'forum.html';
+    const params = new URLSearchParams(location.search);
+    const postId = parseInt(params.get('id'));
+    
+    if (!postId) {
+      showError('无效的帖子');
       return;
     }
     
-    showLoading();
-    
-    // 性能优化：并行加载用户信息和帖子
-    var userPromise = withTimeout(db.collection('users').where({username:currentUser.username}).limit(1).get(), 5000);
-    var postPromise = loadPost();
-    
-    try {
-      var userRes = await userPromise;
-      if (userRes.data && userRes.data[0]) {
-        currentUser.avatar = userRes.data[0].avatar_data || userRes.data[0].avatar_url;
-        currentUser.nickname = userRes.data.nickname || currentUser.nickname;
-      }
-      await postPromise;
-    } catch(e) {
-      alert('加载失败：' + e.message + '\n请检查网络连接');
-    }
-    hideLoading();
-  }
-
-  async function loadPost() {
-    var id = new URLSearchParams(location.search).get('id');
-    if (!id) { showError('帖子不存在'); return; }
-    
-    try {
-      // 性能优化：先加载帖子和回复，渲染页面
-      var res = await withTimeout(db.collection('posts').doc(id).get(), 8000);
-      if (!res.data) { showError('帖子不存在'); return; }
-      postData = Object.assign({}, res.data, {id: res.data._id});
-      
-      var repRes = await withTimeout(db.collection('replies').where({post_id:id,is_deleted:_.neq(true)}).orderBy('created_at','asc').limit(30).get(), 5000);
-      replies = (repRes.data || []).map(function(r){return Object.assign({},r,{id:r._id});});
-      
-      renderUserInfo();
-      render();
-      
-      if (postData.author && !postData.is_anonymous) {
-        withTimeout(db.collection('users').where({username:postData.author}).limit(1).get(), 3000).then(function(authorRes){
-          if (authorRes.data && authorRes.data[0] && $('authorAvatar')) {
-            postData.author_avatar = authorRes.data[0].avatar_data || authorRes.data[0].avatar_url;
-            $('authorAvatar').src = postData.author_avatar;
-          }
-        }).catch(function(){});
-      }
-    } catch(e) {
-      showError('加载失败：' + e.message);
-    }
-  }
-
-  function renderUserInfo() {
-    var nn = currentUser.nickname || currentUser.username;
-    var rt = {student: '学生', teacher: '老师', admin: '管理员'}[currentUser.role] || '学生';
-    
-    // 头像处理
-    var avatarHtml = '';
-    if (currentUser.avatar) {
-      avatarHtml = '<img src="' + esc(currentUser.avatar) + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;margin-right:4px">';
-    } else {
-      avatarHtml = '<span style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-right:4px">' + (nn || '?').charAt(0).toUpperCase() + '</span>';
+    // 检查登录状态
+    if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+      document.getElementById('loginOverlay').style.display = 'flex';
+      document.getElementById('loginBtn').style.display = 'block';
+      loadPostOnly(postId);
+      return;
     }
     
-    $('userInfo').innerHTML = avatarHtml + '<span>' + esc(nn) + '</span><span class="role-tag">' + rt + '</span>';
+    loadPost(postId);
+  } catch(e) {
+    showError('加载失败，请刷新重试');
   }
+}
 
-  function render() {
-    var p = postData;
-    var liked = (p.liked_by || []).indexOf(currentUser.username) > -1;
-    var isAnonymous = p.is_anonymous;
-    var isAuthor = p.author === currentUser.username;
-    var isAdmin = currentUser.role === 'admin';
-    var canDelete = isAuthor || isAdmin;
+function loadPostOnly(id) {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const post = posts.find(p => p.id === id);
+  
+  if (!post) {
+    showError('帖子不存在或已删除');
+    return;
+  }
+  
+  currentPost = post;
+  renderPostPreview();
+  document.getElementById('loading').classList.add('hidden');
+}
+
+function loadPost(id) {
+  try {
+    const postsData = localStorage.getItem(POSTS_KEY);
+    const posts = postsData ? JSON.parse(postsData) : [];
+    const post = posts.find(p => p.id === id);
     
-    var catClass = 'tag-' + (p.category || 'chat');
-    var catName = catNames[p.category] || '其他';
+    if (!post) {
+      showError('帖子不存在或已删除');
+      return;
+    }
     
-    var tagsHtml = '<span class="category-tag ' + catClass + '">' + catName + '</span>';
-    if (isAnonymous) tagsHtml += '<span class="tag-anon">🎭 匿名</span>';
-    if (p.is_pinned) tagsHtml += '<span class="tag-pin">📌 置顶</span>';
+    currentPost = post;
     
-    // 作者头像和名称（可点击跳转到用户主页）
-    var avatarChar, authorAvatarHtml, authorNameHtml;
+    // 加载回复
+    const repliesData = localStorage.getItem(REPLIES_KEY);
+    replies = repliesData ? JSON.parse(repliesData) : [];
+    replies = replies.filter(r => r.post_id === id && !r.is_deleted);
     
-    if (isAnonymous) {
-      // 匿名用户
-      avatarChar = '🎭';
-      authorAvatarHtml = '<div class="author-avatar">' + avatarChar + '</div>';
-      authorNameHtml = '<div class="author-name">匿名用户</div>';
-    } else {
-      // 真实用户
-      var authorAvatar = p.author_avatar;
-      if (authorAvatar) {
-        avatarChar = '<img src="' + esc(authorAvatar) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    renderPost();
+    document.getElementById('loading').classList.add('hidden');
+  } catch(e) {
+    showError('加载失败，请刷新重试');
+  }
+}
+
+function renderPostPreview() {
+  const p = currentPost;
+  const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+  
+  let mediaHtml = '';
+  if (p.media && p.media.length > 0) {
+    mediaHtml = '<div class="post-media">';
+    p.media.forEach(m => {
+      if (m.type === 'image') {
+        mediaHtml += '<img src="' + m.data + '" onclick="viewImage(\'' + m.data + '\')">';
       } else {
-        avatarChar = (p.author_nickname || '?').charAt(0);
+        mediaHtml += '<video src="' + m.data + '" controls></video>';
       }
-      authorAvatarHtml = '<a href="user.html?u=' + esc(p.author) + '" style="text-decoration:none"><div class="author-avatar">' + avatarChar + '</div></a>';
-      authorNameHtml = '<a href="user.html?u=' + esc(p.author) + '" style="text-decoration:none;color:inherit"><div class="author-name">' + esc(p.author_nickname || '') + '</div></a>';
-    }
-    
-    var mediaHtml = '';
-    if (p.media) {
-      try {
-        var media = JSON.parse(p.media);
-        if (media && media.length > 0) {
-          mediaHtml = '<div class="post-media">';
-          for (var i = 0; i < media.length; i++) {
-            var m = media[i];
-            var src = m.url || m.data;
-            if (m.type === 'image') {
-              mediaHtml += '<img src="' + esc(src) + '" onclick="window.open(this.src,\'_blank\')">';
-            } else if (m.type === 'video') {
-              mediaHtml += '<video src="' + esc(src) + '" controls></video>';
-            }
-          }
-          mediaHtml += '</div>';
-        }
-      } catch (e) {}
-    }
-    
-    var actionsHtml = '<button class="action-btn' + (liked ? ' liked' : '') + '" onclick="toggleLike()">' + (liked ? '❤️' : '🤍') + ' ' + (p.likes || 0) + '</button>';
-    if (isAdmin) {
-      actionsHtml += '<button class="action-btn" onclick="togglePin()">' + (p.is_pinned ? '📌 取消置顶' : '📌 置顶') + '</button>';
-    }
-    if (canDelete && !p.is_deleted) {
-      actionsHtml += '<button class="action-btn danger" onclick="deletePost()">🗑 删除</button>';
-    }
-    
-    var repliesHtml = '';
-    if (replies.length === 0) {
-      repliesHtml = '<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，快来抢沙发吧！</div></div>';
-    } else {
-      for (var j = 0; j < replies.length; j++) {
-        var r = replies[j];
-        repliesHtml += '<div class="reply-item">' +
-          '<div class="reply-header">' +
-            '<span class="reply-floor">' + (j + 1) + '楼</span>' +
-            '<div class="reply-avatar">' + (r.author_nickname || '?').charAt(0) + '</div>' +
-            '<span class="reply-author">' + esc(r.author_nickname) + '</span>' +
-            '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
-          '</div>' +
-          '<div class="reply-content">' + esc(r.content) + '</div>' +
-        '</div>';
+    });
+    mediaHtml += '</div>';
+  }
+  
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card">' +
+      '<div class="post-header">' +
+        '<span class="category-tag tag-' + p.category + '">' + (catNames[p.category] || p.category) + '</span>' +
+        (p.is_anonymous ? '<span class="tag-anon">🔒 匿名</span>' : '') +
+      '</div>' +
+      '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
+      '<div class="post-author">' +
+        '<div class="author-avatar">' + authorName.charAt(0).toUpperCase() + '</div>' +
+        '<div class="author-info">' +
+          '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
+          '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-content">' + escapeHtml(p.content) + '</div>' +
+      mediaHtml +
+      '<div class="post-actions">' +
+        '<span style="color:#999;font-size:14px">登录后可查看完整内容</span>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderPost() {
+  const p = currentPost;
+  const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+  
+  let mediaHtml = '';
+  if (p.media && p.media.length > 0) {
+    mediaHtml = '<div class="post-media">';
+    p.media.forEach(m => {
+      if (m.type === 'image') {
+        mediaHtml += '<img src="' + m.data + '" onclick="viewImage(\'' + m.data + '\')">';
+      } else {
+        mediaHtml += '<video src="' + m.data + '" controls></video>';
       }
-    }
-    
-    $('mainContent').innerHTML = 
-      '<div class="post-card">' +
-        '<div class="post-header">' + tagsHtml + '</div>' +
-        '<h1 class="post-title">' + esc(p.title) + '</h1>' +
-        '<div class="post-author">' +
-          authorAvatarHtml +
-          '<div class="author-info">' +
-            authorNameHtml +
-            '<div class="author-time">' + timeAgo(p.created_at) + '</div>' +
-          '</div>' +
+    });
+    mediaHtml += '</div>';
+  }
+  
+  let repliesHtml = '';
+  if (replies.length === 0) {
+    repliesHtml = '<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，发表你的看法</div></div>';
+  } else {
+    repliesHtml = replies.map((r, i) => {
+      const replyAuthor = r.is_anonymous ? '匿名' : (r.author_nickname || r.author || '匿名');
+      return '<div class="reply-item">' +
+        '<div class="reply-header">' +
+          '<span class="reply-floor">#' + (i + 1) + '</span>' +
+          '<div class="reply-avatar">' + replyAuthor.charAt(0).toUpperCase() + '</div>' +
+          '<span class="reply-author">' + escapeHtml(replyAuthor) + '</span>' +
+          '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
         '</div>' +
-        '<div class="post-content">' + esc(p.content) + '</div>' +
-        mediaHtml +
-        '<div class="post-actions">' + actionsHtml + '</div>' +
-      '</div>' +
-      '<div class="replies-section">' +
-        '<div class="replies-header"><span class="replies-title">回复</span><span class="replies-count">' + replies.length + '</span></div>' +
-        repliesHtml +
-      '</div>' +
-      '<div class="reply-input-section">' +
-        '<div class="reply-input-wrapper">' +
-          '<textarea class="reply-textarea" id="replyContent" placeholder="写下你的回复..."></textarea>' +
-          '<button class="btn-send" id="sendBtn" onclick="submitReply()">发送</button>' +
-        '</div>' +
+        '<div class="reply-content">' + escapeHtml(r.content) + '</div>' +
       '</div>';
+    }).join('');
   }
+  
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card">' +
+      '<div class="post-header">' +
+        '<span class="category-tag tag-' + p.category + '">' + (catNames[p.category] || p.category) + '</span>' +
+        (p.is_anonymous ? '<span class="tag-anon">🔒 匿名</span>' : '') +
+      '</div>' +
+      '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
+      '<div class="post-author">' +
+        '<div class="author-avatar">' + authorName.charAt(0).toUpperCase() + '</div>' +
+        '<div class="author-info">' +
+          '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
+          '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-content">' + escapeHtml(p.content) + '</div>' +
+      mediaHtml +
+    '</div>' +
+    
+    '<div class="replies-section">' +
+      '<div class="replies-header">' +
+        '<span class="replies-title">回复</span>' +
+        '<span class="replies-count">' + replies.length + '</span>' +
+      '</div>' +
+      '<div id="repliesList">' + repliesHtml + '</div>' +
+    '</div>' +
+    
+    '<div class="reply-input-section">' +
+      '<div class="reply-input-wrapper">' +
+        '<textarea class="reply-textarea" id="replyInput" placeholder="写下你的回复..."></textarea>' +
+        '<button class="btn-send" onclick="submitReply()">发送</button>' +
+      '</div>' +
+    '</div>';
+}
 
-  function showError(msg) {
-    hideLoading();
-    $('mainContent').innerHTML = '<div class="error-state"><div class="error-icon">😕</div><div class="error-text">' + esc(msg) + '</div><a href="forum.html" class="btn-back">返回论坛</a></div>';
+function submitReply() {
+  const content = document.getElementById('replyInput').value.trim();
+  if (!content) {
+    showToast('请输入回复内容', 'error');
+    return;
   }
+  
+  const reply = {
+    id: Date.now(),
+    post_id: currentPost.id,
+    content: content,
+    author: currentUser.username,
+    author_nickname: currentUser.nickname || currentUser.username,
+    is_anonymous: false,
+    is_deleted: false,
+    created_at: new Date().toISOString()
+  };
+  
+  replies.unshift(reply);
+  localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
+  
+  // 更新帖子回复数
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = JSON.parse(postsData || '[]');
+  const postIndex = posts.findIndex(p => p.id === currentPost.id);
+  if (postIndex >= 0) {
+    posts[postIndex].reply_count = (posts[postIndex].reply_count || 0) + 1;
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  }
+  
+  document.getElementById('replyInput').value = '';
+  renderPost();
+  showToast('回复成功！');
+}
 
-  window.toggleMenu = function() { $('navLinks').classList.toggle('active'); };
-  window.logout = function() { sessionStorage.clear(); window.location.href = 'index.html'; };
-  
-  window.toggleLike = async function() {
-    if (!postData) return;
-    var lb = postData.liked_by || [];
-    var idx = lb.indexOf(currentUser.username);
-    var isLiking = idx === -1; // 是否是点赞操作
-    
-    if (idx > -1) lb.splice(idx, 1); else lb.push(currentUser.username);
-    var res = await db.collection('posts').doc(postData.id).update({likes: lb.length, liked_by: lb});
-    if (res.updated > 0) { 
-      postData.likes = lb.length; 
-      postData.liked_by = lb; 
-      render(); 
-      
-      // 发送点赞通知（如果是点赞且不是给自己点赞）
-      if (isLiking && postData.author !== currentUser.username) {
-        await db.collection('notifications').add({
-          recipient_username: postData.author,
-          sender_username: currentUser.username,
-          sender_nickname: currentUser.nickname,
-          type: 'like',
-          post_id: postData.id,
-          post_title: postData.title,
-          is_read: false,
-          created_at: new Date().toISOString()
-        });
-      }
-    }
-  };
-  
-  window.togglePin = async function() {
-    if (!postData) return;
-    var newState = !postData.is_pinned;
-    var res = await db.collection('posts').doc(postData.id).update({is_pinned: newState});
-    if (res.updated > 0) { postData.is_pinned = newState; render(); }
-  };
-  
-  window.deletePost = async function() {
-    // 二次确认
-    if (!confirm('⚠️ 确定要删除帖子《' + postData.title + '》？\n\n删除后无法恢复！')) return;
-    if (!confirm('再次确认：真的要删除吗？')) return;
-    
-    var res = await db.collection('posts').doc(postData.id).update({is_deleted: true});
-    if (res.updated === 0) { alert('删除失败'); return; }
-    alert('帖子已删除');
-    window.location.href = 'forum.html';
-  };
-  
-  window.submitReply = async function() {
-    var c = $('replyContent').value.trim();
-    if (!c) { alert('请输入回复内容'); return; }
-    $('sendBtn').disabled = true;
-    var res = await db.collection('replies').add({post_id: postData.id, content: c, author: currentUser.username, author_nickname: currentUser.nickname, likes: 0, is_deleted: false, created_at: new Date().toISOString()});
-    $('sendBtn').disabled = false;
-    if (!res.id) { alert('发送失败'); return; }
-    
-    if (postData.author !== currentUser.username) {
-      await db.collection('notifications').add({
-        recipient_username: postData.author,
-        sender_username: currentUser.username,
-        sender_nickname: currentUser.nickname,
-        type: 'reply',
-        post_id: postData.id,
-        post_title: postData.title,
-        content: c,
-        is_read: false,
-        created_at: new Date().toISOString()
-      });
-    }
-    
-    var repRes = await db.collection('replies').where({post_id: postData.id, is_deleted: _.neq(true)}).orderBy('created_at','asc').limit(100).get();
-    replies = (repRes.data || []).map(function(r){return Object.assign({},r,{id:r._id});});
-    $('replyContent').value = '';
-    render();
-  };
+function openShareModal() {
+  const shareUrl = window.location.href;
+  document.getElementById('shareUrl').value = shareUrl;
+  document.getElementById('shareModal').classList.add('active');
+}
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-  </script>
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('active');
+}
+
+function copyShareUrl() {
+  const url = document.getElementById('shareUrl').value;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('链接已复制！');
+  }).catch(() => {
+    document.getElementById('shareUrl').select();
+    document.execCommand('copy');
+    showToast('链接已复制！');
+  });
+}
+
+function viewImage(src) {
+  document.getElementById('viewerImage').src = src;
+  document.getElementById('imageViewer').classList.add('active');
+}
+
+function closeImageViewer() {
+  document.getElementById('imageViewer').classList.remove('active');
+}
+
+function goToLogin() {
+  window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+}
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card" style="text-align:center;padding:60px 20px">' +
+      '<div style="font-size:64px;margin-bottom:16px">❌</div>' +
+      '<div style="font-size:18px;color:#666;margin-bottom:20px">' + msg + '</div>' +
+      '<a href="forum.html" style="background:#667eea;color:white;padding:12px 24px;border-radius:8px;text-decoration:none">返回首页</a>' +
+    '</div>';
+  document.getElementById('loading').classList.add('hidden');
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+init();
+</script>
 </body>
 </html>
