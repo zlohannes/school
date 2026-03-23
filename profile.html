@@ -85,6 +85,10 @@
 </head>
 <body>
   <div class="success-toast" id="toast">✅ 保存成功！</div>
+  <style>
+    .success-toast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999}
+    .success-toast.error{background:#ef4444}
+  </style>
   
   <nav class="navbar">
     <div class="nav-inner">
@@ -326,26 +330,54 @@ function saveProfile() {
   // 保存到本地
   saveUsers(users);
   
-  // 强制同步到云端（重要！）
-  syncUsersToCloud(users).then(() => {
+  // 优先同步到云端，等待完成
+  saveUsersAndSync(users).then(() => {
     currentUser = Object.assign({}, currentUser, updates);
     sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
     closeEdit();
     renderProfile();
-    showToast();
+    showToast('保存成功！');
   }).catch(() => {
-    // 云端同步失败，但本地已保存
-    currentUser = Object.assign({}, currentUser, updates);
-    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-    closeEdit();
-    renderProfile();
-    showToast();
+    showToast('保存失败，请重试', 'error');
   });
 }
 
-function showToast() {
-  $('toast').style.display = 'block';
-  setTimeout(() => {$('toast').style.display = 'none';}, 2000);
+async function saveUsersAndSync(users) {
+  // 先读取云端现有数据
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: users,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
+    });
+    
+    console.log('用户数据已同步到云端');
+  } catch(e) {
+    console.log('用户数据同步失败:', e);
+    throw e;
+  }
+}
+
+function showToast(msg, type = 'success') {
+  const toast = $('toast');
+  toast.textContent = msg;
+  toast.className = 'success-toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
 }
 
 function loadMyPosts() {

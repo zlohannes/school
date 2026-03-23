@@ -48,9 +48,13 @@
     .reply-item:last-child{border-bottom:none}
     .reply-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
     .reply-floor{color:#999;font-size:13px;min-width:40px}
-    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700}
+    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;overflow:hidden;flex-shrink:0}
+    .reply-avatar img{width:100%;height:100%;object-fit:cover}
     .reply-author{font-weight:600;color:#333;font-size:14px}
     .reply-time{color:#999;font-size:12px}
+    .reply-delete-btn{background:#ef4444;color:white;border:none;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:auto}
+    .reply-action-btn{background:#667eea;color:white;border:none;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:4px}
+    .reply-to{color:#999;font-size:12px;margin-left:4px}
     .reply-content{color:#333;font-size:14px;line-height:1.6;padding-left:48px;white-space:pre-wrap}
     .empty-replies{text-align:center;padding:40px;color:#999}
     .empty-icon{font-size:48px;margin-bottom:10px}
@@ -65,6 +69,32 @@
     .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loading .msg{color:#667eea;font-size:15px;font-weight:600}
+    
+    /* 手机端适配 */
+    @media(max-width:768px){
+      .main{padding:0 10px 120px}
+      .post-card{padding:16px}
+      .post-title{font-size:18px}
+      .post-author{gap:8px}
+      .author-avatar{width:36px;height:36px;font-size:16px}
+      .author-name{font-size:14px}
+      .post-content{font-size:14px}
+      .post-actions{gap:8px}
+      .action-btn{padding:6px 12px;font-size:13px}
+      .replies-section{padding:16px}
+      .reply-item{padding:12px 0}
+      .reply-header{gap:8px;flex-wrap:wrap}
+      .reply-avatar{width:32px;height:32px;font-size:12px}
+      .reply-author{font-size:13px}
+      .reply-content{padding-left:40px;font-size:13px}
+      .reply-delete-btn{padding:3px 8px;font-size:11px}
+      .reply-action-btn{padding:3px 8px;font-size:11px}
+      .reply-to{font-size:11px;margin-left:2px}
+      .reply-input-section{padding:12px;width:100%;max-width:100%;border-radius:12px 12px 0 0}
+      .reply-textarea{min-height:50px;font-size:14px}
+      .btn-send{padding:10px 16px;font-size:13px}
+      .nav-links #logoutBtn{display:block}
+    }
     .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
     .toast.error{background:#ef4444}
     .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
@@ -203,12 +233,28 @@ function loadPostOnly(id) {
 
 function loadPost(id) {
   try {
-    const postsData = localStorage.getItem(POSTS_KEY);
-    const posts = postsData ? JSON.parse(postsData) : [];
-    const post = posts.find(p => p.id === id);
+    // 先从本地查找帖子
+    let postsData = localStorage.getItem(POSTS_KEY);
+    let posts = postsData ? JSON.parse(postsData) : [];
+    let post = posts.find(p => p.id === id);
     
+    // 如果本地找不到，从云端加载
     if (!post) {
-      showError('帖子不存在或已删除');
+      console.log('本地未找到帖子，从云端加载...');
+      loadPostFromCloud(id).then(cloudPost => {
+        if (cloudPost) {
+          currentPost = cloudPost;
+          // 保存到本地
+          posts.push(cloudPost);
+          localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+          // 加载回复
+          loadAndMergeReplies(id);
+          renderPost();
+          document.getElementById('loading').classList.add('hidden');
+        } else {
+          showError('帖子不存在或已删除');
+        }
+      });
       return;
     }
     
@@ -227,6 +273,21 @@ function loadPost(id) {
   } catch(e) {
     showError('加载失败，请刷新重试');
   }
+}
+
+async function loadPostFromCloud(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.posts) {
+      return data.record.posts.find(p => p.id === postId);
+    }
+  } catch(e) {
+    console.log('云端帖子加载失败:', e);
+  }
+  return null;
 }
 
 async function loadAndMergeReplies(postId) {
@@ -254,7 +315,7 @@ async function loadAndMergeReplies(postId) {
     localStorage.setItem(REPLIES_KEY, JSON.stringify(mergedReplies));
     
     // 同步合并结果到云端
-    await syncAllToCloud({ replies: mergedReplies });
+    await syncAllToCloud({});
     
     // 更新显示
     replies = mergedReplies.filter(r => r.post_id === postId && !r.is_deleted);
@@ -262,6 +323,8 @@ async function loadAndMergeReplies(postId) {
     
     // 更新帖子回复数
     updatePostReplyCount(postId, replies.length);
+    
+    console.log('回复加载完成，本地:' + localReplies.length + ', 云端:' + cloudReplies.length + ', 合并后:' + mergedReplies.length);
     
   } catch(e) {
     console.log('云端回复加载失败:', e);
@@ -288,11 +351,17 @@ async function syncAllToCloud(data) {
     const cloudData = await res.json();
     const record = cloudData.record || {};
     
+    // 获取本地数据
+    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const localPosts = JSON.parse(localStorage.getItem('forum_posts') || '[]');
+    const localReplies = JSON.parse(localStorage.getItem('forum_replies') || '[]');
+    const localNotifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+    
     const body = {
-      users: record.users || [],
-      posts: data.posts || record.posts || [],
-      replies: data.replies || record.replies || [],
-      notifications: record.notifications || []
+      users: localUsers.length > 0 ? localUsers : (record.users || []),
+      posts: localPosts.length > 0 ? localPosts : (record.posts || []),
+      replies: localReplies.length > 0 ? localReplies : (record.replies || []),
+      notifications: localNotifications.length > 0 ? localNotifications : (record.notifications || [])
     };
     
     await fetch(JSONBIN_URL, {
@@ -304,9 +373,10 @@ async function syncAllToCloud(data) {
       body: JSON.stringify(body)
     });
     
-    console.log('云端同步成功');
+    console.log('云端同步成功:', {users: body.users.length, posts: body.posts.length, replies: body.replies.length, notifications: body.notifications.length});
   } catch(e) {
     console.log('云端同步失败:', e);
+    throw e;
   }
 }
 
@@ -426,12 +496,24 @@ function renderPost() {
         }
       }
       
+      // 判断是否显示删除按钮（回复作者或管理员可删除）
+      const isReplyAuthor = currentUser && currentUser.username === r.author;
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+      const canDeleteReply = isReplyAuthor || isAdmin;
+      const deleteReplyBtn = canDeleteReply ? '<button class="reply-delete-btn" onclick="deleteReply(' + r.id + ')">🗑️</button>' : '';
+      
+      // 回复某人的显示
+      const replyToHtml = r.reply_to ? '<span class="reply-to">回复 <span style="color:#667eea">@' + escapeHtml(r.reply_to_nickname || r.reply_to) + '</span></span>' : '';
+      
       return '<div class="reply-item">' +
         '<div class="reply-header">' +
           '<span class="reply-floor">#' + (i + 1) + '</span>' +
           '<div class="reply-avatar">' + (replyAvatar || replyAuthor.charAt(0).toUpperCase()) + '</div>' +
           '<span class="reply-author">' + escapeHtml(replyAuthor) + '</span>' +
+          replyToHtml +
           '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
+          deleteReplyBtn +
+          '<button class="reply-action-btn" onclick="replyToUser(\'' + escapeHtml(r.author || '') + '\', \'' + escapeHtml(r.author_nickname || r.author || '') + '\')">回复</button>' +
         '</div>' +
         '<div class="reply-content">' + escapeHtml(r.content) + '</div>' +
       '</div>';
@@ -470,6 +552,10 @@ function renderPost() {
     '</div>' +
     
     '<div class="reply-input-section">' +
+      '<div id="replyToInfo" style="display:none;padding:8px 12px;background:#f5f5f5;border-radius:8px;margin-bottom:10px;font-size:13px;color:#666">' +
+        '<span>回复 @<span id="replyToUsername"></span></span>' +
+        '<button onclick="cancelReplyTo()" style="float:right;background:none;border:none;color:#999;font-size:16px;cursor:pointer">×</button>' +
+      '</div>' +
       '<div class="reply-input-wrapper">' +
         '<textarea class="reply-textarea" id="replyInput" placeholder="写下你的回复..."></textarea>' +
         '<button class="btn-send" onclick="submitReply()">发送</button>' +
@@ -477,12 +563,17 @@ function renderPost() {
     '</div>';
 }
 
-function submitReply() {
+async function submitReply() {
   const content = document.getElementById('replyInput').value.trim();
   if (!content) {
     showToast('请输入回复内容', 'error');
     return;
   }
+  
+  // 检查是否回复某人
+  const replyToInfo = document.getElementById('replyToInfo');
+  const replyToUser = replyToInfo.style.display !== 'none' ? replyToInfo.dataset.username : null;
+  const replyToNickname = replyToInfo.dataset.nickname || '';
   
   const reply = {
     id: Date.now(),
@@ -492,34 +583,90 @@ function submitReply() {
     author_nickname: currentUser.nickname || currentUser.username,
     is_anonymous: false,
     is_deleted: false,
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
+    reply_to: replyToUser,
+    reply_to_nickname: replyToNickname
   };
   
   // 添加到本地列表
   replies.unshift(reply);
   localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
   
-  // 添加回复通知
-  if (currentPost.author && currentPost.author !== currentUser.username) {
+  // 添加回复通知（通知被回复的人）
+  if (replyToUser && replyToUser !== currentUser.username) {
     addNotification({
       type: 'reply',
       from_user: currentUser.nickname || currentUser.username,
-      to_user: currentPost.author,
+      to_user: replyToUser,
       post_id: currentPost.id,
       post_title: currentPost.title,
       created_at: new Date().toISOString()
     });
   }
   
-  // 同步所有数据到云端
-  syncAllToCloud({ replies: replies }).then(() => {
+  // 优先同步到云端，等待完成
+  try {
+    await syncAllToCloud({});
     document.getElementById('replyInput').value = '';
+    cancelReplyTo();
     renderPost();
     showToast('回复成功！');
-  }).catch(() => {
-    document.getElementById('replyInput').value = '';
+    console.log('回复已同步到云端');
+  } catch(e) {
+    console.log('云端同步失败:', e);
+    showToast('回复失败，请重试', 'error');
+  }
+}
+
+function replyToUser(username, nickname) {
+  // 不能回复自己
+  if (username === currentUser.username) {
+    alert('不能回复自己');
+    return;
+  }
+  
+  document.getElementById('replyToInfo').style.display = 'block';
+  document.getElementById('replyToInfo').dataset.username = username;
+  document.getElementById('replyToInfo').dataset.nickname = nickname;
+  document.getElementById('replyToUsername').textContent = nickname;
+  document.getElementById('replyInput').placeholder = '回复 @' + nickname + '...';
+  document.getElementById('replyInput').focus();
+}
+
+function cancelReplyTo() {
+  document.getElementById('replyToInfo').style.display = 'none';
+  document.getElementById('replyToInfo').dataset.username = '';
+  document.getElementById('replyToInfo').dataset.nickname = '';
+  document.getElementById('replyInput').placeholder = '写下你的回复...';
+}
+
+function deleteReply(replyId) {
+  const reply = replies.find(r => r.id === replyId);
+  if (!reply) return;
+  
+  // 检查权限
+  const isReplyAuthor = currentUser && currentUser.username === reply.author;
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  
+  if (!isReplyAuthor && !isAdmin) {
+    alert('你没有权限删除这个回复');
+    return;
+  }
+  
+  if (!confirm('确定要删除这条回复吗？')) return;
+  
+  // 标记为已删除
+  reply.is_deleted = true;
+  
+  // 优先同步到云端
+  syncAllToCloud({}).then(() => {
+    // 更新本地
+    localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
+    replies = replies.filter(r => r.post_id === currentPost.id && !r.is_deleted);
     renderPost();
-    showToast('回复成功！（同步中）');
+    showToast('删除成功！');
+  }).catch(() => {
+    showToast('删除失败，请重试', 'error');
   });
 }
 
@@ -527,12 +674,10 @@ function addNotification(notif) {
   const notifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
   notifications.push(notif);
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
-  
-  // 同步到云端
-  syncAllToCloud({ notifications: notifications }).catch(() => {});
+  // 通知会被 syncAllToCloud() 同步到云端
 }
 
-async function syncAllToCloud(data) {
+async function syncAllToCloud() {
   try {
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
@@ -540,11 +685,17 @@ async function syncAllToCloud(data) {
     const cloudData = await res.json();
     const record = cloudData.record || {};
     
+    // 从本地获取所有数据
+    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const localPosts = JSON.parse(localStorage.getItem('forum_posts') || '[]');
+    const localReplies = JSON.parse(localStorage.getItem('forum_replies') || '[]');
+    const localNotifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+    
     const body = {
-      users: record.users || [],
-      posts: data.posts || record.posts || [],
-      replies: data.replies || record.replies || [],
-      notifications: data.notifications || record.notifications || []
+      users: localUsers.length > 0 ? localUsers : (record.users || []),
+      posts: localPosts.length > 0 ? localPosts : (record.posts || []),
+      replies: localReplies.length > 0 ? localReplies : (record.replies || []),
+      notifications: localNotifications.length > 0 ? localNotifications : (record.notifications || [])
     };
     
     await fetch(JSONBIN_URL, {
@@ -556,9 +707,10 @@ async function syncAllToCloud(data) {
       body: JSON.stringify(body)
     });
     
-    console.log('云端同步成功');
+    console.log('云端同步成功:', {users: body.users.length, posts: body.posts.length, replies: body.replies.length, notifications: body.notifications.length});
   } catch(e) {
     console.log('云端同步失败:', e);
+    throw e;
   }
 }
 

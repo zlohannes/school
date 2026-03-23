@@ -111,7 +111,8 @@
       .card-header{padding:10px 14px;font-size:14px}
       .post-item{padding:10px 14px}
       .post-title{font-size:13px}
-      .nav-links a.nav-link:not(#adminLink){display:none}
+      .nav-links a.nav-link:not(#adminLink):not([href*="notifications"]){display:none}
+      .nav-links #adminLink{display:none !important}
     }
   </style>
 </head>
@@ -370,10 +371,29 @@ function loadPosts() {
         localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
         renderPosts();
       }
+      
+      // 同时加载云端回复到本地
+      loadRepliesFromCloud();
     }).catch(() => {});
   } catch(e) {
     allPosts = [];
     renderPosts();
+  }
+}
+
+async function loadRepliesFromCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.replies) {
+      const cloudReplies = data.record.replies;
+      localStorage.setItem('forum_replies', JSON.stringify(cloudReplies));
+      console.log('从云端加载了 ' + cloudReplies.length + ' 条回复');
+    }
+  } catch(e) {
+    console.log('加载云端回复失败:', e);
   }
 }
 
@@ -525,7 +545,7 @@ function addNotification(notif) {
   syncAllToCloud({ notifications: notifications }).catch(() => {});
 }
 
-async function syncAllToCloud(data) {
+async function syncAllToCloud() {
   try {
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
@@ -533,11 +553,17 @@ async function syncAllToCloud(data) {
     const cloudData = await res.json();
     const record = cloudData.record || {};
     
+    // 从本地获取所有数据
+    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const localPosts = JSON.parse(localStorage.getItem('forum_posts') || '[]');
+    const localReplies = JSON.parse(localStorage.getItem('forum_replies') || '[]');
+    const localNotifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+    
     const body = {
-      users: data.users || record.users || [],
-      posts: data.posts || record.posts || [],
-      replies: record.replies || [],
-      notifications: data.notifications || record.notifications || []
+      users: localUsers.length > 0 ? localUsers : (record.users || []),
+      posts: localPosts.length > 0 ? localPosts : (record.posts || []),
+      replies: localReplies.length > 0 ? localReplies : (record.replies || []),
+      notifications: localNotifications.length > 0 ? localNotifications : (record.notifications || [])
     };
     
     await fetch(JSONBIN_URL, {
@@ -548,6 +574,8 @@ async function syncAllToCloud(data) {
       },
       body: JSON.stringify(body)
     });
+    
+    console.log('云端同步成功');
   } catch(e) {
     console.log('云端同步失败:', e);
   }
@@ -716,16 +744,16 @@ function submitPost(e) {
   allPosts.unshift(post);
   localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
   
-  // 同步到云端
+  // 优先同步到云端，等待完成
   syncPostsToCloud(allPosts).then(() => {
     closePostModal();
     renderPosts();
     showToast('发布成功！');
   }).catch(() => {
-    // 云端同步失败，但本地已保存
+    // 云端同步失败
     closePostModal();
     renderPosts();
-    showToast('发布成功！（离线模式）');
+    showToast('发布失败，请重试', 'error');
   });
 }
 
