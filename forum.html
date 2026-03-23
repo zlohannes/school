@@ -303,6 +303,10 @@ async function renderUserInfo() {
     
     const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
     document.getElementById('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
+    
+    // 隐藏游客的发布按钮
+    const fabBtn = document.querySelector('.fab');
+    if (fabBtn) fabBtn.style.display = isGuest ? 'none' : 'block';
   } catch(e) {
     console.error('用户信息加载失败:', e);
   }
@@ -553,6 +557,12 @@ function viewPost(id) {
 }
 
 function openPostModal() {
+  // 检查游客身份
+  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+    alert('游客无法发布帖子，请登录后发布');
+    return;
+  }
+  
   document.getElementById('postModal').classList.add('active');
   document.getElementById('postForm').reset();
   selectedMedia = [];
