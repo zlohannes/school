@@ -481,6 +481,34 @@ function addNotification(notif) {
   const notifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
   notifications.push(notif);
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
+  
+  // 同步到云端
+  syncNotificationsToCloud(notifications).catch(() => {});
+}
+
+async function syncNotificationsToCloud(notifications) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: record.users || [],
+        posts: record.posts || [],
+        notifications: notifications
+      })
+    });
+  } catch(e) {
+    console.log('通知同步失败:', e);
+  }
 }
 
 function togglePin(postId) {
@@ -661,13 +689,23 @@ function submitPost(e) {
 
 async function syncPostsToCloud(posts) {
   try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
     await fetch(JSONBIN_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-ACCESS-KEY': JSONBIN_KEY
       },
-      body: JSON.stringify({users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'), posts: posts})
+      body: JSON.stringify({
+        users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'), 
+        posts: posts,
+        notifications: record.notifications || []
+      })
     });
   } catch(e) {
     console.log('帖子云同步失败:', e);

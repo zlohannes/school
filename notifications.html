@@ -111,8 +111,8 @@ async function init() {
   loadNotifications();
 }
 
-function loadNotifications() {
-  // 从 localStorage 加载通知
+async function loadNotifications() {
+  // 先从本地加载
   const notifData = localStorage.getItem(NOTIFICATIONS_KEY);
   notifications = notifData ? JSON.parse(notifData) : [];
   
@@ -123,6 +123,29 @@ function loadNotifications() {
   notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   
   renderNotifications();
+  
+  // 后台从云端加载最新通知
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.notifications) {
+      const cloudNotifs = data.record.notifications;
+      // 合并本地和云端通知
+      const allNotifs = [...notifications, ...cloudNotifs];
+      // 去重
+      const uniqueNotifs = allNotifs.filter((n, i, arr) => 
+        i === arr.findIndex(t => t.created_at === n.created_at && t.from_user === n.from_user)
+      );
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(uniqueNotifs));
+      notifications = uniqueNotifs.filter(n => n.to_user === currentUser.username);
+      notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      renderNotifications();
+    }
+  } catch(e) {
+    console.log('云端通知加载失败:', e);
+  }
 }
 
 function renderNotifications() {

@@ -316,10 +316,21 @@ function renderPost() {
   } else {
     repliesHtml = replies.map((r, i) => {
       const replyAuthor = r.is_anonymous ? '匿名' : (r.author_nickname || r.author || '匿名');
+      
+      // 从用户数据中查找回复者头像
+      let replyAvatar = '';
+      if (!r.is_anonymous && r.author) {
+        const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+        const replyUser = users.find(u => u.username === r.author);
+        if (replyUser && replyUser.avatar) {
+          replyAvatar = '<img src="' + replyUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+        }
+      }
+      
       return '<div class="reply-item">' +
         '<div class="reply-header">' +
           '<span class="reply-floor">#' + (i + 1) + '</span>' +
-          '<div class="reply-avatar">' + replyAuthor.charAt(0).toUpperCase() + '</div>' +
+          '<div class="reply-avatar">' + (replyAvatar || replyAuthor.charAt(0).toUpperCase()) + '</div>' +
           '<span class="reply-author">' + escapeHtml(replyAuthor) + '</span>' +
           '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
         '</div>' +
@@ -418,6 +429,34 @@ function addNotification(notif) {
   const notifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
   notifications.push(notif);
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
+  
+  // 同步到云端
+  syncNotificationsToCloud(notifications).catch(() => {});
+}
+
+async function syncNotificationsToCloud(notifications) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: record.users || [],
+        posts: record.posts || [],
+        notifications: notifications
+      })
+    });
+  } catch(e) {
+    console.log('通知同步失败:', e);
+  }
 }
 
 function openShareModal() {
