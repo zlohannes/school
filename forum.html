@@ -309,13 +309,38 @@ async function renderUserInfo() {
 
 function loadPosts() {
   try {
+    // 先从本地加载
     const postsData = localStorage.getItem(POSTS_KEY);
     allPosts = postsData ? JSON.parse(postsData) : [];
     renderPosts();
+    
+    // 后台从云端加载最新数据
+    loadPostsFromCloud().then(cloudPosts => {
+      if (cloudPosts && cloudPosts.length > 0) {
+        allPosts = cloudPosts;
+        localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+        renderPosts();
+      }
+    }).catch(() => {});
   } catch(e) {
     allPosts = [];
     renderPosts();
   }
+}
+
+async function loadPostsFromCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.posts) {
+      return data.record.posts;
+    }
+  } catch(e) {
+    console.log('云端帖子加载失败:', e);
+  }
+  return null;
 }
 
 function renderCategories() {
@@ -422,6 +447,7 @@ function toggleLike(postId) {
   
   localStorage.setItem('post_likes', JSON.stringify(likes));
   localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+  syncPostsToCloud(allPosts).catch(() => {});
   renderPosts();
 }
 
@@ -436,6 +462,7 @@ function togglePin(postId) {
   if (post) {
     post.is_pinned = !post.is_pinned;
     localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+    syncPostsToCloud(allPosts).catch(() => {});
     renderPosts();
   }
 }
@@ -549,15 +576,39 @@ function submitPost(e) {
     is_deleted: false,
     created_at: new Date().toISOString(),
     reply_count: 0,
-    media: selectedMedia
+    media: selectedMedia,
+    likes: 0
   };
   
   allPosts.unshift(post);
   localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
   
-  closePostModal();
-  renderPosts();
-  showToast('发布成功！');
+  // 同步到云端
+  syncPostsToCloud(allPosts).then(() => {
+    closePostModal();
+    renderPosts();
+    showToast('发布成功！');
+  }).catch(() => {
+    // 云端同步失败，但本地已保存
+    closePostModal();
+    renderPosts();
+    showToast('发布成功！（离线模式）');
+  });
+}
+
+async function syncPostsToCloud(posts) {
+  try {
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'), posts: posts})
+    });
+  } catch(e) {
+    console.log('帖子云同步失败:', e);
+  }
 }
 
 function showToast(msg, type = 'success') {
