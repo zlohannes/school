@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>鹿城学院论坛 - 校园交流社区</title>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
@@ -206,13 +209,60 @@ const CATEGORIES = [
 
 const USERS_KEY = 'forum_users';
 const POSTS_KEY = 'forum_posts';
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+const JSONBIN_ID = '69c11555aa77b81da90e70f1';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
 let allPosts = [];
 let currentCategory = 'all';
 let currentUser = null;
 let selectedMedia = [];
 
-function init() {
+// JSONBin 云同步
+async function syncUsersToCloud(users) {
   try {
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({users: users})
+    });
+  } catch(e) {
+    console.log('云同步失败:', e);
+  }
+}
+
+async function loadUsersFromCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(data.record.users));
+      return data.record.users;
+    }
+  } catch(e) {
+    console.log('云端加载失败:', e);
+  }
+  return null;
+}
+
+function init() {
+  // 立即显示用户信息（不需要等帖子加载）
+  renderUserInfo();
+  
+  renderCategories();
+  loadPosts();
+  hideLoading();
+}
+
+async function renderUserInfo() {
+  try {
+    // 优先从云端加载用户数据
+    const cloudUsers = await loadUsersFromCloud();
+    
     const userStr = sessionStorage.getItem('currentUser');
     if (!userStr) {
       window.location.href = 'index.html';
@@ -221,14 +271,16 @@ function init() {
     
     currentUser = JSON.parse(userStr);
     
-    // 从 localStorage 获取最新用户信息
-    const usersData = localStorage.getItem(USERS_KEY);
-    if (usersData) {
-      const users = JSON.parse(usersData);
-      const storedUser = users.find(u => u.username === currentUser.username);
-      if (storedUser) {
-        currentUser = Object.assign({}, storedUser); // 使用 localStorage 中的完整信息
-        sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); // 同步更新 sessionStorage
+    // 获取用户信息（优先云端，其次本地）
+    const usersData = cloudUsers ? null : localStorage.getItem(USERS_KEY);
+    const users = cloudUsers || (usersData ? JSON.parse(usersData) : []);
+    const storedUser = users.find(u => u.username === currentUser.username);
+    if (storedUser) {
+      currentUser = Object.assign({}, storedUser);
+      sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+      // 同步本地存储
+      if (cloudUsers) {
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
       }
     }
     
@@ -242,16 +294,10 @@ function init() {
       el.innerHTML = '<div class="avatar">' + initial + '</div><span class="user-name">' + name + '</span>';
     }
     
-    // 游客显示
     const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
     document.getElementById('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
-    
-    renderCategories();
-    loadPosts();
-    hideLoading();
   } catch(e) {
-    console.error('初始化错误:', e);
-    document.getElementById('loading').innerHTML = '<div style="color:#ef4444;padding:40px;text-align:center">加载失败<br><br><button onclick="location.reload()" style="padding:10px 20px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer">点击重试</button></div>';
+    console.error('用户信息加载失败:', e);
   }
 }
 

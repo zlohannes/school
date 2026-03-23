@@ -143,8 +143,26 @@
 <script>
 const USERS_KEY = 'forum_users';
 const POSTS_KEY = 'forum_posts';
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+const JSONBIN_ID = '69c11555aa77b81da90e70f1';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
 let currentUser = null;
 let newAvatarData = null;
+
+async function syncUsersToCloud(users) {
+  try {
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({users: users})
+    });
+  } catch(e) {
+    console.log('云同步失败:', e);
+  }
+}
 
 function $(id){return document.getElementById(id)}
 
@@ -155,6 +173,7 @@ function getUsers() {
 
 function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  syncUsersToCloud(users); // 同步到云端
 }
 
 function init() {

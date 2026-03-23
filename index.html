@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>鹿城学院论坛 - 登录注册</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -119,6 +122,40 @@
 <script>
 const USERS_KEY = 'forum_users';
 const ADMIN_CODE = 'zrw';
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+const JSONBIN_ID = '69c11555aa77b81da90e70f1';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
+
+async function syncUsersToCloud(users) {
+  try {
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({users: users})
+    });
+  } catch(e) {
+    console.log('云同步失败:', e);
+  }
+}
+
+async function loadUsersFromCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(data.record.users));
+      return data.record.users;
+    }
+  } catch(e) {
+    console.log('云端加载失败:', e);
+  }
+  return null;
+}
 
 function $(id){return document.getElementById(id)}
 
@@ -129,6 +166,7 @@ function getUsers() {
 
 function saveUsers(users) {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  syncUsersToCloud(users); // 同步到云端
 }
 
 function showTab(tab) {
@@ -148,39 +186,42 @@ function doLogin(e) {
   const username = $('loginUsername').value.trim();
   const password = $('loginPassword').value;
   
-  const users = getUsers();
-  let user = null;
-  
-  // 优先从 localStorage 查找用户（包括管理员）
-  user = users.find(u => u.username === username && u.password === password);
-  
-  if (!user && username === 'lohannes' && password === 'zrw521..') {
-    // 管理员特殊处理：从 localStorage 获取最新信息，如果没有则创建
-    user = users.find(u => u.username === 'lohannes');
-    if (!user) {
-      // 管理员首次登录，创建用户记录
-      user = {
-        username: 'lohannes',
-        password: 'zrw521..',
-        nickname: '管理员',
-        realName: '管理员',
-        role: 'admin',
-        gender: '',
-        avatar: '',
-        createdAt: new Date().toISOString()
-      };
-      users.push(user);
-      saveUsers(users);
+  // 异步加载云端用户数据
+  loadUsersFromCloud().then(cloudUsers => {
+    const users = cloudUsers || getUsers();
+    let user = null;
+    
+    // 优先从 localStorage 查找用户（包括管理员）
+    user = users.find(u => u.username === username && u.password === password);
+    
+    if (!user && username === 'lohannes' && password === 'zrw521..') {
+      // 管理员特殊处理：从 localStorage 获取最新信息，如果没有则创建
+      user = users.find(u => u.username === 'lohannes');
+      if (!user) {
+        // 管理员首次登录，创建用户记录
+        user = {
+          username: 'lohannes',
+          password: 'zrw521..',
+          nickname: '管理员',
+          realName: '管理员',
+          role: 'admin',
+          gender: '',
+          avatar: '',
+          createdAt: new Date().toISOString()
+        };
+        users.push(user);
+        saveUsers(users);
+      }
     }
-  }
-  
-  if (user) {
-    // 保存完整用户信息到 sessionStorage
-    sessionStorage.setItem('currentUser', JSON.stringify(user));
-    window.location.href = 'forum.html';
-  } else {
-    showError('用户名或密码错误');
-  }
+    
+    if (user) {
+      // 保存完整用户信息到 sessionStorage
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      window.location.href = 'forum.html';
+    } else {
+      showError('用户名或密码错误');
+    }
+  });
 }
 
 function doRegister(e) {
