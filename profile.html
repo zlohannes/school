@@ -180,11 +180,42 @@ function init() {
   const str = sessionStorage.getItem('currentUser');
   if (!str) { window.location.href = 'index.html'; return; }
   currentUser = JSON.parse(str);
-  const users = getUsers();
-  const stored = users.find(u => u.username === currentUser.username);
-  if (stored) currentUser = Object.assign({}, currentUser, stored);
-  renderProfile();
-  loadMyPosts();
+  
+  // 从云端加载最新用户数据
+  loadUsersFromCloud().then(cloudUsers => {
+    if (cloudUsers) {
+      const stored = cloudUsers.find(u => u.username === currentUser.username);
+      if (stored) {
+        currentUser = Object.assign({}, currentUser, stored);
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        localStorage.setItem(USERS_KEY, JSON.stringify(cloudUsers));
+      }
+    }
+    renderProfile();
+    loadMyPosts();
+  }).catch(() => {
+    // 云端加载失败，使用本地
+    const users = getUsers();
+    const stored = users.find(u => u.username === currentUser.username);
+    if (stored) currentUser = Object.assign({}, currentUser, stored);
+    renderProfile();
+    loadMyPosts();
+  });
+}
+
+async function loadUsersFromCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.users) {
+      return data.record.users;
+    }
+  } catch(e) {
+    console.log('云端加载失败:', e);
+  }
+  return null;
 }
 
 function renderProfile() {
@@ -237,29 +268,36 @@ function saveProfile() {
   const nickname = $('editNickname').value.trim();
   const gender = $('editGender').value;
   if (!nickname) { alert('昵称不能为空'); return; }
+  
   const users = getUsers();
   let idx = users.findIndex(u => u.username === currentUser.username);
   const updates = {nickname, gender};
   if (newAvatarData) updates.avatar = newAvatarData;
   
   if (idx >= 0) {
-    // 更新 localStorage 中的用户
     users[idx] = Object.assign({}, users[idx], updates);
   } else {
-    // 如果用户不存在，创建新用户记录
     users.push(Object.assign({}, currentUser, updates));
   }
+  
+  // 保存到本地
   saveUsers(users);
   
-  // 更新 currentUser 对象
-  currentUser = Object.assign({}, currentUser, updates);
-  
-  // 更新 sessionStorage（重要！）
-  sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-  
-  closeEdit();
-  renderProfile();
-  showToast();
+  // 强制同步到云端（重要！）
+  syncUsersToCloud(users).then(() => {
+    currentUser = Object.assign({}, currentUser, updates);
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+    closeEdit();
+    renderProfile();
+    showToast();
+  }).catch(() => {
+    // 云端同步失败，但本地已保存
+    currentUser = Object.assign({}, currentUser, updates);
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+    closeEdit();
+    renderProfile();
+    showToast();
+  });
 }
 
 function showToast() {
