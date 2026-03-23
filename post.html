@@ -231,6 +231,16 @@ function renderPostPreview() {
   const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
   
+  // 从用户数据中查找作者头像
+  let authorAvatar = '';
+  if (!p.is_anonymous && p.author) {
+    const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const authorUser = users.find(u => u.username === p.author);
+    if (authorUser && authorUser.avatar) {
+      authorAvatar = '<img src="' + authorUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+    }
+  }
+  
   let mediaHtml = '';
   if (p.media && p.media.length > 0) {
     mediaHtml = '<div class="post-media">';
@@ -252,7 +262,7 @@ function renderPostPreview() {
       '</div>' +
       '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
       '<div class="post-author">' +
-        '<div class="author-avatar">' + authorName.charAt(0).toUpperCase() + '</div>' +
+        '<div class="author-avatar">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
         '<div class="author-info">' +
           '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
           '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
@@ -271,6 +281,16 @@ function renderPost() {
   const p = currentPost;
   const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+  
+  // 从用户数据中查找作者头像
+  let authorAvatar = '';
+  if (!p.is_anonymous && p.author) {
+    const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const authorUser = users.find(u => u.username === p.author);
+    if (authorUser && authorUser.avatar) {
+      authorAvatar = '<img src="' + authorUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+    }
+  }
   
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
   const isAuthor = currentUser && currentUser.username === p.author;
@@ -316,7 +336,7 @@ function renderPost() {
       '</div>' +
       '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
       '<div class="post-author">' +
-        '<div class="author-avatar">' + authorName.charAt(0).toUpperCase() + '</div>' +
+        '<div class="author-avatar">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
         '<div class="author-info">' +
           '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
           '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
