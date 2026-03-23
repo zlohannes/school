@@ -725,6 +725,7 @@ async function syncPostsToCloud(posts) {
       body: JSON.stringify({
         users: JSON.parse(localStorage.getItem(USERS_KEY) || '[]'), 
         posts: posts,
+        replies: record.replies || [],
         notifications: record.notifications || []
       })
     });

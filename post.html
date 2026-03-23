@@ -214,16 +214,47 @@ function loadPost(id) {
     
     currentPost = post;
     
-    // 加载回复
+    // 先从本地加载回复
     const repliesData = localStorage.getItem(REPLIES_KEY);
     replies = repliesData ? JSON.parse(repliesData) : [];
     replies = replies.filter(r => r.post_id === id && !r.is_deleted);
     
     renderPost();
     document.getElementById('loading').classList.add('hidden');
+    
+    // 后台从云端加载回复并合并
+    loadRepliesFromCloud(id).then(cloudReplies => {
+      if (cloudReplies && cloudReplies.length > 0) {
+        // 合并本地和云端回复
+        const allReplies = JSON.parse(localStorage.getItem(REPLIES_KEY) || '[]');
+        cloudReplies.forEach(cloudReply => {
+          if (!allReplies.find(r => r.id === cloudReply.id)) {
+            allReplies.push(cloudReply);
+          }
+        });
+        localStorage.setItem(REPLIES_KEY, JSON.stringify(allReplies));
+        replies = allReplies.filter(r => r.post_id === id && !r.is_deleted);
+        renderPost();
+      }
+    }).catch(() => {});
   } catch(e) {
     showError('加载失败，请刷新重试');
   }
+}
+
+async function loadRepliesFromCloud(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.replies) {
+      return data.record.replies.filter(r => r.post_id === postId);
+    }
+  } catch(e) {
+    console.log('云端回复加载失败:', e);
+  }
+  return null;
 }
 
 function renderPostPreview() {
@@ -424,6 +455,9 @@ function submitReply() {
     });
   }
   
+  // 同步回复到云端
+  syncRepliesToCloud().catch(() => {});
+  
   document.getElementById('replyInput').value = '';
   renderPost();
   showToast('回复成功！');
@@ -436,6 +470,34 @@ function addNotification(notif) {
   
   // 同步到云端
   syncNotificationsToCloud(notifications).catch(() => {});
+}
+
+async function syncRepliesToCloud() {
+  try {
+    const allReplies = JSON.parse(localStorage.getItem(REPLIES_KEY) || '[]');
+    
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: record.users || [],
+        posts: record.posts || [],
+        replies: allReplies,
+        notifications: record.notifications || []
+      })
+    });
+  } catch(e) {
+    console.log('回复同步失败:', e);
+  }
 }
 
 async function syncNotificationsToCloud(notifications) {
@@ -455,6 +517,7 @@ async function syncNotificationsToCloud(notifications) {
       body: JSON.stringify({
         users: record.users || [],
         posts: record.posts || [],
+        replies: record.replies || [],
         notifications: notifications
       })
     });
@@ -480,6 +543,7 @@ async function syncPostsToCloud(posts) {
       body: JSON.stringify({
         users: record.users || [],
         posts: posts,
+        replies: record.replies || [],
         notifications: record.notifications || []
       })
     });
