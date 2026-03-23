@@ -6,14 +6,9 @@
   <title>用户主页 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
   <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -88,9 +83,9 @@
 
   <script>
 (function(){
-  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
   
   var catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   var catBg = {learning:'#4CAF50',campus:'#2196F3',trade:'#FF9800',job:'#9C27B0',chat:'#FF5722',notice:'#f44336'};
@@ -119,18 +114,15 @@
     $('backBtn').onclick = function() { history.back(); };
     
     // 获取用户信息
-    var userRes = await sb.from('users').select('*').eq('username', username).maybeSingle();
-    if (!userRes.data) {
+    var userRes = await db.collection('users').where({username:username}).limit(1).get();
+    if (!userRes.data||!userRes.data[0]) {
       $('loading').classList.add('hidden');
       $('profileCard').innerHTML = '<div class="empty"><div class="empty-icon">👤</div><div>用户不存在</div></div>';
       return;
     }
-    
-    var user = userRes.data;
-    
-    // 获取帖子数量
-    var postsRes = await sb.from('posts').select('id', {count: 'exact', head: true}).eq('author', username);
-    var postCount = postsRes.count || 0;
+    var user = userRes.data[0];
+    var postsRes = await db.collection('posts').where({author:username,is_deleted:_.neq(true)}).count();
+    var postCount = postsRes.total || 0;
     
     // 渲染用户信息
     var nn = user.nickname || user.username;
@@ -161,8 +153,8 @@
       '</div>';
     
     // 获取帖子列表
-    var myPosts = await sb.from('posts').select('*').eq('author', username).order('created_at', {ascending: false}).limit(50);
-    renderPosts(myPosts.data || []);
+    var myPosts = await db.collection('posts').where({author:username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
+    renderPosts((myPosts.data||[]).map(function(p){return Object.assign({},p,{id:p._id});}));
     
     $('loading').classList.add('hidden');
   }
@@ -190,42 +182,40 @@
     var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
     
     // 检查是否已经是好友或已有申请
-    var existingRes = await sb.from('friendships')
-      .select('*')
-      .or('and(requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + username + '),and(requester_username.eq.' + username + ',recipient_username.eq.' + currentUser.username + ')')
-      .maybeSingle();
+    var existingRes = await db.collection('friendships').where(_.or([
+      {requester_username:currentUser.username, recipient_username:username},
+      {requester_username:username, recipient_username:currentUser.username}
+    ])).limit(1).get();
     
-    if (existingRes.data) {
-      if (existingRes.data.status === 'accepted') {
+    if (existingRes.data&&existingRes.data[0]) {
+      if (existingRes.data[0].status === 'accepted') {
         alert('你们已经是好友了，可以去发私信');
         window.location.href = 'chat.html?u=' + encodeURIComponent(username);
-      } else if (existingRes.data.status === 'pending') {
+      } else if (existingRes.data[0].status === 'pending') {
         alert('已经发送过申请了，请等待对方回应');
       }
       return;
     }
     
-    // 发送好友申请
-    var res = await sb.from('friendships').insert({
+    var res = await db.collection('friendships').add({
       requester_username: currentUser.username,
       recipient_username: username,
-      status: 'pending'
+      status: 'pending',
+      created_at: new Date().toISOString()
     });
     
-    if (res.error) {
-      alert('发送失败：' + res.error.message);
-      return;
-    }
+    if (!res.id) { alert('发送失败'); return; }
     
-    // 发送通知
-    await sb.from('notifications').insert({
+    await db.collection('notifications').add({
       recipient_username: username,
       sender_username: currentUser.username,
       sender_nickname: currentUser.nickname,
       type: 'mention',
       post_id: 0,
       post_title: '好友申请',
-      content: currentUser.nickname + ' 请求添加你为好友'
+      content: currentUser.nickname + ' 请求添加你为好友',
+      is_read: false,
+      created_at: new Date().toISOString()
     });
     
     alert('好友申请已发送，请等待对方同意');

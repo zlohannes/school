@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>帖子详情 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
@@ -106,14 +100,10 @@
 
   <script>
 (function(){
-  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  // 数据库连接优化
-  var sb = window.supabase.createClient(SB_URL, SB_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { 'X-Client-Info': 'school-forum' } },
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
     db: { schema: 'public' }
-  });
   
   // 请求超时包装
   async function withTimeout(promise, ms) {
@@ -178,13 +168,13 @@
     showLoading();
     
     // 性能优化：并行加载用户信息和帖子
-    var userPromise = withTimeout(sb.from('users').select('avatar_data,avatar_url,nickname').eq('username', currentUser.username).maybeSingle(), 5000);
+    var userPromise = withTimeout(db.collection('users').where({username:currentUser.username}).limit(1).get(), 5000);
     var postPromise = loadPost();
     
     try {
       var userRes = await userPromise;
-      if (userRes.data) {
-        currentUser.avatar = userRes.data.avatar_data || userRes.data.avatar_url;
+      if (userRes.data && userRes.data[0]) {
+        currentUser.avatar = userRes.data[0].avatar_data || userRes.data[0].avatar_url;
         currentUser.nickname = userRes.data.nickname || currentUser.nickname;
       }
       await postPromise;
@@ -200,22 +190,20 @@
     
     try {
       // 性能优化：先加载帖子和回复，渲染页面
-      var res = await withTimeout(sb.from('posts').select('*').eq('id', id).maybeSingle(), 8000);
-      if (res.error || !res.data) { showError('帖子不存在'); return; }
-      postData = res.data;
+      var res = await withTimeout(db.collection('posts').doc(id).get(), 8000);
+      if (!res.data) { showError('帖子不存在'); return; }
+      postData = Object.assign({}, res.data, {id: res.data._id});
       
-      // 性能优化：限制回复数量为30条
-      var repRes = await withTimeout(sb.from('replies').select('*').eq('post_id', id).order('created_at', {ascending: true}).limit(30), 5000);
-      replies = repRes.data || [];
+      var repRes = await withTimeout(db.collection('replies').where({post_id:id,is_deleted:_.neq(true)}).orderBy('created_at','asc').limit(30).get(), 5000);
+      replies = (repRes.data || []).map(function(r){return Object.assign({},r,{id:r._id});});
       
       renderUserInfo();
       render();
       
-      // 性能优化：异步加载作者头像，不阻塞页面渲染
       if (postData.author && !postData.is_anonymous) {
-        withTimeout(sb.from('users').select('avatar_data,avatar_url').eq('username', postData.author).maybeSingle(), 3000).then(function(authorRes){
-          if (authorRes.data && $('authorAvatar')) {
-            postData.author_avatar = authorRes.data.avatar_data || authorRes.data.avatar_url;
+        withTimeout(db.collection('users').where({username:postData.author}).limit(1).get(), 3000).then(function(authorRes){
+          if (authorRes.data && authorRes.data[0] && $('authorAvatar')) {
+            postData.author_avatar = authorRes.data[0].avatar_data || authorRes.data[0].avatar_url;
             $('authorAvatar').src = postData.author_avatar;
           }
         }).catch(function(){});
@@ -363,22 +351,23 @@
     var isLiking = idx === -1; // 是否是点赞操作
     
     if (idx > -1) lb.splice(idx, 1); else lb.push(currentUser.username);
-    var res = await sb.from('posts').update({likes: lb.length, liked_by: lb}).eq('id', postData.id);
-    
-    if (!res.error) { 
+    var res = await db.collection('posts').doc(postData.id).update({likes: lb.length, liked_by: lb});
+    if (res.updated > 0) { 
       postData.likes = lb.length; 
       postData.liked_by = lb; 
       render(); 
       
       // 发送点赞通知（如果是点赞且不是给自己点赞）
       if (isLiking && postData.author !== currentUser.username) {
-        await sb.from('notifications').insert({
+        await db.collection('notifications').add({
           recipient_username: postData.author,
           sender_username: currentUser.username,
           sender_nickname: currentUser.nickname,
           type: 'like',
           post_id: postData.id,
-          post_title: postData.title
+          post_title: postData.title,
+          is_read: false,
+          created_at: new Date().toISOString()
         });
       }
     }
@@ -387,8 +376,8 @@
   window.togglePin = async function() {
     if (!postData) return;
     var newState = !postData.is_pinned;
-    var res = await sb.from('posts').update({is_pinned: newState}).eq('id', postData.id);
-    if (!res.error) { postData.is_pinned = newState; render(); }
+    var res = await db.collection('posts').doc(postData.id).update({is_pinned: newState});
+    if (res.updated > 0) { postData.is_pinned = newState; render(); }
   };
   
   window.deletePost = async function() {
@@ -396,8 +385,8 @@
     if (!confirm('⚠️ 确定要删除帖子《' + postData.title + '》？\n\n删除后无法恢复！')) return;
     if (!confirm('再次确认：真的要删除吗？')) return;
     
-    var res = await sb.from('posts').update({is_deleted: true}).eq('id', postData.id);
-    if (res.error) { alert('删除失败'); return; }
+    var res = await db.collection('posts').doc(postData.id).update({is_deleted: true});
+    if (res.updated === 0) { alert('删除失败'); return; }
     alert('帖子已删除');
     window.location.href = 'forum.html';
   };
@@ -406,25 +395,26 @@
     var c = $('replyContent').value.trim();
     if (!c) { alert('请输入回复内容'); return; }
     $('sendBtn').disabled = true;
-    var res = await sb.from('replies').insert({post_id: postData.id, content: c, author: currentUser.username, author_nickname: currentUser.nickname});
+    var res = await db.collection('replies').add({post_id: postData.id, content: c, author: currentUser.username, author_nickname: currentUser.nickname, likes: 0, is_deleted: false, created_at: new Date().toISOString()});
     $('sendBtn').disabled = false;
-    if (res.error) { alert('发送失败：' + res.error.message); return; }
+    if (!res.id) { alert('发送失败'); return; }
     
-    // 发送通知给帖子作者（如果不是回复自己）
     if (postData.author !== currentUser.username) {
-      await sb.from('notifications').insert({
+      await db.collection('notifications').add({
         recipient_username: postData.author,
         sender_username: currentUser.username,
         sender_nickname: currentUser.nickname,
         type: 'reply',
         post_id: postData.id,
         post_title: postData.title,
-        content: c
+        content: c,
+        is_read: false,
+        created_at: new Date().toISOString()
       });
     }
     
-    var repRes = await sb.from('replies').select('*').eq('post_id', postData.id).order('created_at', {ascending: true});
-    replies = repRes.data || [];
+    var repRes = await db.collection('replies').where({post_id: postData.id, is_deleted: _.neq(true)}).orderBy('created_at','asc').limit(100).get();
+    replies = (repRes.data || []).map(function(r){return Object.assign({},r,{id:r._id});});
     $('replyContent').value = '';
     render();
   };

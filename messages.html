@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>好友私信 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -108,9 +102,9 @@
 
   <script>
 (function(){
-  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
   
   var currentUser = null;
   var friends = [];
@@ -131,28 +125,20 @@
 
   async function loadData() {
     // 获取我的好友（双向accepted）
-    var friendsRes = await sb.from('friendships')
-      .select('*')
-      .eq('status', 'accepted')
-      .or('requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + currentUser.username);
+    var friendsRes = await db.collection('friendships')
+      .where(_.or([
+        {status:'accepted', requester_username:currentUser.username},
+        {status:'accepted', recipient_username:currentUser.username}
+      ])).limit(100).get();
+    friends = (friendsRes.data||[]).map(function(f){return Object.assign({},f,{id:f._id});});
     
-    friends = friendsRes.data || [];
+    var requestsRes = await db.collection('friendships')
+      .where({recipient_username:currentUser.username, status:'pending'}).limit(50).get();
+    requests = (requestsRes.data||[]).map(function(f){return Object.assign({},f,{id:f._id});});
     
-    // 获取收到的好友申请
-    var requestsRes = await sb.from('friendships')
-      .select('*')
-      .eq('recipient_username', currentUser.username)
-      .eq('status', 'pending');
-    
-    requests = requestsRes.data || [];
-    
-    // 获取我发送的申请
-    var pendingRes = await sb.from('friendships')
-      .select('*')
-      .eq('requester_username', currentUser.username)
-      .eq('status', 'pending');
-    
-    pending = pendingRes.data || [];
+    var pendingRes = await db.collection('friendships')
+      .where({requester_username:currentUser.username, status:'pending'}).limit(50).get();
+    pending = (pendingRes.data||[]).map(function(f){return Object.assign({},f,{id:f._id});});
     
     // 更新申请数量徽章
     if (requests.length > 0) {
@@ -234,38 +220,33 @@
     if (username === currentUser.username) { alert('不能添加自己为好友'); return; }
     
     // 检查用户是否存在
-    var userRes = await sb.from('users').select('username').eq('username', username).maybeSingle();
-    if (!userRes.data) { alert('用户不存在'); return; }
+    var userRes = await db.collection('users').where({username:username}).limit(1).get();
+    if (!userRes.data||!userRes.data[0]) { alert('用户不存在'); return; }
     
-    // 检查是否已经是好友或已有申请
-    var existingRes = await sb.from('friendships')
-      .select('*')
-      .or('and(requester_username.eq.' + currentUser.username + ',recipient_username.eq.' + username + '),and(requester_username.eq.' + username + ',recipient_username.eq.' + currentUser.username + ')')
-      .maybeSingle();
+    var existingRes = await db.collection('friendships').where(_.or([
+      {requester_username:currentUser.username, recipient_username:username},
+      {requester_username:username, recipient_username:currentUser.username}
+    ])).limit(1).get();
     
-    if (existingRes.data) {
-      if (existingRes.data.status === 'accepted') {
+    if (existingRes.data&&existingRes.data[0]) {
+      if (existingRes.data[0].status === 'accepted') {
         alert('你们已经是好友了');
-      } else if (existingRes.data.status === 'pending') {
+      } else if (existingRes.data[0].status === 'pending') {
         alert('已经发送过申请了，请等待对方回应');
       }
       return;
     }
     
-    // 发送好友申请
-    var res = await sb.from('friendships').insert({
+    var res = await db.collection('friendships').add({
       requester_username: currentUser.username,
       recipient_username: username,
-      status: 'pending'
+      status: 'pending',
+      created_at: new Date().toISOString()
     });
     
-    if (res.error) {
-      alert('发送失败：' + res.error.message);
-      return;
-    }
+    if (!res.id) { alert('发送失败'); return; }
     
-    // 发送系统通知
-    await sb.from('notifications').insert({
+    await db.collection('notifications').add({
       recipient_username: username,
       sender_username: currentUser.username,
       sender_nickname: currentUser.nickname,
@@ -283,8 +264,8 @@
   window.acceptRequest = async function(id) {
     if (!confirm('确定同意该好友申请？')) return;
     
-    var res = await sb.from('friendships').update({status: 'accepted', updated_at: new Date().toISOString()}).eq('id', id);
-    if (res.error) { alert('操作失败'); return; }
+    var res = await db.collection('friendships').doc(id).update({status: 'accepted', updated_at: new Date().toISOString()});
+    if (res.updated===0) { alert('操作失败'); return; }
     
     alert('已添加为好友，现在可以互相发私信了');
     await loadData();
@@ -293,8 +274,8 @@
   window.rejectRequest = async function(id) {
     if (!confirm('确定拒绝该好友申请？')) return;
     
-    var res = await sb.from('friendships').update({status: 'rejected', updated_at: new Date().toISOString()}).eq('id', id);
-    if (res.error) { alert('操作失败'); return; }
+    var res = await db.collection('friendships').doc(id).update({status: 'rejected', updated_at: new Date().toISOString()});
+    if (res.updated===0) { alert('操作失败'); return; }
     
     await loadData();
   };
@@ -302,8 +283,8 @@
   window.removeFriend = async function(id) {
     if (!confirm('确定删除该好友？删除后将无法互相发私信')) return;
     
-    var res = await sb.from('friendships').delete().eq('id', id);
-    if (res.error) { alert('删除失败'); return; }
+    var res = await db.collection('friendships').doc(id).remove();
+    if (res.deleted===0) { alert('删除失败'); return; }
     
     await loadData();
   };

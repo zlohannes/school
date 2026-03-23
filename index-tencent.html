@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛 - 登录注册</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{width:100%;max-width:420px}
+    .card{background:white;padding:25px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.15)}
+    h1{color:#333;text-align:center;font-size:22px;margin-bottom:3px}
+    .subtitle{color:#666;text-align:center;font-size:13px;margin-bottom:20px}
+    h2{color:#333;font-size:16px;margin-bottom:15px}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-weight:600;color:#333;font-size:13px;margin-bottom:4px}
+    .form-group input,.form-group select{width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:13px}
+    .btn{width:100%;background:#667eea;color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
+    .btn:hover{background:#5568d3}
+    .switch{text-align:center;margin-top:12px;color:#666;font-size:13px}
+    .guest-btn{width:100%;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:10px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px}
+    .guest-divider{display:flex;align-items:center;margin:15px 0;color:#999;font-size:12px}
+    .guest-divider::before,.guest-divider::after{content:'';flex:1;height:1px;background:#ddd}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>鹿城学院论坛</h1>
+      <p class="subtitle">温州职业技术学院</p>
+      
+      <div id="loginBox">
+        <h2>🔐 用户登录</h2>
+        <form id="loginForm">
+          <div class="form-group"><label>用户名</label><input type="text" id="loginUsername" required></div>
+          <div class="form-group"><label>密码</label><input type="password" id="loginPassword" required></div>
+          <button type="submit" class="btn" id="loginBtn">登录</button>
+        </form>
+        <div class="guest-divider"><span>或</span></div>
+        <button class="guest-btn" id="guestBtn">👀 游客浏览</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// 腾讯云云函数地址
+const CLOUD_API = 'https://school-7g0r6pyl5a3b9046.service.tcloudbase.com';
+
+function $(id){return document.getElementById(id);}
+
+// 登录
+$('loginForm').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const username = $('loginUsername').value.trim();
+  const password = $('loginPassword').value;
+  
+  try {
+    const res = await fetch(`${CLOUD_API}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    const data = await res.json();
+    
+    if (data.code === 0) {
+      sessionStorage.setItem('currentUser', JSON.stringify(data.data));
+      window.location.href = 'forum.html';
+    } else {
+      alert(data.message);
+    }
+  } catch (err) {
+    alert('登录失败：' + err.message);
+  }
+});
+
+// 游客登录
+$('guestBtn').addEventListener('click', function(){
+  sessionStorage.setItem('currentUser', JSON.stringify({
+    username: '__GUEST__',
+    nickname: '游客',
+    role: 'guest'
+  }));
+  window.location.href = 'forum.html';
+});
+</script>
+</body>
+</html>

@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>鹿城学院论坛 - 个人主页</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -212,9 +206,9 @@
 
   <script>
 (function(){
-  var SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb=window.supabase.createClient(SB_URL,SB_KEY);
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
   var catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
   var catBg={learning:'#4CAF50',campus:'#2196F3',trade:'#FF9800',job:'#9C27B0',chat:'#FF5722',notice:'#f44336'};
   var roleNames={student:'学生',teacher:'老师',admin:'管理员'};
@@ -252,12 +246,12 @@
   async function loadProfile(){
     // 并行请求用户信息 + 统计数据
     var [userRes, postsCountRes, repliesCountRes] = await Promise.all([
-      sb.from('users').select('*').eq('username', currentUser.username).maybeSingle(),
-      sb.from('posts').select('id', {count: 'exact', head: true}).eq('author', currentUser.username),
-      sb.from('replies').select('id', {count: 'exact', head: true}).eq('author', currentUser.username)
+      db.collection('users').where({username:currentUser.username}).limit(1).get(),
+      db.collection('posts').where({author:currentUser.username,is_deleted:_.neq(true)}).count(),
+      db.collection('replies').where({author:currentUser.username,is_deleted:_.neq(true)}).count()
     ]);
     
-    userData = userRes.data;
+    userData = userRes.data && userRes.data[0] ? userRes.data[0] : null;
     if(!userData) return;
     
     var nn = userData.nickname || currentUser.username;
@@ -286,8 +280,8 @@
     $('navUserInfo').innerHTML = '<div class="avatar-sm">'+navAv+'</div><span class="role-tag role-'+role+'">'+(roleNames[role] || '学生')+'</span>';
     
     // 统计（已经并行加载完成）
-    $('postCount').textContent = postsCountRes.count || 0;
-    $('replyCount').textContent = repliesCountRes.count || 0;
+    $('postCount').textContent = postsCountRes.total || 0;
+    $('replyCount').textContent = repliesCountRes.total || 0;
     
     // 管理员：显示管理 tab（但不立即加载用户列表）
     if(role === 'admin'){
@@ -302,8 +296,8 @@
   async function loadPostsIfNeeded(){
     if(postsLoaded) return;
     $('postsList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var myPosts = await sb.from('posts').select('*').eq('author', currentUser.username).order('created_at', {ascending: false}).limit(50);
-    renderPosts(myPosts.data || []);
+    var myPostsRes = await db.collection('posts').where({author:currentUser.username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
+    renderPosts((myPostsRes.data||[]).map(function(p){return Object.assign({},p,{id:p._id});}));
     postsLoaded = true;
   }
 
@@ -311,8 +305,8 @@
   async function loadRepliesIfNeeded(){
     if(repliesLoaded) return;
     $('repliesList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var myReplies = await sb.from('replies').select('*').eq('author', currentUser.username).order('created_at', {ascending: false}).limit(50);
-    renderReplies(myReplies.data || []);
+    var myRepliesRes = await db.collection('replies').where({author:currentUser.username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
+    renderReplies((myRepliesRes.data||[]).map(function(r){return Object.assign({},r,{id:r._id});}));
     repliesLoaded = true;
   }
 
@@ -320,7 +314,7 @@
   async function loadAdminIfNeeded(){
     if(adminLoaded) return;
     $('adminList').innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div>加载中...</div></div>';
-    var usersRes = await sb.from('users').select('username,nickname,major,gender,role,is_banned,created_at').order('created_at', {ascending: false}).limit(100);
+    var usersRes = await db.collection('users').orderBy('created_at','desc').limit(100).get();
     renderAdmin(usersRes.data || []);
     adminLoaded = true;
   }
@@ -395,8 +389,10 @@
     var hashArray=Array.from(new Uint8Array(hashBuffer));
     var hashedPwd=hashArray.map(function(b){return b.toString(16).padStart(2,'0')}).join('');
     
-    var{error}=await sb.from('users').update({password:hashedPwd}).eq('username',username);
-    if(error){alert('重置失败：'+error.message);return}
+    var userToReset = await db.collection('users').where({username:username}).limit(1).get();
+    if(!userToReset.data||!userToReset.data[0]){alert('用户不存在');return;}
+    var res=await db.collection('users').doc(userToReset.data[0]._id).update({password:hashedPwd});
+    if(res.updated===0){alert('重置失败');return}
     alert('密码已重置！新密码：'+newPwd+'\n\n请告知用户！');
   };
 
@@ -406,8 +402,10 @@
     if(!confirm('⚠️ 确定要'+action+'用户 '+username+' ？'))return;
     if(!confirm('再次确认：真的要'+action+'该用户吗？\n\n'+action+'后用户将'+(ban?'无法登录':'恢复登录')+'！'))return;
     
-    var res=await sb.from('users').update({is_banned:ban}).eq('username',username);
-    if(res.error){alert('操作失败：'+res.error.message);return}
+    var userToBan = await db.collection('users').where({username:username}).limit(1).get();
+    if(!userToBan.data||!userToBan.data[0]){alert('用户不存在');return;}
+    var res=await db.collection('users').doc(userToBan.data[0]._id).update({is_banned:ban});
+    if(res.updated===0){alert('操作失败');return}
     alert('已'+(ban?'封禁':'解封')+'用户 '+username);
     await loadProfile();
   }
@@ -428,7 +426,10 @@
     var gd=$('editGender').value;
     if(!nn){alert('昵称不能为空');return}
     $('saveBtn').disabled=true;
-    await sb.from('users').update({nickname:nn,gender:gd}).eq('username',currentUser.username);
+    var userToEdit = await db.collection('users').where({username:currentUser.username}).limit(1).get();
+    if(userToEdit.data&&userToEdit.data[0]){
+      await db.collection('users').doc(userToEdit.data[0]._id).update({nickname:nn,gender:gd});
+    }
     currentUser.nickname=nn;
     sessionStorage.setItem('currentUser',JSON.stringify(currentUser));
     $('editForm').classList.remove('show');
@@ -498,7 +499,10 @@
       
       $('progressBar').querySelector('.bar').style.width='70%';
       
-      await sb.from('users').update({avatar_data:base64}).eq('username',currentUser.username);
+      var userToUpdate = await db.collection('users').where({username:currentUser.username}).limit(1).get();
+      if(userToUpdate.data&&userToUpdate.data[0]){
+        await db.collection('users').doc(userToUpdate.data[0]._id).update({avatar_data:base64});
+      }
       
       $('progressBar').querySelector('.bar').style.width='100%';
       userData.avatar_data=base64;

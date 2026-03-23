@@ -5,15 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>消息通知 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -86,9 +80,9 @@
 
   <script>
 (function(){
-  var SB_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY = 'sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
   
   var currentUser = null;
   var notifications = [];
@@ -115,12 +109,10 @@
   }
 
   async function loadNotifications() {
-    var res = await sb.from('notifications')
-      .select('*')
-      .eq('recipient_username', currentUser.username)
-      .order('created_at', {ascending: false});
-    
-    notifications = res.data || [];
+    var res = await db.collection('notifications')
+      .where({recipient_username: currentUser.username})
+      .orderBy('created_at','desc').limit(100).get();
+    notifications = (res.data || []).map(function(n){return Object.assign({},n,{id:n._id});});
     render();
   }
 
@@ -169,14 +161,12 @@
   };
 
   window.viewNotification = async function(id, postId) {
-    // 标记为已读
-    await sb.from('notifications').update({is_read: true}).eq('id', id);
-    // 跳转到帖子
+    await db.collection('notifications').doc(id).update({is_read: true});
     window.location.href = 'post.html?id=' + postId;
   };
 
   window.markRead = async function(id) {
-    await sb.from('notifications').update({is_read: true}).eq('id', id);
+    await db.collection('notifications').doc(id).update({is_read: true});
     var n = notifications.find(function(item) { return item.id === id; });
     if (n) n.is_read = true;
     render();

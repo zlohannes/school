@@ -11,18 +11,11 @@
   <meta property="og:title" content="鹿城学院论坛">
   <meta property="og:description" content="温州职业技术学院学生交流平台">
   <meta property="og:type" content="website">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：预加载关键资源 -->
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
   <link rel="preload" href="./config.js" as="script">
   <script>sessionStorage.clear();</script>
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -146,18 +139,10 @@
   </div>
   <script src="./config.js"></script>
 <script>
-// 等待 Supabase 加载完成
 document.addEventListener('DOMContentLoaded', function(){
-  // 检查 Supabase 是否加载成功
-  if(!window.supabase){
-    console.error('Supabase 加载失败');
-    alert('页面加载失败，请刷新重试');
-    return;
-  }
-  
-  var SB_URL = window.SUPABASE_URL;
-  var SB_KEY = window.SUPABASE_ANON_KEY;
-  var sb = window.supabase.createClient(SB_URL, SB_KEY);
+  // 初始化 CloudBase
+  var app = tcb.init({ env: window.CLOUDBASE_ENV });
+  var db = app.database();
   var ADMIN_CODE_HASH = window.ADMIN_CODE_HASH;
   var PASSWORD_SALT = window.PASSWORD_SALT || 'lc_forum_2026';
 
@@ -165,55 +150,31 @@ document.addEventListener('DOMContentLoaded', function(){
   function showLoading(){$('loading').classList.add('show')}
   function hideLoading(){$('loading').classList.remove('show')}
 
-  // SHA-256 哈希函数
   async function sha256(text) {
     var encoder = new TextEncoder();
     var data = encoder.encode(text);
     var hashBuffer = await crypto.subtle.digest('SHA-256', data);
     var hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    return hashArray.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
   }
-
-  // 密码加密：SHA-256(密码 + 盐值)
-  async function hashPassword(password) {
-    return await sha256(password + PASSWORD_SALT);
-  }
-
-  // 验证管理员注册码
-  async function verifyAdminCode(code) {
-    var hash = await sha256(code);
-    return hash === ADMIN_CODE_HASH;
-  }
+  async function hashPassword(p){ return await sha256(p + PASSWORD_SALT); }
+  async function verifyAdminCode(code){ return (await sha256(code)) === ADMIN_CODE_HASH; }
 
   function showLogin(){$('registerBox').style.display='none';$('loginBox').style.display='block';$('resetBox').style.display='none'}
   function showRegister(){$('loginBox').style.display='none';$('registerBox').style.display='block';$('resetBox').style.display='none'}
   function showReset(){$('registerBox').style.display='none';$('loginBox').style.display='none';$('resetBox').style.display='block'}
 
-  // 角色切换
   document.querySelectorAll('input[name="role"]').forEach(function(radio){
     radio.addEventListener('change', async function(){
       var role = this.value;
       var majorSelect = $('regMajor');
-      if(role === 'teacher' || role === 'admin'){
-        majorSelect.disabled = true;
-        majorSelect.value = '';
-      } else {
-        majorSelect.disabled = false;
-      }
-      if(role === 'admin'){
-        var code = prompt('请输入管理员注册码：');
-        if(!code) {
-          // 用户取消，重置为学生
-          document.querySelector('input[name="role"][value="student"]').checked = true;
-          $('regMajor').disabled = false;
-          return;
-        }
-        var valid = await verifyAdminCode(code);
-        if(!valid){
-          alert('注册码错误！');
-          document.querySelector('input[name="role"][value="student"]').checked = true;
-          $('regMajor').disabled = false;
-        }
+      if(role==='teacher'||role==='admin'){majorSelect.disabled=true;majorSelect.value='';}
+      else{majorSelect.disabled=false;}
+      if(role==='admin'){
+        var code=prompt('请输入管理员注册码：');
+        if(!code){document.querySelector('input[name="role"][value="student"]').checked=true;$('regMajor').disabled=false;return;}
+        var valid=await verifyAdminCode(code);
+        if(!valid){alert('注册码错误！');document.querySelector('input[name="role"][value="student"]').checked=true;$('regMajor').disabled=false;}
       }
     });
   });
@@ -221,173 +182,80 @@ document.addEventListener('DOMContentLoaded', function(){
   // 注册
   $('registerForm').addEventListener('submit', async function(e){
     e.preventDefault();
-    var u = $('regUsername').value.trim();
-    var n = $('regNickname').value.trim() || u;
-    var p = $('regPassword').value;
-    var c = $('regConfirm').value;
-    var rn = $('regRealName').value.trim();
-    var m = $('regMajor').value;
-    var g = $('regGender').value;
-    var r = document.querySelector('input[name="role"]:checked').value;
-
-    if(p.length < 6 || p.length > 20){ alert('密码长度应为6-20位'); return }
-    if(p !== c){ alert('两次密码不一致'); return }
-    if(!$('agreeTerms').checked){ alert('请阅读并同意用户协议'); return }
-
-    showLoading();
-    $('regBtn').disabled = true;
-
-    try {
-      // 检查用户名是否已存在
-      var checkRes = await sb.from('users').select('username').eq('username', u).maybeSingle();
-      if(checkRes.data){
-        hideLoading();
-        $('regBtn').disabled = false;
-        alert('用户名已存在');
-        return;
-      }
-      
-      // 检查真实姓名是否已存在（防止刷号）
-      var nameCheckRes = await sb.from('users').select('username').eq('real_name', rn).maybeSingle();
-      if(nameCheckRes.data){
-        hideLoading();
-        $('regBtn').disabled = false;
+    var u=$('regUsername').value.trim(), n=$('regNickname').value.trim()||u;
+    var p=$('regPassword').value, c=$('regConfirm').value;
+    var rn=$('regRealName').value.trim(), m=$('regMajor').value;
+    var g=$('regGender').value, r=document.querySelector('input[name="role"]:checked').value;
+    if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
+    if(p!==c){alert('两次密码不一致');return}
+    if(!$('agreeTerms').checked){alert('请阅读并同意用户协议');return}
+    showLoading(); $('regBtn').disabled=true;
+    try{
+      var exist=await db.collection('users').where({username:u}).get();
+      if(exist.data.length){hideLoading();$('regBtn').disabled=false;alert('用户名已存在');return;}
+      var nameExist=await db.collection('users').where({real_name:rn}).get();
+      if(nameExist.data.length){
+        hideLoading();$('regBtn').disabled=false;
         alert('该真实姓名已注册过账号，请直接登录');
-        showLogin();
-        $('loginUsername').value = nameCheckRes.data.username;
-        return;
+        showLogin();$('loginUsername').value=nameExist.data[0].username;return;
       }
-
-      // 使用 SHA-256 加密密码
-      var hashedPassword = await hashPassword(p);
-
-      var insertRes = await sb.from('users').insert({
-        username: u,
-        nickname: n,
-        password: hashedPassword,
-        real_name: rn,
-        major: m,
-        gender: g,
-        role: r
-      });
-
-      hideLoading();
-      $('regBtn').disabled = false;
-
-      if(insertRes.error){
-        alert('注册失败：' + insertRes.error.message);
-        return;
-      }
-
-      alert('注册成功！请登录');
-      showLogin();
-      $('loginUsername').value = u;
-      $('regUsername').value = '';
-      $('regPassword').value = '';
-      $('regConfirm').value = '';
-    } catch(err) {
-      hideLoading();
-      $('regBtn').disabled = false;
-      alert('网络错误，请重试');
-    }
+      var hp=await hashPassword(p);
+      await db.collection('users').add({username:u,nickname:n,password:hp,real_name:rn,major:m,gender:g,role:r,is_banned:false,created_at:new Date().toISOString()});
+      hideLoading();$('regBtn').disabled=false;
+      alert('注册成功！请登录');showLogin();$('loginUsername').value=u;
+    }catch(err){hideLoading();$('regBtn').disabled=false;alert('网络错误：'+err.message);}
   });
 
   // 登录
   $('loginForm').addEventListener('submit', async function(e){
     e.preventDefault();
-    var u = $('loginUsername').value.trim();
-    var p = $('loginPassword').value;
-
-    showLoading();
-    $('loginBtn').disabled = true;
-
-    try {
-      var res = await sb.from('users').select('*').eq('username', u).maybeSingle();
-      hideLoading();
-      $('loginBtn').disabled = false;
-
-      var user = res.data;
-      if(!user){ alert('用户名不存在'); return }
-
-      // 使用 SHA-256 验证密码
-      var hashedInput = await hashPassword(p);
-      if(user.password !== hashedInput){ alert('密码错误'); return }
-
-      if(user.is_banned){ alert('账号已被封禁，请联系管理员'); return }
-
-      sessionStorage.setItem('currentUser', JSON.stringify({
-        username: user.username,
-        nickname: user.nickname,
-        role: user.role,
-        realName: user.real_name
-      }));
-      window.location.href = 'forum.html';
-    } catch(err) {
-      hideLoading();
-      $('loginBtn').disabled = false;
-      alert('网络连接失败，请重试');
-    }
+    var u=$('loginUsername').value.trim(), p=$('loginPassword').value;
+    showLoading();$('loginBtn').disabled=true;
+    try{
+      var res=await db.collection('users').where({username:u}).get();
+      hideLoading();$('loginBtn').disabled=false;
+      if(!res.data.length){alert('用户名不存在');return;}
+      var user=res.data[0];
+      var hp=await hashPassword(p);
+      if(user.password!==hp){alert('密码错误');return;}
+      if(user.is_banned){alert('账号已被封禁，请联系管理员');return;}
+      sessionStorage.setItem('currentUser',JSON.stringify({username:user.username,nickname:user.nickname,role:user.role,realName:user.real_name,id:user._id}));
+      window.location.href='forum.html';
+    }catch(err){hideLoading();$('loginBtn').disabled=false;alert('网络连接失败：'+err.message);}
   });
 
-  $('toLoginBtn').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
-  $('toRegisterBtn').addEventListener('click', function(e){ e.preventDefault(); showRegister(); });
-  $('forgotPwdBtn').addEventListener('click', function(e){ e.preventDefault(); showReset(); });
-  $('toLoginFromReset').addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
+  $('toLoginBtn').addEventListener('click',function(e){e.preventDefault();showLogin();});
+  $('toRegisterBtn').addEventListener('click',function(e){e.preventDefault();showRegister();});
+  $('forgotPwdBtn').addEventListener('click',function(e){e.preventDefault();showReset();});
+  $('toLoginFromReset').addEventListener('click',function(e){e.preventDefault();showLogin();});
 
-  // 游客登录
   function guestLogin(){
-    sessionStorage.setItem('currentUser', JSON.stringify({
-      username: '__GUEST__',
-      nickname: '游客',
-      role: 'guest',
-      realName: ''
-    }));
-    window.location.href = 'forum.html';
+    sessionStorage.setItem('currentUser',JSON.stringify({username:'__GUEST__',nickname:'游客',role:'guest',realName:''}));
+    window.location.href='forum.html';
   }
-  $('guestBtn').addEventListener('click', guestLogin);
-  if($('guestBtn2')) $('guestBtn2').addEventListener('click', guestLogin);
+  $('guestBtn').addEventListener('click',guestLogin);
+  if($('guestBtn2'))$('guestBtn2').addEventListener('click',guestLogin);
 
   // 重置密码
   $('resetForm').addEventListener('submit', async function(e){
     e.preventDefault();
-    var u = $('resetUsername').value.trim();
-    var rn = $('resetRealName').value.trim();
-    var p = $('resetPassword').value;
-    var c = $('resetConfirm').value;
-
-    if(p.length < 6 || p.length > 20){ alert('密码长度应为6-20位'); return }
-    if(p !== c){ alert('两次密码不一致'); return }
-
-    showLoading();
-    $('resetBtn').disabled = true;
-
-    try {
-      var res = await sb.from('users').select('*').eq('username', u).maybeSingle();
-      var user = res.data;
-      if(!user){ hideLoading(); $('resetBtn').disabled = false; alert('用户名不存在'); return }
-      if(user.real_name !== rn){ hideLoading(); $('resetBtn').disabled = false; alert('真实姓名不正确'); return }
-
-      var hashedPassword = await hashPassword(p);
-      var updateRes = await sb.from('users').update({password: hashedPassword}).eq('username', u);
-      
-      hideLoading();
-      $('resetBtn').disabled = false;
-      
-      if(updateRes.error){ alert('重置失败：' + updateRes.error.message); return }
-      alert('密码重置成功！请用新密码登录');
-      showLogin();
-      $('loginUsername').value = u;
-      $('resetUsername').value = '';
-      $('resetRealName').value = '';
-      $('resetPassword').value = '';
-      $('resetConfirm').value = '';
-    } catch(err) {
-      hideLoading();
-      $('resetBtn').disabled = false;
-      alert('网络错误，请重试');
-    }
+    var u=$('resetUsername').value.trim(), rn=$('resetRealName').value.trim();
+    var p=$('resetPassword').value, c=$('resetConfirm').value;
+    if(p.length<6||p.length>20){alert('密码长度应为6-20位');return}
+    if(p!==c){alert('两次密码不一致');return}
+    showLoading();$('resetBtn').disabled=true;
+    try{
+      var res=await db.collection('users').where({username:u}).get();
+      if(!res.data.length){hideLoading();$('resetBtn').disabled=false;alert('用户名不存在');return;}
+      var user=res.data[0];
+      if(user.real_name!==rn){hideLoading();$('resetBtn').disabled=false;alert('真实姓名不正确');return;}
+      var hp=await hashPassword(p);
+      await db.collection('users').doc(user._id).update({password:hp});
+      hideLoading();$('resetBtn').disabled=false;
+      alert('密码重置成功！请用新密码登录');showLogin();$('loginUsername').value=u;
+    }catch(err){hideLoading();$('resetBtn').disabled=false;alert('网络错误：'+err.message);}
   });
 });
-  </script>
+</script>
 </body>
 </html>

@@ -11,17 +11,10 @@
   <meta property="og:title" content="鹿城学院论坛">
   <meta property="og:description" content="温州职业技术学院学生交流平台">
   <meta property="og:type" content="website">
-  <!-- 性能优化：预连接关键域名 -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://tsxnnzcteavcpowsbaye.supabase.co" crossorigin>
-  <link rel="preconnect" href="https://www.wzvtc.cn" crossorigin>
-  <!-- 性能优化：DNS 预解析 -->
-  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-  <link rel="dns-prefetch" href="https://tsxnnzcteavcpowsbaye.supabase.co">
-  <!-- 性能优化：预加载关键资源 -->
+  <!-- 腾讯云 CloudBase SDK -->
+  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
   <link rel="preload" href="./config.js" as="script">
-  <!-- 性能优化：异步加载 Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
     :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--danger:#ff6b6b;--purple:#a855f7}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -283,23 +276,11 @@
 
   <script>
 (function(){
-  var SB_URL='https://tsxnnzcteavcpowsbaye.supabase.co';
-  var SB_KEY='sb_publishable_SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
-  // 数据库连接优化：增加超时和重试配置
-  var sb=window.supabase.createClient(SB_URL,SB_KEY,{
-    auth:{
-      persistSession:false,
-      autoRefreshToken:false
-    },
-    global:{
-      headers:{
-        'X-Client-Info':'school-forum'
-      }
-    },
-    db:{
-      schema:'public'
-    }
-  });
+  // 初始化腾讯云 CloudBase
+  var app=tcb.init({env:window.CLOUDBASE_ENV});
+  var db=app.database();
+  var _=db.command;
+
   // 请求超时包装函数
   async function withTimeout(promise,ms=8000){
     return Promise.race([
@@ -344,11 +325,13 @@
   var postsCache=null,cacheTime=0,CACHE_TTL=60000; // 缓存1分钟
   var USE_STATIC_JSON=true; // 启用静态JSON模式
   
-  // 从静态JSON加载帖子（速度快）
+  // 从腾讯云COS加载帖子（国内速度快）
   async function loadPostsFromStatic(){
     try{
-      var res=await fetch('./data/posts.json?v='+Date.now(),{cache:'no-cache'});
-      if(!res.ok)throw new Error('Static JSON not found');
+      // 优先从腾讯云COS读取
+      var cosUrl='https://school-1414403628.cos.ap-shanghai.myqcloud.com/posts.json?v='+Date.now();
+      var res=await fetch(cosUrl,{cache:'no-cache'});
+      if(!res.ok)throw new Error('COS load failed');
       var data=await res.json();
       if(data.posts && data.posts.length>0){
         // 转换回复数字段
@@ -359,7 +342,21 @@
       }
       return null;
     }catch(e){
-      console.log('Static JSON load failed:',e);
+      console.log('COS load failed:',e);
+      // 回退到本地JSON
+      try{
+        var res=await fetch('./data/posts.json?v='+Date.now(),{cache:'no-cache'});
+        if(!res.ok)throw new Error('Local JSON not found');
+        var data=await res.json();
+        if(data.posts && data.posts.length>0){
+          data.posts.forEach(function(p){
+            replyCounts[p.id]=p.reply_count||0;
+          });
+          return data.posts;
+        }
+      }catch(e2){
+        console.log('Local JSON also failed:',e2);
+      }
       return null;
     }
   }
@@ -413,14 +410,11 @@
       if(isGuest){
         // 性能优化：只加载最近7天的帖子，限制50条，减少数据传输
         var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
-        var postsRes=await withTimeout(sb.from('posts')
-          .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous')
-          .gte('created_at',sevenDaysAgo)
-          .eq('is_deleted',false)
-          .order('is_pinned',{ascending:false})
-          .order('created_at',{ascending:false})
-          .limit(50),8000);
-        allPosts=postsRes.data||[];
+        var postsRes=await withTimeout(db.collection('posts')
+          .where({is_deleted:_.neq(true),created_at:_.gte(sevenDaysAgo)})
+          .orderBy('is_pinned','desc').orderBy('created_at','desc')
+          .limit(50).get(),8000);
+        allPosts=(postsRes.data||[]).map(function(p){return Object.assign({},p,{id:p._id});});
         postsCache=allPosts;
         cacheTime=now;
         // 游客不显示发帖按钮
@@ -432,24 +426,15 @@
         if($('notificationBtn')) $('notificationBtn').style.display='none';
       }else{
         // 性能优化：并行加载用户数据和帖子，带超时控制
-        var userPromise=withTimeout(sb.from('users')
-          .select('username,nickname,avatar_data,avatar_url,role')
-          .eq('username',currentUser.username)
-          .maybeSingle(),5000);
-        
-        // 性能优化：只加载最近7天的帖子，限制50条，减少字段
+        var userPromise=withTimeout(db.collection('users').where({username:currentUser.username}).limit(1).get(),5000);
         var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
-        var postsPromise=withTimeout(sb.from('posts')
-          .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted')
-          .gte('created_at',sevenDaysAgo)
-          .eq('is_deleted',false)
-          .order('is_pinned',{ascending:false})
-          .order('created_at',{ascending:false})
-          .limit(50),8000);
-        
+        var postsPromise=withTimeout(db.collection('posts')
+          .where({is_deleted:_.neq(true),created_at:_.gte(sevenDaysAgo)})
+          .orderBy('is_pinned','desc').orderBy('created_at','desc')
+          .limit(50).get(),8000);
         var [userRes,postsRes]=await Promise.all([userPromise,postsPromise]);
-        userData=userRes.data;
-        allPosts=postsRes.data||[];
+        userData=userRes.data&&userRes.data[0]?userRes.data[0]:null;
+        allPosts=(postsRes.data||[]).map(function(p){return Object.assign({},p,{id:p._id});});
         postsCache=allPosts;
         cacheTime=now;
         
@@ -484,20 +469,15 @@
     lastRefreshTime=now;
     try{
       var sevenDaysAgo=new Date(Date.now()-7*24*60*60*1000).toISOString();
-      var postsRes=await withTimeout(sb.from('posts')
-        .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted')
-        .gte('created_at',sevenDaysAgo)
-        .eq('is_deleted',false)
-        .order('is_pinned',{ascending:false})
-        .order('created_at',{ascending:false})
-        .limit(50),10000);
+      var postsRes=await withTimeout(db.collection('posts')
+        .where({is_deleted:_.neq(true),created_at:_.gte(sevenDaysAgo)})
+        .orderBy('is_pinned','desc').orderBy('created_at','desc')
+        .limit(50).get(),10000);
       if(postsRes.data && postsRes.data.length>0){
-        // 检查是否有新数据
         var currentIds=allPosts.map(function(p){return p.id}).sort().join(',');
-        var newIds=postsRes.data.map(function(p){return p.id}).sort().join(',');
+        var newIds=postsRes.data.map(function(p){return p._id}).sort().join(',');
         if(currentIds!==newIds || postsRes.data.length!==allPosts.length){
-          // 有新数据，静默更新
-          allPosts=postsRes.data;
+          allPosts=postsRes.data.map(function(p){return Object.assign({},p,{id:p._id});});
           postsCache=allPosts;
           cacheTime=Date.now();
           filterAndRender();
@@ -519,8 +499,8 @@
   }
       // 性能优化：只在有帖子时批量查询回复数，限制查询数量
       if(allPosts.length>0){
-        var ids=allPosts.slice(0,50).map(function(p){return p.id}); // 只查前50条的回复数
-        var repRes=await sb.from('replies').select('post_id').in('post_id',ids);
+        var ids=allPosts.slice(0,50).map(function(p){return p.id});
+        var repRes=await db.collection('replies').where({post_id:_.in(ids),is_deleted:_.neq(true)}).field({post_id:true}).limit(500).get();
         (repRes.data||[]).forEach(function(r){replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1});
       }
       
@@ -549,8 +529,8 @@
   
   // 检查未读通知
   async function checkNotifications(){
-    var res=await sb.from('notifications').select('id',{count:'exact',head:true}).eq('recipient_username',currentUser.username).eq('is_read',false);
-    var count=res.count||0;
+    var res=await db.collection('notifications').where({recipient_username:currentUser.username,is_read:false}).count();
+    var count=res.total||0;
     var badge=$('notificationBadge');
     var btn=$('notificationBtn');
     if(count>0){
@@ -584,9 +564,7 @@
   async function loadReplyCountsForPage(postIds){
     if(!postIds.length || isGuest)return;
     try{
-      var res=await withTimeout(sb.from('replies')
-        .select('post_id')
-        .in('post_id',postIds),5000);
+      var res=await withTimeout(db.collection('replies').where({post_id:_.in(postIds),is_deleted:_.neq(true)}).field({post_id:true}).limit(500).get(),5000);
       (res.data||[]).forEach(function(r){
         replyCounts[r.post_id]=(replyCounts[r.post_id]||0)+1;
       });
@@ -740,8 +718,8 @@
       step2OkText:'确定，永久删除'
     });
     if(!confirmed)return;
-    var res=await sb.from('posts').update({is_deleted:true}).eq('id',id);
-    if(res.error){alert('删除失败：'+res.error.message);return}
+    var res=await db.collection('posts').doc(id).update({is_deleted:true});
+    if(res.updated===0){alert('删除失败');return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_deleted:true}):p});
     filterAndRender();
   };
@@ -749,8 +727,8 @@
   window.togglePin=async function(id,isPinned){
     var action=isPinned?'取消置顶':'置顶';
     if(!confirm('确定'+action+'？'))return;
-    var res=await sb.from('posts').update({is_pinned:!isPinned}).eq('id',id);
-    if(res.error){alert('操作失败');return}
+    var res=await db.collection('posts').doc(id).update({is_pinned:!isPinned});
+    if(res.updated===0){alert('操作失败');return}
     allPosts=allPosts.map(function(p){return p.id===id?Object.assign({},p,{is_pinned:!isPinned}):p});
     filterAndRender();
   };
@@ -799,16 +777,14 @@
       is_anonymous:isAnonymous,
       media:mediaUrls.length>0?JSON.stringify(mediaUrls):null
     };
-    var res=await sb.from('posts').insert(postData);
+    var res=await db.collection('posts').add(postData);
     $('submitBtn').disabled=false;
-    if(res.error){alert('发布失败：'+res.error.message);return}
+    if(!res.id){alert('发布失败');return}
     $('postModal').classList.remove('active');
     $('postAnonymous').checked=false;
-    selectedImages=[];
-    selectedVideo=null;
-    $('mediaPreview').innerHTML='';
-    var postsRes=await sb.from('posts').select('*').order('created_at',{ascending:false});
-    allPosts=postsRes.data||[];
+    selectedImages=[];selectedVideo=null;$('mediaPreview').innerHTML='';
+    var postsRes=await db.collection('posts').where({is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
+    allPosts=(postsRes.data||[]).map(function(p){return Object.assign({},p,{id:p._id});});
     currentPage=1;filterAndRender();
   };
 
@@ -818,11 +794,13 @@
     var fileName=currentUser.username+'_'+Date.now()+'_'+Math.random().toString(36).substr(2,9)+'.'+ext;
     var filePath=type+'/'+fileName;
     
-    var{data,error}=await sb.storage.from(STORAGE_BUCKET).upload(filePath,file);
-    if(error)throw new Error(error.message);
-    
-    var{data:urlData}=sb.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-    return urlData.publicUrl;
+    // CloudBase 暂不支持直接上传，使用 base64 存储
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){ resolve(e.target.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   function compressImage(file,maxWidth=1200,quality=0.7){
