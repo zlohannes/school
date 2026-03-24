@@ -277,7 +277,14 @@ function renderPosts(){
   if(currentCategory!=='all'){
     posts=posts.filter(p=>p.category===currentCategory);
   }
-  posts=posts.filter(p=>!p.is_deleted).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  posts=posts.filter(p=>!p.is_deleted);
+  
+  // 置顶帖子排在最前
+  posts.sort((a,b)=>{
+    if(a.is_pinned && !b.is_pinned) return -1;
+    if(!a.is_pinned && b.is_pinned) return 1;
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
   
   const start=(currentPage-1)*POSTS_PER_PAGE;
   const pagePosts=posts.slice(start,start+POSTS_PER_PAGE);
@@ -290,11 +297,14 @@ function renderPosts(){
   }
   
   const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
   
   $('postList').innerHTML=pagePosts.map(p=>{
     const authorName=p.is_anonymous?'匿名':(p.author_nickname||p.author);
+    const pinBtn=isAdmin?'<span class="pin-btn" onclick="event.stopPropagation();togglePin('+p.id+')" style="margin-left:8px;cursor:pointer;color:'+(p.is_pinned?'#f59e0b':'#999')+'">📌</span>':'';
+    const pinnedMark=p.is_pinned?'<span style="color:#f59e0b;margin-right:4px">📌</span>':'';
     return '<div class="post-item" onclick="viewPost('+p.id+')">'+
-      '<div class="post-title">'+escapeHtml(p.title)+'</div>'+
+      '<div class="post-title">'+pinnedMark+escapeHtml(p.title)+pinBtn+'</div>'+
       '<div class="post-preview">'+escapeHtml(p.content||'').substring(0,100)+(p.content&&p.content.length>100?'...':'')+'</div>'+
       '<div class="post-meta">'+
         '<span class="category-tag tag-'+p.category+'">'+(catNames[p.category]||p.category)+'</span>'+
@@ -310,6 +320,25 @@ function viewPost(id){
   window.location.href='post.html?id='+id;
 }
 
+function togglePin(postId){
+  const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
+  if(!isAdmin){
+    showToast('只有管理员可以置顶帖子','error');
+    return;
+  }
+  
+  const post=allPosts.find(p=>p.id===postId);
+  if(!post)return;
+  
+  post.is_pinned=!post.is_pinned;
+  localStorage.setItem(POSTS_KEY,JSON.stringify(allPosts));
+  renderPosts();
+  
+  syncToCloud().then(()=>{
+    showToast(post.is_pinned?'置顶成功':'取消置顶');
+  }).catch(()=>showToast('同步失败','error'));
+}
+
 function escapeHtml(text){
   if(!text)return'';
   const map={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
@@ -318,7 +347,9 @@ function escapeHtml(text){
 
 async function loadPostsFromCloud(){
   try{
-    const res=await fetch(JSONBIN_URL,{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
+    // 添加时间戳避免缓存
+    const url = JSONBIN_URL + '?t=' + Date.now();
+    const res=await fetch(url,{headers:{'X-ACCESS-KEY':JSONBIN_KEY,'Cache-Control':'no-cache'}});
     const data=await res.json();
     if(data.record&&data.record.posts){
       return data.record.posts;
@@ -408,6 +439,15 @@ async function init(){
 }
 
 init();
+
+// 从详情页返回时刷新数据
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) {
+    // 从缓存恢复，重新加载数据
+    console.log('从缓存恢复，重新加载数据');
+    location.reload();
+  }
+});
 </script>
 </body>
 </html>

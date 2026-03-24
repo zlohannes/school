@@ -561,7 +561,9 @@ function cancelReplyTo() {
 }
 
 async function syncToCloud() {
-  const res = await fetch(JSONBIN_URL, {headers: {'X-ACCESS-KEY': JSONBIN_KEY}});
+  // 添加时间戳避免缓存
+  const url = JSONBIN_URL + '?t=' + Date.now();
+  const res = await fetch(url, {headers: {'X-ACCESS-KEY': JSONBIN_KEY, 'Cache-Control': 'no-cache'}});
   const data = await res.json();
   const record = data.record || {};
   
