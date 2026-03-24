@@ -394,13 +394,20 @@ async function submitNewPost(){
     const data=await res.json();
     const record=data.record||{};
 
+    // 合并云端和本地帖子，避免覆盖
+    let cloudPosts = record.posts || [];
+    // 检查本地新帖子是否已存在，不存在则添加
+    if(!cloudPosts.find(p => p.id === post.id)){
+      cloudPosts.unshift(post);
+    }
+    
     // 合并用户数据后上传
     await fetch(JSONBIN_URL,{
       method:'PUT',
       headers:{'Content-Type':'application/json','X-ACCESS-KEY':JSONBIN_KEY},
       body:JSON.stringify({
         users:record.users||[],
-        posts:posts,
+        posts:cloudPosts,
         replies:record.replies||[],
         notifications:record.notifications||[]
       })

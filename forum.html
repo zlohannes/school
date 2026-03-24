@@ -398,47 +398,30 @@ async function syncToCloud(){
   }
 }
 
-async function init(){
-  try{
-    renderUserInfo();
-    renderCategories();
-    
-    // 优先从云端加载帖子（确保数据最新）
-    const cloudPosts = await loadPostsFromCloud();
-    if (cloudPosts && cloudPosts.length > 0) {
-      allPosts = cloudPosts;
-      // 合并本地数据（如果本地有更新）
-      const localPosts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
-      localPosts.forEach(lp => {
-        const idx = allPosts.findIndex(p => p.id === lp.id);
-        if (idx === -1) {
-          // 本地有，云端没有，添加
-          allPosts.push(lp);
-        } else {
-          // 两边都有，取最大值
-          allPosts[idx].reply_count = Math.max(allPosts[idx].reply_count || 0, lp.reply_count || 0);
-          allPosts[idx].likes = Math.max(allPosts[idx].likes || 0, lp.likes || 0);
-        }
-      });
-      localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
-    } else {
-      // 云端没有，从本地加载
-      const postsData = localStorage.getItem(POSTS_KEY);
-      allPosts = postsData ? JSON.parse(postsData) : [];
-    }
-    renderPosts();
-    hideLoading();
-    
-    // 后台同步到云端（如果有本地更新）
-    syncToCloud().catch(e => console.log('同步失败:', e));
-    
-  }catch(e){
-    console.error('init error:',e);
-    hideLoading();
+function init() {
+  var postsData = localStorage.getItem(POSTS_KEY);
+  if (postsData) {
+    try { allPosts = JSON.parse(postsData); } catch(e) { allPosts = []; }
   }
+  renderPosts();
+  renderUserInfo();
+  renderCategories();
+  hideLoading();
+  
+  setTimeout(function() {
+    loadPostsFromCloud().then(function(cloudPosts) {
+      if (cloudPosts && cloudPosts.length > 0) {
+        cloudPosts.forEach(function(cp) {
+          if (!allPosts.find(function(p) { return p.id === cp.id; })) {
+            allPosts.push(cp);
+          }
+        });
+        localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+        renderPosts();
+      }
+    });
+  }, 1000);
 }
-
-init();
 
 // 从详情页返回时刷新数据
 window.addEventListener('pageshow', function(e) {
