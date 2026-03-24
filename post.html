@@ -389,11 +389,13 @@ async function submitNewPost(){
 
   // 同步到云端
   try{
-    const res=await fetch(JSONBIN_URL+'?t='+Date.now(),{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
+    // 先获取云端最新数据
+    const res=await fetch(JSONBIN_URL+'?v='+Date.now(),{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
     const data=await res.json();
     const record=data.record||{};
 
-    await fetch(JSONBIN_URL+'?t='+Date.now(),{
+    // 合并用户数据后上传
+    await fetch(JSONBIN_URL,{
       method:'PUT',
       headers:{'Content-Type':'application/json','X-ACCESS-KEY':JSONBIN_KEY},
       body:JSON.stringify({
@@ -408,7 +410,6 @@ async function submitNewPost(){
   }catch(e){
     console.log('同步失败:',e);
     showToast('发布失败，请重试', 'error');
-    // 不跳转，留在当前页面
   }
 }
 
@@ -742,9 +743,8 @@ function cancelReplyTo() {
 }
 
 async function syncToCloud() {
-  // 添加时间戳避免缓存
-  const url = JSONBIN_URL + '?t=' + Date.now();
-  const res = await fetch(url, {headers: {'X-ACCESS-KEY': JSONBIN_KEY, 'Cache-Control': 'no-cache'}});
+  // 先获取云端最新数据
+  const res = await fetch(JSONBIN_URL + '?v=' + Date.now(), {headers: {'X-ACCESS-KEY': JSONBIN_KEY}});
   const data = await res.json();
   const record = data.record || {};
 
@@ -760,14 +760,14 @@ async function syncToCloud() {
     notifications: localNotifs.length > 0 ? localNotifs : (record.notifications || [])
   };
 
-  const putRes = await fetch(JSONBIN_URL + '?t=' + Date.now(), {
+  const putRes = await fetch(JSONBIN_URL, {
     method: 'PUT',
     headers: {'Content-Type': 'application/json', 'X-ACCESS-KEY': JSONBIN_KEY},
     body: JSON.stringify(body)
   });
 
   if (!putRes.ok) throw new Error('sync failed');
-  console.log('云端同步成功: replies=' + body.replies.length);
+  console.log('云端同步成功: posts=' + body.posts.length);
 }
 
 function addNotification(notif) {
