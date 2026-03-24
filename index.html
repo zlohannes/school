@@ -277,13 +277,21 @@ async function saveUsers(users) {
   // 先保存到本地
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   
-  // 同步到云端（合并模式）
+  // 同步到云端（合并模式 - 保留云端已有用户）
   try {
     const res = await fetch(JSONBIN_URL, {
       headers: {'X-ACCESS-KEY': JSONBIN_KEY}
     });
     const data = await res.json();
     const record = data.record || {};
+    
+    // 合并云端和本地用户
+    let cloudUsers = record.users || [];
+    users.forEach(newUser => {
+      if (!cloudUsers.find(u => u.username === newUser.username)) {
+        cloudUsers.push(newUser);
+      }
+    });
     
     await fetch(JSONBIN_URL, {
       method: 'PUT',
@@ -292,7 +300,7 @@ async function saveUsers(users) {
         'X-ACCESS-KEY': JSONBIN_KEY
       },
       body: JSON.stringify({
-        users: users,
+        users: cloudUsers,
         posts: record.posts || [],
         replies: record.replies || [],
         notifications: record.notifications || []
