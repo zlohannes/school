@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>帖子详情 - 鹿城学院论坛</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
+    .navbar{background:linear-gradient(135deg,#667eea,#764ba2);padding:12px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    .nav-content{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .nav-left{display:flex;align-items:center;gap:15px}
+    .back-btn{color:white;text-decoration:none;font-size:14px}
+    .nav-logo{color:white;font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;text-decoration:none}
+    .nav-links{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+    .nav-link{color:rgba(255,255,255,0.9);text-decoration:none;font-size:14px}
+    .btn-share{background:rgba(255,255,255,0.2);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer}
+    .btn-login{background:white;color:#667eea;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+    .mobile-menu-btn{display:none;background:none;border:none;color:white;font-size:24px;cursor:pointer}
+    @media(max-width:768px){.mobile-menu-btn{display:block}.nav-links{display:none;width:100%;flex-direction:column;align-items:flex-start;padding-top:10px}.nav-links.active{display:flex}}
+    .main{max-width:800px;margin:20px auto;padding:0 15px 100px}
+    .post-card{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px;margin-bottom:20px}
+    .post-header{display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+    .category-tag{padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600;color:white}
+    .tag-learning{background:#4CAF50}.tag-campus{background:#2196F3}.tag-trade{background:#FF9800}.tag-job{background:#9C27B0}.tag-chat{background:#FF5722}.tag-notice{background:#f44336}
+    .tag-anon{background:rgba(168,85,247,0.2);color:#a855f7;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600}
+    .post-title{font-size:22px;font-weight:700;color:#333;margin-bottom:20px;line-height:1.4}
+    .post-author{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #eee}
+    .author-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:700}
+    .author-info{flex:1}
+    .author-name{font-weight:600;color:#333;font-size:15px}
+    .author-time{color:#999;font-size:13px;margin-top:2px}
+    .post-content{color:#333;font-size:15px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word}
+    .post-media{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px}
+    .post-media img{max-width:100%;border-radius:8px;cursor:pointer;max-height:400px;object-fit:contain}
+    .post-media video{max-width:100%;border-radius:8px;max-height:400px}
+    .post-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .action-btn{background:none;border:1px solid #ddd;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;transition:all 0.2s}
+    .action-btn:hover{background:#f5f5f5}
+    .replies-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:25px}
+    .replies-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+    .replies-title{font-size:18px;font-weight:600;color:#333}
+    .replies-count{background:#667eea;color:white;padding:2px 10px;border-radius:10px;font-size:13px}
+    .reply-item{padding:18px 0;border-bottom:1px solid #eee}
+    .reply-item:last-child{border-bottom:none}
+    .reply-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .reply-floor{color:#999;font-size:13px;min-width:40px}
+    .reply-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;overflow:hidden;flex-shrink:0}
+    .reply-avatar img{width:100%;height:100%;object-fit:cover}
+    .reply-author{font-weight:600;color:#333;font-size:14px}
+    .reply-time{color:#999;font-size:12px}
+    .reply-delete-btn{background:#ef4444;color:white;border:none;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:auto}
+    .reply-action-btn{background:#667eea;color:white;border:none;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:4px}
+    .reply-to{color:#999;font-size:12px;margin-left:4px}
+    .reply-content{color:#333;font-size:14px;line-height:1.6;padding-left:48px;white-space:pre-wrap}
+    .empty-replies{text-align:center;padding:40px;color:#999}
+    .empty-icon{font-size:48px;margin-bottom:10px}
+    .reply-input-section{background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.08);padding:20px;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:800px}
+    .reply-input-wrapper{display:flex;gap:12px}
+    .reply-textarea{flex:1;min-height:60px;max-height:150px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:none;font-family:inherit}
+    .reply-textarea:focus{border-color:#667eea;outline:none}
+    .btn-send{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+    .btn-send:disabled{opacity:0.5;cursor:not-allowed}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:16px}
+    .loading.hidden{display:none}
+    .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading .msg{color:#667eea;font-size:15px;font-weight:600}
+    
+    /* 手机端适配 */
+    @media(max-width:768px){
+      .main{padding:0 10px 120px}
+      .post-card{padding:16px}
+      .post-title{font-size:18px}
+      .post-author{gap:8px}
+      .author-avatar{width:36px;height:36px;font-size:16px}
+      .author-name{font-size:14px}
+      .post-content{font-size:14px}
+      .post-actions{gap:8px}
+      .action-btn{padding:6px 12px;font-size:13px}
+      .replies-section{padding:16px}
+      .reply-item{padding:12px 0}
+      .reply-header{gap:8px;flex-wrap:wrap}
+      .reply-avatar{width:32px;height:32px;font-size:12px}
+      .reply-author{font-size:13px}
+      .reply-content{padding-left:40px;font-size:13px}
+      .reply-delete-btn{padding:3px 8px;font-size:11px}
+      .reply-action-btn{padding:3px 8px;font-size:11px}
+      .reply-to{font-size:11px;margin-left:2px}
+      .reply-input-section{padding:12px;width:100%;max-width:100%;border-radius:12px 12px 0 0}
+      .reply-textarea{min-height:50px;font-size:14px}
+      .btn-send{padding:10px 16px;font-size:13px}
+      .nav-links #logoutBtn{display:block}
+    }
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
+    .toast.error{background:#ef4444}
+    .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
+    .login-box{background:white;border-radius:16px;padding:32px;max-width:360px;width:100%;text-align:center}
+    .login-icon{font-size:64px;margin-bottom:16px}
+    .login-title{font-size:20px;font-weight:700;color:#333;margin-bottom:8px}
+    .login-desc{color:#666;font-size:14px;margin-bottom:20px}
+    .login-btn{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:14px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer}
+    .share-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:400;padding:20px}
+    .share-modal.active{display:flex}
+    .share-content{background:white;border-radius:16px;padding:24px;max-width:400px;width:100%}
+    .share-title{font-size:18px;font-weight:700;margin-bottom:16px;text-align:center}
+    .share-url{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:12px;word-break:break-all}
+    .share-btns{display:flex;gap:10px}
+    .share-btn{flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:white;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+    .share-btn.primary{background:#667eea;color:white;border-color:#667eea}
+    .image-viewer{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:500}
+    .image-viewer.active{display:flex}
+    .image-viewer img{max-width:95%;max-height:95%;object-fit:contain}
+    .image-viewer .close-btn{position:absolute;top:20px;right:20px;background:none;border:none;color:white;font-size:32px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div><div class="msg">加载�?..</div></div>
+  <div class="toast" id="toast"></div>
+  
+  <div class="login-overlay" id="loginOverlay" style="display:none">
+    <div class="login-box">
+      <div class="login-icon">🔐</div>
+      <div class="login-title">登录后查看详�?/div>
+      <div class="login-desc">登录后即可查看帖子详情、参与讨�?/div>
+      <button class="login-btn" onclick="goToLogin()">前往登录</button>
+    </div>
+  </div>
+  
+  <div class="share-modal" id="shareModal">
+    <div class="share-content">
+      <div class="share-title">分享帖子</div>
+      <input type="text" class="share-url" id="shareUrl" readonly>
+      <div class="share-btns">
+        <button class="share-btn" onclick="copyShareUrl()">📋 复制链接</button>
+        <button class="share-btn primary" onclick="closeShareModal()">完成</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="image-viewer" id="imageViewer">
+    <button class="close-btn" onclick="closeImageViewer()">×</button>
+    <img id="viewerImage" src="" alt="">
+  </div>
+  
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <a href="forum.html" class="back-btn">�?返回</a>
+        <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
+      </div>
+      <button class="mobile-menu-btn" onclick="toggleMenu()">�?/button>
+      <div class="nav-links" id="navLinks">
+        <a href="forum.html" class="nav-link">首页</a>
+        <a href="profile.html" class="nav-link">我的主页</a>
+        <button class="btn-share" onclick="openShareModal()">🔗 分享</button>
+        <button class="btn-login" id="loginBtn" onclick="goToLogin()" style="display:none">登录</button>
+        <button class="btn-login" id="logoutBtn" onclick="logout()" style="display:none;background:#ef4444">退�?/button>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="main" id="mainContent"></div>
+
+<script>
+const POSTS_KEY = 'forum_posts';
+const REPLIES_KEY = 'forum_replies';
+const USERS_KEY = 'forum_users';
+
+let currentPost = null;
+let currentUser = null;
+let replies = [];
+
+function init() {
+  try {
+    currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    
+    // 从本地加载用户信息（不等云端�?    if (currentUser) {
+      const usersData = localStorage.getItem('forum_users');
+      if (usersData) {
+        const users = JSON.parse(usersData);
+        const storedUser = users.find(u => u.username === currentUser.username);
+        if (storedUser) {
+          currentUser = Object.assign({}, storedUser);
+          sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+      }
+    }
+    
+    const params = new URLSearchParams(location.search);
+    const postId = parseInt(params.get('id'));
+    
+    if (!postId) {
+      showError('无效的帖�?);
+      return;
+    }
+    
+    // 检查登录状�?    if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+      document.getElementById('loginOverlay').style.display = 'flex';
+      document.getElementById('loginBtn').style.display = 'block';
+      document.getElementById('logoutBtn').style.display = 'none';
+      loadPostOnly(postId);
+      return;
+    }
+    
+    document.getElementById('loginBtn').style.display = 'none';
+    document.getElementById('logoutBtn').style.display = 'block';
+    loadPost(postId);
+  } catch(e) {
+    showError('加载失败，请刷新重试');
+  }
+}
+
+function loadPostOnly(id) {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const post = posts.find(p => p.id === id);
+  
+  if (!post) {
+    showError('帖子不存在或已删�?);
+    return;
+  }
+  
+  currentPost = post;
+  renderPostPreview();
+  document.getElementById('loading').classList.add('hidden');
+}
+
+function loadPost(id) {
+  try {
+    // 先从本地查找帖子
+    let postsData = localStorage.getItem(POSTS_KEY);
+    let posts = postsData ? JSON.parse(postsData) : [];
+    let post = posts.find(p => p.id === id);
+    
+    // 如果本地找不到，从云端加�?    if (!post) {
+      console.log('本地未找到帖子，从云端加�?..');
+      loadPostFromCloud(id).then(cloudPost => {
+        if (cloudPost) {
+          currentPost = cloudPost;
+          // 保存到本�?          posts.push(cloudPost);
+          localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+          // 加载回复
+          loadAndMergeReplies(id);
+          renderPost();
+          document.getElementById('loading').classList.add('hidden');
+        } else {
+          showError('帖子不存在或已删�?);
+        }
+      });
+      return;
+    }
+    
+    currentPost = post;
+    
+    // 先从本地加载回复
+    const repliesData = localStorage.getItem(REPLIES_KEY);
+    replies = repliesData ? JSON.parse(repliesData) : [];
+    replies = replies.filter(r => r.post_id === id && !r.is_deleted);
+    
+    renderPost();
+    document.getElementById('loading').classList.add('hidden');
+    
+    // 强制从云端加载回复（不管本地有没有）
+    loadAndMergeReplies(id);
+  } catch(e) {
+    showError('加载失败，请刷新重试');
+  }
+}
+
+async function loadPostFromCloud(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.posts) {
+      return data.record.posts.find(p => p.id === postId);
+    }
+  } catch(e) {
+    console.log('云端帖子加载失败:', e);
+  }
+  return null;
+}
+
+async function loadAndMergeReplies(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    const cloudReplies = record.replies || [];
+    
+    // 获取本地回复
+    const localRepliesData = localStorage.getItem(REPLIES_KEY);
+    const localReplies = localRepliesData ? JSON.parse(localRepliesData) : [];
+    
+    // 合并去重（根�?id�?    const mergedReplies = [...cloudReplies];
+    localReplies.forEach(localReply => {
+      if (!mergedReplies.find(r => r.id === localReply.id)) {
+        mergedReplies.push(localReply);
+      }
+    });
+    
+    // 保存合并结果到本�?    localStorage.setItem(REPLIES_KEY, JSON.stringify(mergedReplies));
+    
+    // 同步合并结果到云�?    await syncAllToCloud({});
+    
+    // 更新显示
+    replies = mergedReplies.filter(r => r.post_id === postId && !r.is_deleted);
+    renderPost();
+    
+    // 更新帖子回复�?    updatePostReplyCount(postId, replies.length);
+    
+    console.log('回复加载完成，本�?' + localReplies.length + ', 云端:' + cloudReplies.length + ', 合并�?' + mergedReplies.length);
+    
+  } catch(e) {
+    console.log('云端回复加载失败:', e);
+  }
+}
+
+function updatePostReplyCount(postId, count) {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const postIndex = posts.findIndex(p => p.id === postId);
+  if (postIndex >= 0) {
+    posts[postIndex].reply_count = count;
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+    currentPost.reply_count = count;
+    syncAllToCloud({ posts: posts }).catch(() => {});
+  }
+}
+
+
+async function loadRepliesFromCloud(postId) {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.replies) {
+      return data.record.replies.filter(r => r.post_id === postId);
+    }
+  } catch(e) {
+    console.log('云端回复加载失败:', e);
+  }
+  return null;
+}
+
+function renderPostPreview() {
+  const p = currentPost;
+  const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+  
+  // 从用户数据中查找作者头�?  let authorAvatar = '';
+  if (!p.is_anonymous && p.author) {
+    const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const authorUser = users.find(u => u.username === p.author);
+    if (authorUser && authorUser.avatar) {
+      authorAvatar = '<img src="' + authorUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+    }
+  }
+  
+  let mediaHtml = '';
+  if (p.media && p.media.length > 0) {
+    mediaHtml = '<div class="post-media">';
+    p.media.forEach(m => {
+      if (m.type === 'image') {
+        mediaHtml += '<img src="' + m.data + '" onclick="viewImage(\'' + m.data + '\')">';
+      } else {
+        mediaHtml += '<video src="' + m.data + '" controls></video>';
+      }
+    });
+    mediaHtml += '</div>';
+  }
+  
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card">' +
+      '<div class="post-header">' +
+        '<span class="category-tag tag-' + p.category + '">' + (catNames[p.category] || p.category) + '</span>' +
+        (p.is_anonymous ? '<span class="tag-anon">🔒 匿名</span>' : '') +
+      '</div>' +
+      '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
+      '<div class="post-author">' +
+        '<div class="author-avatar">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="author-info">' +
+          '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
+          '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-content">' + escapeHtml(p.content) + '</div>' +
+      mediaHtml +
+      '<div class="post-actions">' +
+        '<button class="action-btn" onclick="alert(\'请登录后点赞\')" style="background:#ddd;color:#333">❤️ ' + (p.likes || 0) + ' 点赞</button>' +
+        '<button class="action-btn" onclick="openShareModal()">🔗 分享</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderPost() {
+  const p = currentPost;
+  const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  const authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '匿名');
+  
+  // 从用户数据中查找作者头�?  let authorAvatar = '';
+  if (!p.is_anonymous && p.author) {
+    const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const authorUser = users.find(u => u.username === p.author);
+    if (authorUser && authorUser.avatar) {
+      authorAvatar = '<img src="' + authorUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+    }
+  }
+  
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  const isAuthor = currentUser && currentUser.username === p.author;
+  const canDelete = isAdmin || isAuthor;
+  const deleteBtn = canDelete ? '<button class="action-btn" onclick="deletePost(' + p.id + ')" style="background:#ef4444">🗑�?删除</button>' : '';
+  
+  let mediaHtml = '';
+  if (p.media && p.media.length > 0) {
+    mediaHtml = '<div class="post-media">';
+    p.media.forEach(m => {
+      if (m.type === 'image') {
+        mediaHtml += '<img src="' + m.data + '" onclick="viewImage(\'' + m.data + '\')">';
+      } else {
+        mediaHtml += '<video src="' + m.data + '" controls></video>';
+      }
+    });
+    mediaHtml += '</div>';
+  }
+  
+  let repliesHtml = '';
+  if (replies.length === 0) {
+    repliesHtml = '<div class="empty-replies"><div class="empty-icon">💬</div><div>暂无回复，发表你的看�?/div></div>';
+  } else {
+    repliesHtml = replies.map((r, i) => {
+      const replyAuthor = r.is_anonymous ? '匿名' : (r.author_nickname || r.author || '匿名');
+      
+      // 从用户数据中查找回复者头�?      let replyAvatar = '';
+      if (!r.is_anonymous && r.author) {
+        const users = JSON.parse(localStorage.getItem('forum_users') || '[]');
+        const replyUser = users.find(u => u.username === r.author);
+        if (replyUser && replyUser.avatar) {
+          replyAvatar = '<img src="' + replyUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+        }
+      }
+      
+      // 判断是否显示删除按钮（回复作者或管理员可删除�?      const isReplyAuthor = currentUser && currentUser.username === r.author;
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+      const canDeleteReply = isReplyAuthor || isAdmin;
+      const deleteReplyBtn = canDeleteReply ? '<button class="reply-delete-btn" onclick="deleteReply(' + r.id + ')">🗑�?/button>' : '';
+      
+      // 回复某人的显�?      const replyToHtml = r.reply_to ? '<span class="reply-to">回复 <span style="color:#667eea">@' + escapeHtml(r.reply_to_nickname || r.reply_to) + '</span></span>' : '';
+      
+      return '<div class="reply-item">' +
+        '<div class="reply-header">' +
+          '<span class="reply-floor">#' + (i + 1) + '</span>' +
+          '<div class="reply-avatar">' + (replyAvatar || replyAuthor.charAt(0).toUpperCase()) + '</div>' +
+          '<span class="reply-author">' + escapeHtml(replyAuthor) + '</span>' +
+          replyToHtml +
+          '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
+          deleteReplyBtn +
+          '<button class="reply-action-btn" onclick="replyToUser(\'' + escapeHtml(r.author || '') + '\', \'' + escapeHtml(r.author_nickname || r.author || '') + '\')">回复</button>' +
+        '</div>' +
+        '<div class="reply-content">' + escapeHtml(r.content) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+  
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card">' +
+      '<div class="post-header">' +
+        '<span class="category-tag tag-' + p.category + '">' + (catNames[p.category] || p.category) + '</span>' +
+        (p.is_anonymous ? '<span class="tag-anon">🔒 匿名</span>' : '') +
+      '</div>' +
+      '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
+      '<div class="post-author">' +
+        '<div class="author-avatar">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="author-info">' +
+          '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
+          '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="post-content">' + escapeHtml(p.content) + '</div>' +
+      mediaHtml +
+      '<div class="post-actions">' +
+        '<button class="action-btn" onclick="toggleLike(' + p.id + ')" style="background:' + (isLiked(p.id) ? '#ef4444' : '#ddd') + ';color:' + (isLiked(p.id) ? 'white' : '#333') + '">❤️ ' + (p.likes || 0) + ' 点赞</button>' +
+        '<button class="action-btn" onclick="openShareModal()">🔗 分享</button>' +
+        deleteBtn +
+      '</div>' +
+    '</div>' +
+    
+    '<div class="replies-section">' +
+      '<div class="replies-header">' +
+        '<span class="replies-title">回复</span>' +
+        '<span class="replies-count">' + replies.length + '</span>' +
+      '</div>' +
+      '<div id="repliesList">' + repliesHtml + '</div>' +
+    '</div>' +
+    
+    '<div class="reply-input-section">' +
+      '<div id="replyToInfo" style="display:none;padding:8px 12px;background:#f5f5f5;border-radius:8px;margin-bottom:10px;font-size:13px;color:#666">' +
+        '<span>回复 @<span id="replyToUsername"></span></span>' +
+        '<button onclick="cancelReplyTo()" style="float:right;background:none;border:none;color:#999;font-size:16px;cursor:pointer">×</button>' +
+      '</div>' +
+      '<div class="reply-input-wrapper">' +
+        '<textarea class="reply-textarea" id="replyInput" placeholder="写下你的回复..."></textarea>' +
+        '<button class="btn-send" onclick="submitReply()">发�?/button>' +
+      '</div>' +
+    '</div>';
+}
+
+async function submitReply() {
+  const content = document.getElementById('replyInput').value.trim();
+  if (!content) {
+    showToast('请输入回复内�?, 'error');
+    return;
+  }
+  
+  // 检查是否回复某�?  const replyToInfo = document.getElementById('replyToInfo');
+  const replyToUser = replyToInfo.style.display !== 'none' ? replyToInfo.dataset.username : null;
+  const replyToNickname = replyToInfo.dataset.nickname || '';
+  
+  const reply = {
+    id: Date.now(),
+    post_id: currentPost.id,
+    content: content,
+    author: currentUser.username,
+    author_nickname: currentUser.nickname || currentUser.username,
+    is_anonymous: false,
+    is_deleted: false,
+    created_at: new Date().toISOString(),
+    reply_to: replyToUser,
+    reply_to_nickname: replyToNickname
+  };
+  
+  // 添加到本地列�?  replies.unshift(reply);
+  localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
+  
+  // 添加回复通知（通知被回复的人）
+  if (replyToUser && replyToUser !== currentUser.username) {
+    addNotification({
+      type: 'reply',
+      from_user: currentUser.nickname || currentUser.username,
+      to_user: replyToUser,
+      post_id: currentPost.id,
+      post_title: currentPost.title,
+      created_at: new Date().toISOString()
+    });
+  }
+  
+  // 更新显示
+  document.getElementById('replyInput').value = '';
+  cancelReplyTo();
+  renderPost();
+  
+  // 优先同步到云端，等待完成
+  try {
+    await syncToCloud();
+    showToast('回复成功�?);
+  } catch(e) {
+    console.log('云端同步失败:', e);
+    showToast('回复失败，请重试', 'error');
+  }
+}
+
+// 统一的云端同步函�?async function syncToCloud() {
+  try {
+    // 先读取云端现有数�?    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const cloudData = await res.json();
+    const record = cloudData.record || {};
+    
+    // 读取本地所有数�?    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    const localPosts = JSON.parse(localStorage.getItem('forum_posts') || '[]');
+    const localReplies = JSON.parse(localStorage.getItem('forum_replies') || '[]');
+    const localNotifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
+    
+    // 合并数据：以本地为准，但添加云端有而本地没有的数据
+    const mergedUsers = mergeById(localUsers, record.users || []);
+    const mergedPosts = mergeById(localPosts, record.posts || []);
+    const mergedReplies = mergeById(localReplies, record.replies || []);
+    const mergedNotifications = mergeById(localNotifications, record.notifications || []);
+    
+    // 上传到云�?    const putRes = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: mergedUsers,
+        posts: mergedPosts,
+        replies: mergedReplies,
+        notifications: mergedNotifications
+      })
+    });
+    
+    if (!putRes.ok) {
+      throw new Error('云端同步失败: ' + putRes.status);
+    }
+    
+    console.log('云端同步成功: replies=' + mergedReplies.length);
+    return true;
+  } catch(e) {
+    console.log('云端同步异常:', e);
+    throw e;
+  }
+}
+
+// 合并两个数组，根�?id 去重
+function mergeById(local, cloud) {
+  const map = new Map();
+  [...cloud, ...local].forEach(item => {
+    if (item && item.id) {
+      map.set(item.id, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+function replyToUser(username, nickname) {
+  // 不能回复自己
+  if (username === currentUser.username) {
+    alert('不能回复自己');
+    return;
+  }
+  
+  document.getElementById('replyToInfo').style.display = 'block';
+  document.getElementById('replyToInfo').dataset.username = username;
+  document.getElementById('replyToInfo').dataset.nickname = nickname;
+  document.getElementById('replyToUsername').textContent = nickname;
+  document.getElementById('replyInput').placeholder = '回复 @' + nickname + '...';
+  document.getElementById('replyInput').focus();
+}
+
+function cancelReplyTo() {
+  document.getElementById('replyToInfo').style.display = 'none';
+  document.getElementById('replyToInfo').dataset.username = '';
+  document.getElementById('replyToInfo').dataset.nickname = '';
+  document.getElementById('replyInput').placeholder = '写下你的回复...';
+}
+
+function deleteReply(replyId) {
+  const reply = replies.find(r => r.id === replyId);
+  if (!reply) return;
+  
+  // 检查权�?  const isReplyAuthor = currentUser && currentUser.username === reply.author;
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  
+  if (!isReplyAuthor && !isAdmin) {
+    alert('你没有权限删除这个回�?);
+    return;
+  }
+  
+  if (!confirm('确定要删除这条回复吗�?)) return;
+  
+  // 标记为已删除
+  reply.is_deleted = true;
+  
+  // 优先同步到云�?  syncAllToCloud({}).then(() => {
+    // 更新本地
+    localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
+    replies = replies.filter(r => r.post_id === currentPost.id && !r.is_deleted);
+    renderPost();
+    showToast('删除成功�?);
+  }).catch(() => {
+    showToast('删除失败，请重试', 'error');
+  });
+}
+
+function openShareModal() {
+  const shareUrl = window.location.href;
+  document.getElementById('shareUrl').value = shareUrl;
+  document.getElementById('shareModal').classList.add('active');
+}
+
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('active');
+}
+
+function copyShareUrl() {
+  const url = document.getElementById('shareUrl').value;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('链接已复制！');
+  }).catch(() => {
+    document.getElementById('shareUrl').select();
+    document.execCommand('copy');
+    showToast('链接已复制！');
+  });
+}
+
+function viewImage(src) {
+  document.getElementById('viewerImage').src = src;
+  document.getElementById('imageViewer').classList.add('active');
+}
+
+function closeImageViewer() {
+  document.getElementById('imageViewer').classList.remove('active');
+}
+
+function goToLogin() {
+  window.location.href = 'index.html?redirect=' + encodeURIComponent(window.location.href);
+}
+
+function logout() {
+  if (confirm('确定要退出吗�?)) {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+  }
+}
+
+function deletePost(postId) {
+  const postsData = localStorage.getItem('forum_posts');
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const post = posts.find(p => p.id === postId);
+  
+  if (!post) return;
+  
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  const isAuthor = currentUser && currentUser.username === post.author;
+  
+  if (!isAdmin && !isAuthor) {
+    alert('你没有权限删除这个帖�?);
+    return;
+  }
+  
+  if (confirm('确定要删除这个帖子吗�?)) {
+    post.is_deleted = true;
+    localStorage.setItem('forum_posts', JSON.stringify(posts));
+    showToast('删除成功�?);
+    setTimeout(() => {
+      window.location.href = 'forum.html';
+    }, 1500);
+  }
+}
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML = 
+    '<div class="post-card" style="text-align:center;padding:60px 20px">' +
+      '<div style="font-size:64px;margin-bottom:16px">�?/div>' +
+      '<div style="font-size:18px;color:#666;margin-bottom:20px">' + msg + '</div>' +
+      '<a href="forum.html" style="background:#667eea;color:white;padding:12px 24px;border-radius:8px;text-decoration:none">返回首页</a>' +
+    '</div>';
+  document.getElementById('loading').classList.add('hidden');
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟�?;
+  if (s < 86400) return Math.floor(s / 3600) + '小时�?;
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+function isLiked(postId) {
+  if (!currentUser) return false;
+  const likes = JSON.parse(localStorage.getItem('post_likes') || '{}');
+  const key = currentUser.username + '_' + postId;
+  return likes[key] === true;
+}
+
+function toggleLike(postId) {
+  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+    alert('请登录后点赞');
+    return;
+  }
+  
+  const likes = JSON.parse(localStorage.getItem('post_likes') || '{}');
+  const key = currentUser.username + '_' + postId;
+  const postsData = localStorage.getItem('forum_posts');
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const post = posts.find(p => p.id === postId);
+  
+  if (!post) return;
+  
+  if (likes[key]) {
+    delete likes[key];
+    post.likes = Math.max(0, (post.likes || 1) - 1);
+  } else {
+    likes[key] = true;
+    post.likes = (post.likes || 0) + 1;
+  }
+  
+  localStorage.setItem('post_likes', JSON.stringify(likes));
+  localStorage.setItem('forum_posts', JSON.stringify(posts));
+  
+  currentPost.likes = post.likes;
+  renderPost();
+  showToast(likes[key] ? '点赞成功�? : '取消点赞');
+}
+
+init();
+</script>
+</body>
+</html>
