@@ -335,24 +335,7 @@ async function loadRepliesFromCloud(){
     const res=await fetch(JSONBIN_URL,{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
     const data=await res.json();
     if(data.record&&data.record.replies){
-      const cloudReplies=data.record.replies;
-      localStorage.setItem(REPLIES_KEY,JSON.stringify(cloudReplies));
-      
-      // 更新所有帖子的 reply_count
-      const posts=JSON.parse(localStorage.getItem(POSTS_KEY)||'[]');
-      let updated=false;
-      posts.forEach(post=>{
-        const count=cloudReplies.filter(r=>r.post_id===post.id&&!r.is_deleted).length;
-        if(count!==post.reply_count){
-          post.reply_count=count;
-          updated=true;
-        }
-      });
-      if(updated){
-        localStorage.setItem(POSTS_KEY,JSON.stringify(posts));
-        allPosts=posts;
-        renderPosts();
-      }
+      localStorage.setItem(REPLIES_KEY,JSON.stringify(data.record.replies));
     }
   }catch(e){
     console.log('加载云端回复失败:',e);
@@ -360,39 +343,46 @@ async function loadRepliesFromCloud(){
 }
 
 async function init(){
-  await renderUserInfo();
-  renderCategories();
-  
-  // 从本地加载帖子
-  const postsData=localStorage.getItem(POSTS_KEY);
-  allPosts=postsData?JSON.parse(postsData):[];
-  renderPosts();
-  hideLoading();
-  
-  // 后台从云端加载并合并
-  const cloudPosts=await loadPostsFromCloud();
-  if(cloudPosts&&cloudPosts.length>0){
-    // 合并：保留本地的 reply_count 和 likes
-    const merged=cloudPosts.map(cp=>{
-      const lp=allPosts.find(p=>p.id===cp.id);
-      if(lp){
-        return{...cp,reply_count:Math.max(lp.reply_count||0,cp.reply_count||0),likes:Math.max(lp.likes||0,cp.likes||0)};
-      }
-      return cp;
-    });
-    // 添加本地有但云端没有的帖子
-    allPosts.forEach(lp=>{
-      if(!merged.find(p=>p.id===lp.id)){
-        merged.push(lp);
-      }
-    });
-    allPosts=merged;
-    localStorage.setItem(POSTS_KEY,JSON.stringify(allPosts));
+  try{
+    await renderUserInfo();
+    renderCategories();
+    
+    // 从本地加载帖子
+    const postsData=localStorage.getItem(POSTS_KEY);
+    allPosts=postsData?JSON.parse(postsData):[];
     renderPosts();
+    
+    // 立即隐藏加载
+    hideLoading();
+    
+    // 后台从云端加载并合并（不阻塞UI）
+    loadPostsFromCloud().then(cloudPosts=>{
+      if(cloudPosts&&cloudPosts.length>0){
+        const merged=cloudPosts.map(cp=>{
+          const lp=allPosts.find(p=>p.id===cp.id);
+          if(lp){
+            return{...cp,reply_count:Math.max(lp.reply_count||0,cp.reply_count||0),likes:Math.max(lp.likes||0,cp.likes||0)};
+          }
+          return cp;
+        });
+        allPosts.forEach(lp=>{
+          if(!merged.find(p=>p.id===lp.id)){
+            merged.push(lp);
+          }
+        });
+        allPosts=merged;
+        localStorage.setItem(POSTS_KEY,JSON.stringify(allPosts));
+        renderPosts();
+      }
+    }).catch(e=>console.log('云端加载失败:',e));
+    
+    // 加载回复（不阻塞）
+    loadRepliesFromCloud().catch(e=>console.log('回复加载失败:',e));
+    
+  }catch(e){
+    console.error('init error:',e);
+    hideLoading();
   }
-  
-  // 加载回复并更新计数
-  await loadRepliesFromCloud();
 }
 
 init();
