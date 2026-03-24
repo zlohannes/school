@@ -361,7 +361,7 @@ function renderPost() {
       return '<div class="reply-item">' +
         '<div class="reply-header">' +
           '<span class="reply-floor">#' + (i + 1) + '</span>' +
-          '<div class="reply-avatar" onclick="if(window.innerWidth<=768)viewUserProfile(\'' + escapeHtml(r.author || '') + '\')" style="cursor:pointer">' + (replyAvatar || replyAuthor.charAt(0).toUpperCase()) + '</div>' +
+          '<div class="reply-avatar" onclick="viewUserProfile(\'' + escapeHtml(r.author || '') + '\')" style="cursor:pointer">' + (replyAvatar || replyAuthor.charAt(0).toUpperCase()) + '</div>' +
           '<span class="reply-author">' + escapeHtml(replyAuthor) + '</span>' +
           replyToHtml +
           '<span class="reply-time">' + timeAgo(r.created_at) + '</span>' +
@@ -381,7 +381,7 @@ function renderPost() {
       '</div>' +
       '<h1 class="post-title">' + escapeHtml(p.title) + '</h1>' +
       '<div class="post-author">' +
-        '<div class="author-avatar" onclick="if(window.innerWidth<=768)viewUserProfile(\'' + escapeHtml(p.author || '') + '\')" style="cursor:pointer">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="author-avatar" onclick="viewUserProfile(\'' + escapeHtml(p.author || '') + '\')" style="cursor:pointer">' + (authorAvatar || authorName.charAt(0).toUpperCase()) + '</div>' +
         '<div class="author-info">' +
           '<div class="author-name">' + escapeHtml(authorName) + '</div>' +
           '<div class="author-time">' + new Date(p.created_at).toLocaleString('zh-CN') + '</div>' +
@@ -599,6 +599,14 @@ function deleteReply(replyId) {
   
   reply.is_deleted = true;
   localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
+  
+  // 更新帖子的 reply_count
+  const posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
+  const post = posts.find(p => p.id === reply.post_id);
+  if (post) {
+    post.reply_count = Math.max(0, (post.reply_count || 0) - 1);
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  }
   
   syncToCloud().then(() => {
     replies = replies.filter(r => r.post_id === currentPost.id && !r.is_deleted);
