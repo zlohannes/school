@@ -145,10 +145,8 @@
       <div class="mobile-menu" id="mobileMenu">
         <div id="mobileGuestLogin" style="display:none"><a href="index.html" class="mobile-menu-item">🔑 登录</a></div>
         <a href="forum.html" class="mobile-menu-item">🏠 首页</a>
-        <a href="profile.html" class="mobile-menu-item">👤 我的主页</a>
         <a href="notifications.html" class="mobile-menu-item">💬 消息</a>
         <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">👨‍💼 用户管理</a>
-        <div class="mobile-menu-item" id="mobileUserInfo" onclick="window.location.href='profile.html'"></div>
         <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">🚪 退出登录</div>
       </div>
     </div>
@@ -349,7 +347,6 @@ async function renderUserInfo() {
     // 更新移动端用户信息
     if (!isGuest) {
       document.getElementById('mobileLogout').style.display = 'flex';
-      document.getElementById('mobileUserInfo').textContent = '👤 ' + (currentUser.nickname || currentUser.username);
     }
     
     // 隐藏游客的发布按钮
@@ -426,6 +423,23 @@ async function loadRepliesFromCloud() {
       const cloudReplies = data.record.replies;
       localStorage.setItem('forum_replies', JSON.stringify(cloudReplies));
       console.log('从云端加载了 ' + cloudReplies.length + ' 条回复');
+      
+      // 更新所有帖子的 reply_count
+      const posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
+      let updated = false;
+      posts.forEach(post => {
+        const count = cloudReplies.filter(r => r.post_id === post.id && !r.is_deleted).length;
+        if (count !== post.reply_count) {
+          post.reply_count = count;
+          updated = true;
+        }
+      });
+      
+      if (updated) {
+        localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+        allPosts = posts;
+        renderPosts();
+      }
     }
   } catch(e) {
     console.log('加载云端回复失败:', e);

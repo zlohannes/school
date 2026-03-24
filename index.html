@@ -261,12 +261,16 @@ function doRegister(e) {
   const newUser = {username, password, nickname, realName, major, gender, role, createdAt: new Date().toISOString()};
   users.push(newUser);
   
-  // 保存到本地
-  saveUsers(users);
-  
-  // 注册后自动登录
-  sessionStorage.setItem('currentUser', JSON.stringify(newUser));
-  window.location.href = 'forum.html';
+  // 保存到本地并同步到云端
+  saveUsers(users).then(() => {
+    // 注册后自动登录
+    sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+    window.location.href = 'forum.html';
+  }).catch(() => {
+    // 即使同步失败也允许登录
+    sessionStorage.setItem('currentUser', JSON.stringify(newUser));
+    window.location.href = 'forum.html';
+  });
 }
 
 async function saveUsers(users) {
