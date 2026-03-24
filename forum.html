@@ -230,7 +230,7 @@ function updateUserDisplay(){
   }
 }
 
-async function renderUserInfo(){
+function renderUserInfo(){
   try{
     const userStr=sessionStorage.getItem('currentUser');
     if(!userStr){
@@ -243,7 +243,6 @@ async function renderUserInfo(){
     const isGuest=!currentUser||currentUser.role==='guest';
     const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
     
-    // 安全设置元素显示状态
     const setDisplay=(id,display)=>{
       const el=$(id);
       if(el)el.style.display=display;
@@ -344,7 +343,7 @@ async function loadRepliesFromCloud(){
 
 async function init(){
   try{
-    await renderUserInfo();
+    renderUserInfo();
     renderCategories();
     
     // 从本地加载帖子
