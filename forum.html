@@ -115,14 +115,17 @@
       .nav-links #adminLink{display:none !important}
     }
     
-    /* 移动端菜单 */
+    /* 移动端菜�?*/
     .mobile-menu{display:none;position:absolute;top:100%;left:0;right:0;background:white;box-shadow:0 4px 12px rgba(0,0,0,0.15);padding:10px;z-index:99;border-top:1px solid #eee}
     .mobile-menu.active{display:block}
     .mobile-menu-item{padding:12px 16px;display:flex;align-items:center;gap:10px;color:#333;border-radius:8px;font-size:14px}
     .mobile-menu-item:hover{background:#f5f5f5}
     .menu-btn{display:none;background:none;border:none;color:#333;font-size:24px;cursor:pointer;padding:4px;margin-left:auto}
+    .mobile-avatar{display:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;overflow:hidden;flex-shrink:0}
+    .mobile-avatar img{width:100%;height:100%;object-fit:cover}
     @media(max-width:768px){
       .menu-btn{display:block}
+      .mobile-avatar{display:flex !important}
       .nav-links{display:none}
       .nav-inner{position:relative}
     }
@@ -138,16 +141,17 @@
       <div class="nav-links">
         <div id="guestLoginBtn" style="display:none"><a href="index.html" class="nav-link">登录</a></div>
         <a href="notifications.html" class="nav-link">💬 消息</a>
-        <a href="admin.html" class="nav-link" id="adminLink" style="display:none;color:#ef4444">👨‍💼 管理</a>
+        <a href="admin.html" class="nav-link" id="adminLink" style="display:none;color:#ef4444">👨‍�?管理</a>
         <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'"></div>
       </div>
-      <button class="menu-btn" id="menuBtn" onclick="toggleMobileMenu()">☰</button>
+      <button class="menu-btn" id="menuBtn" onclick="toggleMobileMenu()">�?/button>
+      <div class="mobile-avatar" id="mobileAvatar" onclick="window.location.href='profile.html'"></div>
       <div class="mobile-menu" id="mobileMenu">
         <div id="mobileGuestLogin" style="display:none"><a href="index.html" class="mobile-menu-item">🔑 登录</a></div>
         <a href="forum.html" class="mobile-menu-item">🏠 首页</a>
         <a href="notifications.html" class="mobile-menu-item">💬 消息</a>
-        <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">👨‍💼 用户管理</a>
-        <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">🚪 退出登录</div>
+        <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">👨‍�?用户管理</a>
+        <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">🚪 退出登�?/div>
       </div>
     </div>
   </nav>
@@ -168,8 +172,8 @@
       <div class="sidebar-card">
         <h3>📢 公告</h3>
         <div class="notice-text">
-          网站处于起步阶段，很多功能未开发完全，敬请谅解。<br>
-          反馈建议：<span class="notice-phone">13587769094（微信同号）</span>
+          网站处于起步阶段，很多功能未开发完全，敬请谅解�?br>
+          反馈建议�?span class="notice-phone">13587769094（微信同号）</span>
         </div>
       </div>
     </aside>
@@ -215,7 +219,7 @@
         </div>
         <div class="checkbox-group">
           <input type="checkbox" id="isAnonymous">
-          <label for="isAnonymous">🔒 匿名发布（作者显示为"匿名"）</label>
+          <label for="isAnonymous">🔒 匿名发布（作者显示为"匿名"�?/label>
         </div>
         <div class="btn-row">
           <button type="button" class="btn" onclick="closePostModal()">取消</button>
@@ -245,10 +249,8 @@ let currentCategory = 'all';
 let currentUser = null;
 let selectedMedia = [];
 let currentPage = 1;
-const POSTS_PER_PAGE = 10; // 每页10条帖子
-
-// JSONBin 云同步
-async function syncUsersToCloud(users) {
+const POSTS_PER_PAGE = 10; // 每页10条帖�?
+// JSONBin 云同�?async function syncUsersToCloud(users) {
   try {
     await fetch(JSONBIN_URL, {
       method: 'PUT',
@@ -259,7 +261,7 @@ async function syncUsersToCloud(users) {
       body: JSON.stringify({users: users})
     });
   } catch(e) {
-    console.log('云同步失败:', e);
+    console.log('云同步失�?', e);
   }
 }
 
@@ -280,8 +282,7 @@ async function loadUsersFromCloud() {
 }
 
 function init() {
-  // 立即显示用户信息（不需要等帖子加载）
-  renderUserInfo();
+  // 立即显示用户信息（不需要等帖子加载�?  renderUserInfo();
   
   renderCategories();
   loadPosts();
@@ -306,8 +307,7 @@ async function renderUserInfo() {
     // 先用 sessionStorage 的数据渲染（最快）
     updateUserDisplay();
     
-    // 从云端加载最新用户数据
-    try {
+    // 从云端加载最新用户数�?    try {
       const res = await fetch(JSONBIN_URL, { headers: {'X-ACCESS-KEY': JSONBIN_KEY} });
       const data = await res.json();
       if (data.record && data.record.users) {
@@ -315,7 +315,7 @@ async function renderUserInfo() {
         localStorage.setItem(USERS_KEY, JSON.stringify(cloudUsers));
         const storedUser = cloudUsers.find(u => u.username === currentUser.username);
         if (storedUser) {
-          // 合并：云端数据优先，但保留 sessionStorage 中有而云端没有的字段
+          // 合并：云端数据优先，但保�?sessionStorage 中有而云端没有的字段
           currentUser = Object.assign({}, currentUser, storedUser);
           sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
           updateUserDisplay();
@@ -339,18 +339,15 @@ async function renderUserInfo() {
     document.getElementById('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
     document.getElementById('mobileGuestLogin').style.display = isGuest ? 'block' : 'none';
     
-    // 显示管理员链接
-    const isAdmin = currentUser.role === 'admin' || currentUser.username === 'lohannes';
+    // 显示管理员链�?    const isAdmin = currentUser.role === 'admin' || currentUser.username === 'lohannes';
     document.getElementById('adminLink').style.display = isAdmin ? 'block' : 'none';
     document.getElementById('mobileAdminLink').style.display = isAdmin ? 'flex' : 'none';
     
-    // 更新移动端用户信息
-    if (!isGuest) {
+    // 更新移动端用户信�?    if (!isGuest) {
       document.getElementById('mobileLogout').style.display = 'flex';
     }
     
-    // 隐藏游客的发布按钮
-    const fabBtn = document.querySelector('.fab');
+    // 隐藏游客的发布按�?    const fabBtn = document.querySelector('.fab');
     if (fabBtn) fabBtn.style.display = isGuest ? 'none' : 'block';
   } catch(e) {
     console.error('用户信息加载失败:', e);
@@ -365,7 +362,16 @@ function updateUserDisplay() {
   const avatarHtml = currentUser.avatar
     ? '<div class="avatar"><img src="' + currentUser.avatar + '"></div>'
     : '<div class="avatar">' + initial + '</div>';
-  el.innerHTML = avatarHtml + '<span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
+  el.innerHTML = avatarHtml + '<span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退�?/button>';
+  
+  // 更新移动端头�?  const mobileAvatar = document.getElementById('mobileAvatar');
+  if (mobileAvatar) {
+    if (currentUser.avatar) {
+      mobileAvatar.innerHTML = '<img src="' + currentUser.avatar + '" style="width:100%;height:100%;object-fit:cover">';
+    } else {
+      mobileAvatar.textContent = initial;
+    }
+  }
 }
 
 function loadPosts() {
@@ -378,12 +384,10 @@ function loadPosts() {
     // 后台从云端加载最新数据并合并
     loadPostsFromCloud().then(cloudPosts => {
       if (cloudPosts && cloudPosts.length > 0) {
-        // 合并本地和云端数据，以本地 reply_count 和 likes 为准（如果有的话）
-        const mergedPosts = cloudPosts.map(cloudPost => {
+        // 合并本地和云端数据，以本�?reply_count �?likes 为准（如果有的话�?        const mergedPosts = cloudPosts.map(cloudPost => {
           const localPost = allPosts.find(p => p.id === cloudPost.id);
           if (localPost) {
-            // 保留本地的 reply_count 和 likes（如果本地的更大）
-            return {
+            // 保留本地�?reply_count �?likes（如果本地的更大�?            return {
               ...cloudPost,
               reply_count: Math.max(localPost.reply_count || 0, cloudPost.reply_count || 0),
               likes: Math.max(localPost.likes || 0, cloudPost.likes || 0)
@@ -392,8 +396,7 @@ function loadPosts() {
           return cloudPost;
         });
         
-        // 添加本地有但云端没有的帖子
-        allPosts.forEach(localPost => {
+        // 添加本地有但云端没有的帖�?        allPosts.forEach(localPost => {
           if (!mergedPosts.find(p => p.id === localPost.id)) {
             mergedPosts.push(localPost);
           }
@@ -404,8 +407,7 @@ function loadPosts() {
         renderPosts();
       }
       
-      // 同时加载云端回复到本地
-      loadRepliesFromCloud();
+      // 同时加载云端回复到本�?      loadRepliesFromCloud();
     }).catch(() => {});
   } catch(e) {
     allPosts = [];
@@ -422,7 +424,7 @@ async function loadRepliesFromCloud() {
     if (data.record && data.record.replies) {
       const cloudReplies = data.record.replies;
       localStorage.setItem('forum_replies', JSON.stringify(cloudReplies));
-      console.log('从云端加载了 ' + cloudReplies.length + ' 条回复');
+      console.log('从云端加载了 ' + cloudReplies.length + ' 条回�?);
       
       // 更新所有帖子的 reply_count
       const posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
@@ -483,10 +485,10 @@ function renderPosts() {
     return new Date(b.created_at) - new Date(a.created_at);
   });
   
-  document.getElementById('postCount').textContent = posts.length + ' 条';
+  document.getElementById('postCount').textContent = posts.length + ' �?;
   
   if (posts.length === 0) {
-    document.getElementById('postList').innerHTML = '<div class="empty">暂无帖子，发表第一篇吧！</div>';
+    document.getElementById('postList').innerHTML = '<div class="empty">暂无帖子，发表第一篇吧�?/div>';
     return;
   }
   
@@ -506,7 +508,7 @@ function renderPosts() {
         if (m.type === 'image') {
           mediaHtml += '<img src="' + m.data + '" class="media-thumb" loading="lazy">';
         } else {
-          mediaHtml += '<div class="media-video">▶</div>';
+          mediaHtml += '<div class="media-video">�?/div>';
         }
       }
       mediaHtml += '</div>';
@@ -515,7 +517,7 @@ function renderPosts() {
     const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
     const isAuthor = currentUser && currentUser.username === p.author;
     const canDelete = isAdmin || isAuthor;
-    const deleteBtn = canDelete ? '<button onclick="event.stopPropagation();deletePost(' + p.id + ')" style="padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">🗑️ 删除</button>' : '';
+    const deleteBtn = canDelete ? '<button onclick="event.stopPropagation();deletePost(' + p.id + ')" style="padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">🗑�?删除</button>' : '';
     const pinBtn = isAdmin ? '<button onclick="event.stopPropagation();togglePin(' + p.id + ')" style="padding:4px 8px;background:' + (p.is_pinned ? '#ef4444' : '#667eea') + ';color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">' + (p.is_pinned ? '取消置顶' : '置顶') + '</button>' : '';
     
     html.push('<div class="post-item" style="position:relative;cursor:pointer" onclick="viewPost(' + p.id + ')">' +
@@ -526,7 +528,7 @@ function renderPosts() {
       '<div class="post-meta">' +
         '<span>👤 ' + escapeHtml(authorName) + '</span>' +
         '<span>💬 ' + (p.reply_count || 0) + '</span>' +
-        '<span>⏰ ' + timeAgo(p.created_at) + '</span>' +
+        '<span>�?' + timeAgo(p.created_at) + '</span>' +
         '<button onclick="event.stopPropagation();toggleLike(' + p.id + ')" style="padding:4px 8px;background:' + (isLiked(p.id) ? '#ef4444' : '#667eea') + ';color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;margin-left:8px">❤️ ' + (p.likes || 0) + '</button>' +
         pinBtn +
         deleteBtn +
@@ -590,8 +592,7 @@ function addNotification(notif) {
   notifications.push(notif);
   localStorage.setItem('forum_notifications', JSON.stringify(notifications));
   
-  // 同步到云端
-  syncAllToCloud({ notifications: notifications }).catch(() => {});
+  // 同步到云�?  syncAllToCloud({ notifications: notifications }).catch(() => {});
 }
 
 async function syncAllToCloud() {
@@ -602,8 +603,7 @@ async function syncAllToCloud() {
     const cloudData = await res.json();
     const record = cloudData.record || {};
     
-    // 从本地获取所有数据
-    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+    // 从本地获取所有数�?    const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
     const localPosts = JSON.parse(localStorage.getItem('forum_posts') || '[]');
     const localReplies = JSON.parse(localStorage.getItem('forum_replies') || '[]');
     const localNotifications = JSON.parse(localStorage.getItem('forum_notifications') || '[]');
@@ -633,7 +633,7 @@ async function syncAllToCloud() {
 function togglePin(postId) {
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
   if (!isAdmin) {
-    alert('只有管理员可以置顶帖子');
+    alert('只有管理员可以置顶帖�?);
     return;
   }
   
@@ -654,19 +654,19 @@ function deletePost(postId) {
   const isAuthor = currentUser && currentUser.username === post.author;
   
   if (!isAdmin && !isAuthor) {
-    alert('你没有权限删除这个帖子');
+    alert('你没有权限删除这个帖�?);
     return;
   }
   
-  if (confirm('确定要删除这个帖子吗？')) {
+  if (confirm('确定要删除这个帖子吗�?)) {
     post.is_deleted = true;
     localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
     syncPostsToCloud(allPosts).then(() => {
       renderPosts();
-      showToast('删除成功！');
+      showToast('删除成功�?);
     }).catch(() => {
       renderPosts();
-      showToast('删除成功！（离线模式）');
+      showToast('删除成功！（离线模式�?);
     });
   }
 }
@@ -677,7 +677,7 @@ function loadMorePosts() {
 }
 
 function logout() {
-  if (confirm('确定要退出吗？')) {
+  if (confirm('确定要退出吗�?)) {
     sessionStorage.removeItem('currentUser');
     window.location.href = 'index.html';
   }
@@ -694,24 +694,23 @@ function timeAgo(dateStr) {
   if (!dateStr) return '';
   const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
   if (s < 60) return '刚刚';
-  if (s < 3600) return Math.floor(s / 60) + '分钟前';
-  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 3600) return Math.floor(s / 60) + '分钟�?;
+  if (s < 86400) return Math.floor(s / 3600) + '小时�?;
   if (s < 2592000) return Math.floor(s / 86400) + '天前';
   return new Date(dateStr).toLocaleDateString('zh-CN');
 }
 
 function viewPost(id) {
   if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
-    alert('游客无法查看帖子详情，请登录后查看');
+    alert('游客无法查看帖子详情，请登录后查�?);
     return;
   }
   window.location.href = 'post.html?id=' + id;
 }
 
 function openPostModal() {
-  // 检查游客身份
-  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
-    alert('游客无法发布帖子，请登录后发布');
+  // 检查游客身�?  if (!currentUser || currentUser.role === 'guest' || currentUser.username === '__GUEST__') {
+    alert('游客无法发布帖子，请登录后发�?);
     return;
   }
   
@@ -771,7 +770,7 @@ function submitPost(e) {
   const isAnonymous = document.getElementById('isAnonymous').checked;
   
   if (!title || !category || !content) {
-    showToast('请填写完整信息', 'error');
+    showToast('请填写完整信�?, 'error');
     return;
   }
   
@@ -797,7 +796,7 @@ function submitPost(e) {
   syncPostsToCloud(allPosts).then(() => {
     closePostModal();
     renderPosts();
-    showToast('发布成功！');
+    showToast('发布成功�?);
   }).catch(() => {
     // 云端同步失败
     closePostModal();
@@ -832,7 +831,7 @@ async function syncPostsToCloud(posts) {
       })
     });
   } catch(e) {
-    console.log('帖子云同步失败:', e);
+    console.log('帖子云同步失�?', e);
   }
 }
 

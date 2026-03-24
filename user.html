@@ -3,62 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>用户主页 - 鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
-  <!-- 性能优化：预连接关键域名 -->
-  <!-- 腾讯云 CloudBase SDK -->
-  <link rel="preconnect" href="https://tcb-api.tencentcloudapi.com" crossorigin>
-  <script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.0/tcb.js"></script>
   <style>
-    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    :root{--bg:#f0f2f5;--card:#fff;--text:#1c1e21;--muted:#65676b;--acc:#667eea}
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:var(--acc);text-decoration:none}
+    .navbar{position:sticky;top:0;z-index:100;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
     .nav-inner{max-width:800px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
-    .nav-logo-badge{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;flex-shrink:0}
-    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
-    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none;transition:all 0.2s}
-    .nav-link:hover{color:var(--text);background:rgba(255,255,255,0.06)}
-    .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer;text-decoration:none}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    .nav-link:hover{background:#f5f5f5}
     .container{max-width:800px;margin:20px auto;padding:0 16px}
-    .profile-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
-    .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(135deg,rgba(76,201,240,0.15),rgba(168,85,247,0.15))}
-    .avatar-section{position:relative;z-index:1;text-align:center;padding-top:40px}
-    .avatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;color:#fff;border:3px solid var(--card);box-shadow:0 4px 20px rgba(0,0,0,0.3);overflow:hidden;margin:0 auto}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .nickname{font-size:24px;font-weight:700;margin-top:12px}
-    .role-tag{padding:4px 12px;border-radius:10px;font-size:12px;font-weight:600;margin-top:8px;display:inline-block}
-    .role-student{background:rgba(76,201,240,0.2);color:var(--acc)}
-    .role-teacher{background:rgba(34,197,94,0.2);color:#22c55e}
-    .role-admin{background:rgba(239,68,68,0.2);color:#ef4444}
-    .stats{display:flex;justify-content:center;gap:32px;margin-top:16px}
-    .stat{text-align:center}
-    .stat-num{font-size:22px;font-weight:700;color:var(--acc)}
-    .stat-label{font-size:12px;color:var(--muted);margin-top:2px}
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;max-width:360px;margin-left:auto;margin-right:auto}
-    .info-item{padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
-    .info-label{font-size:11px;color:var(--muted);margin-bottom:2px}
-    .info-value{font-size:14px}
-    .section-title{font-size:16px;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .post-list{display:flex;flex-direction:column;gap:10px}
-    .post-item{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;cursor:pointer;transition:all 0.2s}
-    .post-item:hover{border-color:rgba(76,201,240,0.3);transform:translateY(-1px)}
-    .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;margin-bottom:6px}
-    .cat-learning{background:rgba(76,175,80,0.2);color:#4CAF50}
-    .cat-campus{background:rgba(33,150,243,0.2);color:#2196F3}
-    .cat-trade{background:rgba(255,152,0,0.2);color:#FF9800}
-    .cat-job{background:rgba(156,39,176,0.2);color:#9C27B0}
-    .cat-chat{background:rgba(255,87,34,0.2);color:#FF5722}
-    .cat-notice{background:rgba(244,67,54,0.2);color:#f44336}
-    .post-title{font-size:14px;font-weight:600;margin-bottom:4px}
-    .post-meta{font-size:12px;color:var(--muted);display:flex;gap:12px}
-    .empty{text-align:center;padding:40px 20px;color:var(--muted)}
+    .profile-header{background:white;border-radius:16px;padding:40px 20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.08);margin-bottom:20px}
+    .profile-avatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:40px;font-weight:700;margin:0 auto 16px;overflow:hidden}
+    .profile-avatar img{width:100%;height:100%;object-fit:cover}
+    .profile-name{font-size:24px;font-weight:700;margin-bottom:8px}
+    .profile-role{color:#999;font-size:14px}
+    .section{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}
+    .section-title{font-size:18px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee}
+    .post-item{padding:16px 0;border-bottom:1px solid #eee;cursor:pointer}
+    .post-item:last-child{border-bottom:none}
+    .post-item:hover{background:#f9f9f9;margin:0 -20px;padding:16px 20px}
+    .post-title{font-weight:600;font-size:16px;margin-bottom:8px;color:#333}
+    .post-meta{color:#999;font-size:13px;display:flex;gap:12px}
+    .empty{text-align:center;padding:40px;color:#999}
     .empty-icon{font-size:48px;margin-bottom:10px}
-    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500}
     .loading.hidden{display:none}
-    .spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
+    .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:768px){
+      .container{padding:0 12px}
+      .profile-header{padding:30px 16px}
+      .profile-avatar{width:80px;height:80px;font-size:32px}
+      .profile-name{font-size:20px}
+    }
   </style>
 </head>
 <body>
@@ -67,163 +49,136 @@
   <nav class="navbar">
     <div class="nav-inner">
       <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
-      <div class="nav-links">
-        <a href="forum.html" class="nav-link">首页</a>
-        <a href="profile.html" class="nav-link">我的主页</a>
-        <button class="btn" id="backBtn">← 返回</button>
-      </div>
+      <a href="forum.html" class="nav-link">← 返回</a>
     </div>
   </nav>
-  
+
   <div class="container">
-    <div class="profile-card" id="profileCard"></div>
-    <div class="section-title">📝 发布的帖子</div>
-    <div class="post-list" id="postList"></div>
+    <div class="profile-header">
+      <div class="profile-avatar" id="userAvatar"></div>
+      <div class="profile-name" id="userName">加载中...</div>
+      <div class="profile-role" id="userRole"></div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">📮 发布的帖子</div>
+      <div id="userPosts"></div>
+    </div>
   </div>
 
-  <script>
-(function(){
-  var app=tcb.init({env:window.CLOUDBASE_ENV});
-  var db=app.database();
-  var _=db.command;
+<script>
+const POSTS_KEY = 'forum_posts';
+const USERS_KEY = 'forum_users';
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
+
+let targetUser = null;
+
+function $(id) { return document.getElementById(id); }
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const username = params.get('user');
   
-  var catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
-  var catBg = {learning:'#4CAF50',campus:'#2196F3',trade:'#FF9800',job:'#9C27B0',chat:'#FF5722',notice:'#f44336'};
-  var roleNames = {student:'学生',teacher:'老师',admin:'管理员'};
-
-  function $(id) { return document.getElementById(id); }
-  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-  function timeAgo(d) {
-    var s = Math.floor((Date.now() - new Date(d)) / 1000);
-    if (s < 60) return '刚刚';
-    if (s < 3600) return Math.floor(s / 60) + '分钟前';
-    if (s < 86400) return Math.floor(s / 3600) + '小时前';
-    if (s < 2592000) return Math.floor(s / 86400) + '天前';
-    return new Date(d).toLocaleDateString('zh-CN');
+  if (!username) {
+    showError('无效的用户');
+    return;
   }
-
-  async function init() {
-    var params = new URLSearchParams(location.search);
-    var username = params.get('u');
-    
-    if (!username) {
-      window.location.href = 'forum.html';
-      return;
-    }
-    
-    $('backBtn').onclick = function() { history.back(); };
-    
-    // 获取用户信息
-    var userRes = await db.collection('users').where({username:username}).limit(1).get();
-    if (!userRes.data||!userRes.data[0]) {
-      $('loading').classList.add('hidden');
-      $('profileCard').innerHTML = '<div class="empty"><div class="empty-icon">👤</div><div>用户不存在</div></div>';
-      return;
-    }
-    var user = userRes.data[0];
-    var postsRes = await db.collection('posts').where({author:username,is_deleted:_.neq(true)}).count();
-    var postCount = postsRes.total || 0;
-    
-    // 渲染用户信息
-    var nn = user.nickname || user.username;
-    var role = user.role || 'student';
-    var avatar = user.avatar_data || user.avatar_url;
-    var avatarHtml = avatar 
-      ? '<img src="' + esc(avatar) + '">' 
-      : nn.charAt(0).toUpperCase();
-    
-    // 检查是否是查看自己
-    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-    var isSelf = currentUser.username === username;
-    var pmBtn = isSelf ? '' : '<button onclick="addFriend(\'' + esc(username) + '\')" style="display:inline-block;margin-top:12px;padding:8px 20px;background:linear-gradient(135deg,var(--acc),var(--purple));color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">➕ 加好友</button>';
-    
-    $('profileCard').innerHTML = 
-      '<div class="avatar-section">' +
-        '<div class="avatar">' + avatarHtml + '</div>' +
-        '<div class="nickname">' + esc(nn) + '</div>' +
-        '<span class="role-tag role-' + role + '">' + (roleNames[role] || '学生') + '</span>' +
-        pmBtn +
-        '<div class="stats">' +
-          '<div class="stat"><div class="stat-num">' + postCount + '</div><div class="stat-label">发帖</div></div>' +
-        '</div>' +
-        '<div class="info-grid">' +
-          '<div class="info-item"><div class="info-label">性别</div><div class="info-value">' + (user.gender || '-') + '</div></div>' +
-          '<div class="info-item"><div class="info-label">注册时间</div><div class="info-value">' + (user.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '-') + '</div></div>' +
-        '</div>' +
-      '</div>';
-    
-    // 获取帖子列表
-    var myPosts = await db.collection('posts').where({author:username,is_deleted:_.neq(true)}).orderBy('created_at','desc').limit(50).get();
-    renderPosts((myPosts.data||[]).map(function(p){return Object.assign({},p,{id:p._id});}));
-    
-    $('loading').classList.add('hidden');
-  }
-
-  function renderPosts(posts) {
-    if (!posts.length) {
-      $('postList').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>还没有发过帖子</div></div>';
-      return;
-    }
-    
-    $('postList').innerHTML = posts.map(function(p) {
-      var cn = catNames[p.category] || '其他';
-      var bg = catBg[p.category] || '#999';
-      return '<div class="post-item" onclick="location.href=\'post.html?id=' + p.id + '\'">' +
-        '<span class="cat-tag" style="background:' + bg + '20;color:' + bg + '">' + cn + '</span>' +
-        '<div class="post-title">' + esc(p.title) + '</div>' +
-        '<div class="post-meta"><span>👍 ' + (p.likes || 0) + '</span><span>' + timeAgo(p.created_at) + '</span></div>' +
-      '</div>';
-    }).join('');
-  }
-
-  window.addFriend = async function(username) {
-    if (!confirm('确定要添加 ' + username + ' 为好友吗？')) return;
-    
-    var currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
-    
-    // 检查是否已经是好友或已有申请
-    var existingRes = await db.collection('friendships').where(_.or([
-      {requester_username:currentUser.username, recipient_username:username},
-      {requester_username:username, recipient_username:currentUser.username}
-    ])).limit(1).get();
-    
-    if (existingRes.data&&existingRes.data[0]) {
-      if (existingRes.data[0].status === 'accepted') {
-        alert('你们已经是好友了，可以去发私信');
-        window.location.href = 'chat.html?u=' + encodeURIComponent(username);
-      } else if (existingRes.data[0].status === 'pending') {
-        alert('已经发送过申请了，请等待对方回应');
+  
+  // 从本地查找用户
+  const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+  targetUser = users.find(u => u.username === username);
+  
+  // 如果本地没有，从云端加载
+  if (!targetUser) {
+    try {
+      const res = await fetch(JSONBIN_URL, {headers: {'X-ACCESS-KEY': JSONBIN_KEY}});
+      const data = await res.json();
+      if (data.record && data.record.users) {
+        targetUser = data.record.users.find(u => u.username === username);
       }
-      return;
+    } catch(e) {
+      console.log('云端加载失败:', e);
     }
-    
-    var res = await db.collection('friendships').add({
-      requester_username: currentUser.username,
-      recipient_username: username,
-      status: 'pending',
-      created_at: new Date().toISOString()
-    });
-    
-    if (!res.id) { alert('发送失败'); return; }
-    
-    await db.collection('notifications').add({
-      recipient_username: username,
-      sender_username: currentUser.username,
-      sender_nickname: currentUser.nickname,
-      type: 'mention',
-      post_id: 0,
-      post_title: '好友申请',
-      content: currentUser.nickname + ' 请求添加你为好友',
-      is_read: false,
-      created_at: new Date().toISOString()
-    });
-    
-    alert('好友申请已发送，请等待对方同意');
-  };
+  }
+  
+  if (!targetUser) {
+    showError('用户不存在');
+    return;
+  }
+  
+  renderUserProfile();
+  renderUserPosts();
+  $('loading').classList.add('hidden');
+}
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-  </script>
+function renderUserProfile() {
+  const name = targetUser.nickname || targetUser.username || '?';
+  const initial = name.charAt(0).toUpperCase();
+  
+  if (targetUser.avatar) {
+    $('userAvatar').innerHTML = '<img src="' + targetUser.avatar + '">';
+  } else {
+    $('userAvatar').textContent = initial;
+  }
+  
+  $('userName').textContent = name;
+  
+  const roleMap = {admin:'管理员',teacher:'老师',student:'学生'};
+  $('userRole').textContent = roleMap[targetUser.role] || '学生';
+}
+
+function renderUserPosts() {
+  const posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
+  const userPosts = posts.filter(p => p.author === targetUser.username && !p.is_deleted);
+  
+  if (userPosts.length === 0) {
+    $('userPosts').innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>暂无帖子</div></div>';
+    return;
+  }
+  
+  // 按时间倒序
+  userPosts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+  const catNames = {learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  
+  $('userPosts').innerHTML = userPosts.map(p => {
+    return '<div class="post-item" onclick="viewPost(' + p.id + ')">' +
+      '<div class="post-title">' + escapeHtml(p.title) + '</div>' +
+      '<div class="post-meta">' +
+        '<span>' + (catNames[p.category] || p.category) + '</span>' +
+        '<span>💬 ' + (p.reply_count || 0) + '</span>' +
+        '<span>❤️ ' + (p.likes || 0) + '</span>' +
+        '<span>' + timeAgo(p.created_at) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function viewPost(postId) {
+  window.location.href = 'post.html?id=' + postId;
+}
+
+function escapeHtml(text) {
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function showError(msg) {
+  document.body.innerHTML = '<div style="text-align:center;padding:60px;color:#999"><div style="font-size:48px;margin-bottom:16px">❌</div><div>' + msg + '</div><div style="margin-top:20px"><a href="forum.html" style="color:#667eea">返回首页</a></div></div>';
+}
+
+init();
+</script>
 </body>
 </html>
