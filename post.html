@@ -672,17 +672,17 @@ function renderPostPreview() {
 }
 
 async function submitReply() {
-  const content = $('replyInput').value.trim();
+  var content = $('replyInput').value.trim();
   if (!content) {
-    showToast('请输入回复内容', 'error');
+    alert('请输入回复内容');
     return;
   }
 
-  const replyToInfo = $('replyToInfo');
-  const replyToUser = replyToInfo.style.display !== 'none' ? replyToInfo.dataset.username : null;
-  const replyToNickname = replyToInfo.dataset.nickname || '';
+  var replyToInfo = $('replyToInfo');
+  var replyToUser = replyToInfo.style.display !== 'none' ? replyToInfo.dataset.username : null;
+  var replyToNickname = replyToInfo.dataset.nickname || '';
 
-  const reply = {
+  var reply = {
     id: Date.now(),
     post_id: currentPost.id,
     content: content,
@@ -699,35 +699,18 @@ async function submitReply() {
   localStorage.setItem(REPLIES_KEY, JSON.stringify(replies));
 
   // 更新帖子的 reply_count
-  const posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
-  const post = posts.find(p => p.id === currentPost.id);
+  var posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]');
+  var post = posts.find(function(p) { return p.id === currentPost.id; });
   if (post) {
     post.reply_count = (post.reply_count || 0) + 1;
     localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
     currentPost.reply_count = post.reply_count;
   }
 
-  if (replyToUser && replyToUser !== currentUser.username) {
-    addNotification({
-      type: 'reply',
-      from_user: currentUser.nickname || currentUser.username,
-      to_user: replyToUser,
-      post_id: currentPost.id,
-      post_title: currentPost.title,
-      created_at: new Date().toISOString()
-    });
-  }
-
   $('replyInput').value = '';
   cancelReplyTo();
   renderPost();
-
-  try {
-    await syncToCloud();
-    showToast('回复成功！');
-  } catch(e) {
-    showToast('回复失败，请重试', 'error');
-  }
+  alert('回复成功！');
 }
 
 function replyToUser(username, nickname) {
