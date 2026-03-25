@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>鹿城学院论坛 - 个人主页</title>
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(11,15,20,0.9);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:800px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+    .nav-logo-badge{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:700;flex-shrink:0}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    
+    .container{max-width:800px;margin:16px auto;padding:0 16px}
+    
+    .profile-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+    .profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:70px;background:linear-gradient(135deg,rgba(76,201,240,0.15),rgba(168,85,247,0.15))}
+    
+    .avatar-section{position:relative;z-index:1;text-align:center;padding-top:35px}
+    .avatar-wrapper{display:inline-block;cursor:pointer;position:relative}
+    .avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;border:3px solid var(--card);box-shadow:0 4px 16px rgba(0,0,0,0.3);overflow:hidden;margin:0 auto}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .avatar-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);height:22px;display:flex;align-items:center;justify-content:center;border-radius:0 0 50% 50%;opacity:0;font-size:10px}
+    .avatar-wrapper:active .avatar-overlay{opacity:1}
+    .avatar-hint{font-size:10px;color:var(--muted);margin-top:6px}
+    
+    .nickname{font-size:18px;font-weight:700;margin-top:10px}
+    .role-tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;margin-top:6px}
+    .role-student{background:rgba(76,201,240,0.2);color:var(--acc)}
+    .role-teacher{background:rgba(34,197,94,0.2);color:#22c55e}
+    .role-admin{background:rgba(239,68,68,0.2);color:#ef4444}
+    
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+    .info-item{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px}
+    .info-label{font-size:10px;color:var(--muted);margin-bottom:3px}
+    .info-value{font-size:13px;font-weight:600}
+    
+    .edit-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:20px;margin-bottom:12px;display:none}
+    .edit-card.active{display:block}
+    .edit-card h3{font-size:15px;margin-bottom:14px;color:var(--acc)}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+    .form-group input,.form-group select{width:100%;padding:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text);font-size:14px}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--acc)}
+    .form-group select option{background:#1a2030}
+    .btn-row{display:flex;gap:10px;margin-top:14px}
+    .btn{flex:1;padding:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);border-radius:8px;font-size:14px;cursor:pointer}
+    .btn-primary{background:linear-gradient(135deg,rgba(76,201,240,0.2),rgba(168,85,247,0.2));border-color:var(--acc)}
+    
+    .avatar-upload{display:none}
+    .avatar-preview-area{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+    .avatar-preview{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
+    .avatar-preview img{width:100%;height:100%;object-fit:cover}
+    .avatar-upload-btn{flex:1}
+    
+    .success-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;display:none}
+    
+    .notice-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;margin-bottom:12px}
+    .notice-title{font-weight:600;font-size:14px;margin-bottom:10px}
+    .notice-text{font-size:12px;color:var(--muted);line-height:1.7}
+    .notice-phone{color:var(--acc)}
+    
+    .post-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
+    .post-item:last-child{border-bottom:none}
+    .post-title{font-size:13px;font-weight:600;margin-bottom:4px}
+    .post-preview{font-size:12px;color:var(--muted);margin:4px 0;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+    .post-meta{font-size:11px;color:var(--muted);display:flex;gap:10px}
+    .empty-posts{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+    
+    @media(max-width:480px){
+      .container{padding:0 12px;margin:12px auto}
+      .profile-card,.edit-card,.notice-card{padding:16px;border-radius:12px}
+      .avatar{width:60px;height:60px;font-size:24px}
+      .nickname{font-size:16px}
+      .info-grid{gap:8px}
+      .info-item{padding:8px}
+      .info-value{font-size:12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="success-toast" id="toast">✅ 保存成功！</div>
+  <style>
+    .success-toast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999}
+    .success-toast.error{background:#ef4444}
+  </style>
+  
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a href="forum.html" class="nav-link">← 返回</a>
+        <button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer">退出</button>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <div class="profile-card">
+      <div class="avatar-section">
+        <div class="avatar-wrapper" onclick="openEdit()">
+          <div class="avatar" id="avatarDisplay"></div>
+          <div class="avatar-overlay">✏️</div>
+        </div>
+        <div class="avatar-hint">点击头像编辑</div>
+        <div class="nickname" id="nicknameDisplay"></div>
+        <div id="roleDisplay"></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-label">用户名</div><div class="info-value" id="usernameDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">性别</div><div class="info-value" id="genderDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">专业</div><div class="info-value" id="majorDisplay">-</div></div>
+        <div class="info-item"><div class="info-label">注册时间</div><div class="info-value" id="createdDisplay">-</div></div>
+      </div>
+    </div>
+    
+    <div class="edit-card" id="editCard">
+      <h3>✏️ 编辑资料</h3>
+      <div class="form-group">
+        <label>头像</label>
+        <div class="avatar-preview-area">
+          <div class="avatar-preview" id="avatarPreview"></div>
+          <div class="avatar-upload-btn">
+            <button class="btn" onclick="document.getElementById('avatarInput').click()" style="width:100%">📷 上传头像</button>
+            <input type="file" id="avatarInput" class="avatar-upload" accept="image/*" onchange="previewAvatar(this)">
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>昵称</label><input type="text" id="editNickname" placeholder="请输入昵称" maxlength="20"></div>
+      <div class="form-group"><label>性别</label>
+        <select id="editGender"><option value="">请选择</option><option value="男">男</option><option value="女">女</option></select>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="closeEdit()">取消</button>
+        <button class="btn btn-primary" onclick="saveProfile()">💾 保存</button>
+      </div>
+    </div>
+    
+    <div class="profile-card">
+      <div class="notice-title">📝 发布的帖子</div>
+      <div id="myPostsList"></div>
+    </div>
+  </div>
+
+<script>
+const USERS_KEY = 'forum_users';
+const POSTS_KEY = 'forum_posts';
+let currentUser = null;
+let newAvatarData = null;
+
+function $(id){return document.getElementById(id)}
+
+function getUsers() {
+  const data = localStorage.getItem(USERS_KEY);
+  return data ? JSON.parse(data) : [];
+}
+
+function saveUsers(users) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
+
+function init() {
+  const str = sessionStorage.getItem('currentUser');
+  if (!str) { window.location.href = 'index.html'; return; }
+  currentUser = JSON.parse(str);
+  
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    document.querySelector('.avatar-hint').textContent = '游客无法编辑资料';
+    document.querySelector('.avatar-wrapper').style.cursor = 'not-allowed';
+    document.querySelector('.avatar-wrapper').onclick = function() {
+      alert('游客无法编辑资料，请登录后编辑');
+    };
+  }
+  
+  // 从本地加载最新用户数据
+  const users = getUsers();
+  const stored = users.find(u => u.username === currentUser.username);
+  if (stored) {
+    currentUser = Object.assign({}, currentUser, stored);
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  }
+  
+  renderProfile();
+  loadMyPosts();
+}
+
+function renderProfile() {
+  const avatarEl = $('avatarDisplay');
+  if (currentUser.avatar) {
+    avatarEl.innerHTML = '<img src="' + currentUser.avatar + '">';
+  } else {
+    avatarEl.textContent = (currentUser.nickname || currentUser.username || '?').charAt(0).toUpperCase();
+  }
+  $('nicknameDisplay').textContent = currentUser.nickname || currentUser.username;
+  const roleMap = {admin:['管理员','role-admin'],teacher:['老师','role-teacher'],student:['学生','role-student']};
+  const [roleName, roleClass] = roleMap[currentUser.role] || ['学生','role-student'];
+  $('roleDisplay').innerHTML = '<span class="role-tag ' + roleClass + '">' + roleName + '</span>';
+  $('usernameDisplay').textContent = currentUser.username || '-';
+  $('genderDisplay').textContent = currentUser.gender || '-';
+  $('majorDisplay').textContent = currentUser.major || '-';
+  $('createdDisplay').textContent = currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('zh-CN') : '-';
+}
+
+function openEdit() {
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    alert('游客无法编辑资料，请登录后编辑');
+    return;
+  }
+  
+  $('editCard').classList.add('active');
+  $('editNickname').value = currentUser.nickname || '';
+  $('editGender').value = currentUser.gender || '';
+  const previewEl = $('avatarPreview');
+  if (currentUser.avatar) {
+    previewEl.innerHTML = '<img src="' + currentUser.avatar + '">';
+  } else {
+    previewEl.textContent = (currentUser.nickname || '?').charAt(0).toUpperCase();
+  }
+  $('editCard').scrollIntoView({behavior:'smooth'});
+}
+
+function closeEdit() {
+  $('editCard').classList.remove('active');
+  newAvatarData = null;
+}
+
+function previewAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    newAvatarData = e.target.result;
+    $('avatarPreview').innerHTML = '<img src="' + newAvatarData + '">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveProfile() {
+  // 检查游客身份
+  const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
+  if (isGuest) {
+    alert('游客无法编辑资料，请登录后编辑');
+    return;
+  }
+  
+  const nickname = $('editNickname').value.trim();
+  const gender = $('editGender').value;
+  if (!nickname) { alert('昵称不能为空'); return; }
+  
+  const users = getUsers();
+  let idx = users.findIndex(u => u.username === currentUser.username);
+  const updates = {nickname, gender};
+  if (newAvatarData) updates.avatar = newAvatarData;
+  
+  if (idx >= 0) {
+    users[idx] = Object.assign({}, users[idx], updates);
+  } else {
+    users.push(Object.assign({}, currentUser, updates));
+  }
+  
+  // 保存到本地
+  saveUsers(users);
+  
+  currentUser = Object.assign({}, currentUser, updates);
+  sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  closeEdit();
+  renderProfile();
+  showToast('保存成功！');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = $('toast');
+  toast.textContent = msg;
+  toast.className = 'success-toast ' + type;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 2000);
+}
+
+function loadMyPosts() {
+  const postsData = localStorage.getItem(POSTS_KEY);
+  const posts = postsData ? JSON.parse(postsData) : [];
+  const myPosts = posts.filter(p => !p.is_deleted && p.author === currentUser.username);
+  const el = $('myPostsList');
+  if (myPosts.length === 0) {
+    el.innerHTML = '<div class="empty-posts">还没有发布过帖子</div>';
+    return;
+  }
+  el.innerHTML = myPosts.map(p => '<div class="post-item" onclick="window.location.href=\'post.html?id=' + p.id + '\'"><div class="post-title">' + p.title + '</div><div class="post-preview">' + p.content + '</div><div class="post-meta"><span>💬 ' + (p.reply_count || 0) + '</span><span>⏰ ' + timeAgo(p.created_at) + '</span></div></div>').join('');
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function logout() {
+  if (confirm('确定要退出吗？')) {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

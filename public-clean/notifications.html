@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>消息 - 鹿城学院论坛</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <style>
+    :root{--bg:#0b0f14;--card:#121821;--muted:#9fb2c3;--text:#e9f0f6;--acc:#4cc9f0;--purple:#a855f7}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .navbar{position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);background:rgba(11,15,20,0.8);border-bottom:1px solid rgba(255,255,255,0.06)}
+    .nav-inner{max-width:1000px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;color:var(--text);text-decoration:none}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px;text-decoration:none}
+    .nav-link:hover,.nav-link.active{color:var(--text);background:rgba(255,255,255,0.06)}
+    .container{max-width:800px;margin:20px auto;padding:0 16px}
+    .page-title{font-size:20px;font-weight:600;margin-bottom:16px}
+    .tabs{display:flex;background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:14px;margin-bottom:16px;overflow:hidden}
+    .tab{flex:1;padding:14px;text-align:center;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;transition:all 0.2s;border-bottom:2px solid transparent}
+    .tab:hover{color:var(--text);background:rgba(255,255,255,0.02)}
+    .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+    .notification-list{display:flex;flex-direction:column;gap:10px}
+    .notification-item{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all 0.2s}
+    .notification-item:hover{border-color:rgba(76,201,240,0.3);background:rgba(76,201,240,0.05)}
+    .notification-item.unread{border-color:rgba(76,201,240,0.3);background:rgba(76,201,240,0.08)}
+    .notification-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--purple));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;overflow:hidden}
+    .notification-avatar img{width:100%;height:100%;object-fit:cover}
+    .notification-content{flex:1}
+    .notification-title{font-weight:600;font-size:14px;margin-bottom:4px}
+    .notification-text{color:var(--muted);font-size:13px;margin-bottom:6px}
+    .notification-time{color:var(--muted);font-size:12px}
+    .notification-actions{display:flex;gap:8px;margin-top:8px}
+    .btn-small{padding:4px 10px;font-size:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:var(--text);border-radius:6px;cursor:pointer}
+    .btn-small:hover{background:rgba(255,255,255,0.08)}
+    .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+    .empty-icon{font-size:48px;margin-bottom:10px}
+    @media(max-width:768px){
+      .container{padding:0 12px}
+      .notification-item{padding:12px}
+      .notification-avatar{width:36px;height:36px;font-size:16px}
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
+      <div class="nav-links">
+        <a href="forum.html" class="nav-link">首页</a>
+        <a href="profile.html" class="nav-link">我的主页</a>
+        <a href="notifications.html" class="nav-link active">消息</a>
+        <button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer">退出</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-title">消息</div>
+    
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('all')">全部</div>
+      <div class="tab" onclick="switchTab('likes')">点赞</div>
+      <div class="tab" onclick="switchTab('replies')">回复</div>
+    </div>
+    
+    <div id="notificationList" class="notification-list"></div>
+  </div>
+
+  <script>
+const USERS_KEY = 'forum_users';
+const POSTS_KEY = 'forum_posts';
+const REPLIES_KEY = 'forum_replies';
+const NOTIFICATIONS_KEY = 'forum_notifications';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+
+let currentUser = null;
+let currentTab = 'all';
+let notifications = [];
+
+function $(id) { return document.getElementById(id); }
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  if (s < 2592000) return Math.floor(s / 86400) + '天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function escapeHtml(text) {
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+async function init() {
+  const userStr = sessionStorage.getItem('currentUser');
+  if (!userStr) {
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  currentUser = JSON.parse(userStr);
+  loadNotifications();
+}
+
+async function loadNotifications() {
+  // 先从本地加载
+  const notifData = localStorage.getItem(NOTIFICATIONS_KEY);
+  notifications = notifData ? JSON.parse(notifData) : [];
+  
+  // 过滤出发给当前用户的通知
+  notifications = notifications.filter(n => n.to_user === currentUser.username);
+  
+  // 按时间倒序排列
+  notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+  renderNotifications();
+  
+  // 后台从云端加载最新通知
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    if (data.record && data.record.notifications) {
+      const cloudNotifs = data.record.notifications;
+      // 合并本地和云端通知
+      const allNotifs = [...notifications, ...cloudNotifs];
+      // 去重
+      const uniqueNotifs = allNotifs.filter((n, i, arr) => 
+        i === arr.findIndex(t => t.created_at === n.created_at && t.from_user === n.from_user)
+      );
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(uniqueNotifs));
+      notifications = uniqueNotifs.filter(n => n.to_user === currentUser.username);
+      notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      renderNotifications();
+    }
+  } catch(e) {
+    console.log('云端通知加载失败:', e);
+  }
+}
+
+function renderNotifications() {
+  let filtered = notifications;
+  
+  if (currentTab === 'likes') {
+    filtered = notifications.filter(n => n.type === 'like');
+  } else if (currentTab === 'replies') {
+    filtered = notifications.filter(n => n.type === 'reply');
+  }
+  
+  if (filtered.length === 0) {
+    $('notificationList').innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>暂无消息</div></div>';
+    return;
+  }
+  
+  const html = filtered.map(n => {
+    const fromUser = n.from_user || '匿名';
+    const initial = fromUser.charAt(0).toUpperCase();
+    const typeText = n.type === 'like' ? '点赞了你的帖子' : '回复了你的帖子';
+    const postTitle = n.post_title ? escapeHtml(n.post_title) : '（已删除）';
+    
+    return '<div class="notification-item" onclick="goToPost(' + n.post_id + ')">' +
+      '<div class="notification-avatar">' + initial + '</div>' +
+      '<div class="notification-content">' +
+        '<div class="notification-title">' + escapeHtml(fromUser) + ' ' + typeText + '</div>' +
+        '<div class="notification-text">' + postTitle + '</div>' +
+        '<div class="notification-time">' + timeAgo(n.created_at) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  
+  $('notificationList').innerHTML = html;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderNotifications();
+}
+
+function goToPost(postId) {
+  window.location.href = 'post.html?id=' + postId;
+}
+
+function logout() {
+  if (confirm('确定要退出吗？')) {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+  }
+}
+
+init();
+  </script>
+</body>
+</html>
