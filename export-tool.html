@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据导出工具 - 鹿城学院论坛</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{width:100%;max-width:600px}
+    .card{background:white;padding:30px;border-radius:12px;box-shadow:0 8px 25px rgba(0,0,0,0.15)}
+    h1{color:#333;text-align:center;font-size:24px;margin-bottom:10px}
+    .subtitle{color:#666;text-align:center;font-size:14px;margin-bottom:30px}
+    .btn{width:100%;background:#667eea;color:white;padding:12px;border:none;border-radius:6px;font-size:16px;font-weight:600;cursor:pointer;margin-top:15px}
+    .btn:hover{background:#5568d3}
+    .btn:disabled{background:#aaa;cursor:not-allowed}
+    .btn-success{background:#10b981}
+    .btn-success:hover{background:#059669}
+    .output{margin-top:20px;padding:15px;background:#f5f5f5;border-radius:6px;font-family:monospace;font-size:12px;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all;display:none}
+    .status{margin-top:15px;padding:12px;border-radius:6px;text-align:center;display:none}
+    .status.success{background:#d4edda;color:#155724}
+    .status.error{background:#f8d7da;color:#721c24}
+    .steps{margin:20px 0;padding:15px;background:#f8f9fa;border-radius:6px}
+    .steps h3{font-size:14px;color:#333;margin-bottom:10px}
+    .steps ol{padding-left:20px;color:#666;font-size:13px;line-height:1.8}
+    .steps li{margin-bottom:5px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>📦 数据导出工具</h1>
+      <p class="subtitle">将 Supabase 数据导出为 JSON 文件</p>
+      
+      <div class="steps">
+        <h3>使用步骤：</h3>
+        <ol>
+          <li>点击"导出数据"按钮</li>
+          <li>等待数据加载完成</li>
+          <li>点击"复制 JSON"按钮</li>
+          <li>打开 GitHub 仓库的 posts.json 文件</li>
+          <li>粘贴并提交</li>
+        </ol>
+      </div>
+      
+      <button class="btn" id="exportBtn" onclick="exportData()">📥 导出数据</button>
+      <button class="btn btn-success" id="copyBtn" onclick="copyData()" style="display:none">📋 复制 JSON</button>
+      
+      <div class="status" id="status"></div>
+      <pre class="output" id="output"></pre>
+    </div>
+  </div>
+
+  <script>
+    let exportedData = null;
+    
+    async function exportData() {
+      const btn = document.getElementById('exportBtn');
+      const status = document.getElementById('status');
+      const output = document.getElementById('output');
+      
+      btn.disabled = true;
+      btn.textContent = '⏳ 正在导出...';
+      status.style.display = 'none';
+      
+      try {
+        const SUPABASE_URL = 'https://tsxnnzcteavcpowsbaye.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzeG5uemN0ZWF2Y3Bvd3NiYXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQwMDAwMDAsImV4cCI6MTg5OTc2MDAwMH0.SHiGnxlUonmmOFKytrt-Lg_8DXAWJJl';
+        
+        // 获取帖子
+        const postsRes = await fetch(`${SUPABASE_URL}/rest/v1/posts?select=id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted&is_deleted=eq.false&order=is_pinned.desc,created_at.desc&limit=200`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        
+        if (!postsRes.ok) throw new Error('获取帖子失败');
+        const posts = await postsRes.json();
+        
+        // 获取回复数
+        const repliesRes = await fetch(`${SUPABASE_URL}/rest/v1/replies?select=post_id`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+        
+        const replies = repliesRes.ok ? await repliesRes.json() : [];
+        
+        // 统计回复数
+        const replyCounts = {};
+        replies.forEach(r => {
+          replyCounts[r.post_id] = (replyCounts[r.post_id] || 0) + 1;
+        });
+        
+        // 合并数据
+        const postsWithReplies = posts.map(p => ({
+          ...p,
+          reply_count: replyCounts[p.id] || 0
+        }));
+        
+        exportedData = {
+          updated_at: new Date().toISOString(),
+          count: postsWithReplies.length,
+          posts: postsWithReplies
+        };
+        
+        // 显示结果
+        output.textContent = JSON.stringify(exportedData, null, 2);
+        output.style.display = 'block';
+        
+        status.className = 'status success';
+        status.textContent = `✅ 成功导出 ${postsWithReplies.length} 条帖子数据！`;
+        status.style.display = 'block';
+        
+        btn.textContent = '✅ 导出完成';
+        document.getElementById('copyBtn').style.display = 'block';
+        
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = '❌ 导出失败：' + error.message;
+        status.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '📥 重新导出';
+      }
+    }
+    
+    async function copyData() {
+      if (!exportedData) return;
+      
+      try {
+        const text = JSON.stringify(exportedData, null, 2);
+        await navigator.clipboard.writeText(text);
+        
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ 已复制！';
+        setTimeout(() => {
+          btn.textContent = '📋 复制 JSON';
+        }, 2000);
+      } catch (err) {
+        alert('复制失败，请手动复制上面的文本');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试论坛</title>
+  <style>
+    body{font-family:sans-serif;padding:20px;background:#f5f5f5}
+    h1{color:#333}
+    #log{padding:10px;background:#fff;margin:10px 0;border-radius:4px;font-family:monospace;white-space:pre-wrap}
+    .error{color:red}
+    .success{color:green}
+  </style>
+</head>
+<body>
+  <h1>论坛加载测试</h1>
+  <div id="log">开始测试...</div>
+  <button onclick="location.reload()">刷新</button>
+  <button onclick="window.location.href='index.html'">去登录</button>
+
+<script>
+var log = document.getElementById('log');
+function addLog(msg, type) {
+  log.innerHTML += '\n[' + new Date().toLocaleTimeString() + '] ' + msg;
+  if (type === 'error') log.style.color = 'red';
+}
+
+addLog('1. 检查 sessionStorage...');
+var userStr = sessionStorage.getItem('currentUser');
+if (!userStr) {
+  addLog('未登录 - 跳转到登录页', 'error');
+  // 不跳转，让用户看到测试页面
+} else {
+  try {
+    var user = JSON.parse(userStr);
+    addLog('已登录: ' + user.username, 'success');
+  } catch(e) {
+    addLog('登录数据损坏: ' + e.message, 'error');
+  }
+}
+
+addLog('2. 检查 localStorage...');
+try {
+  var postsData = localStorage.getItem('forum_posts');
+  if (postsData) {
+    var posts = JSON.parse(postsData);
+    addLog('本地帖子数: ' + posts.length, 'success');
+  } else {
+    addLog('本地无帖子数据');
+  }
+} catch(e) {
+  addLog('localStorage错误: ' + e.message, 'error');
+}
+
+addLog('3. 检查页面元素...');
+var ids = ['loading', 'postList', 'categories', 'userInfo', 'toast'];
+ids.forEach(function(id) {
+  var el = document.getElementById(id);
+  addLog(id + ': ' + (el ? '存在' : '不存在'));
+});
+
+addLog('测试完成');
+</script>
+</body>
+</html>

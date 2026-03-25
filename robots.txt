@@ -1,0 +1,5 @@
+# robots.txt for 鹿城学院论坛
+User-agent: *
+Allow: /
+
+Sitemap: https://zlohannes.github.io/school-forum/sitemap.xml

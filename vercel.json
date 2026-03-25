@@ -1,9 +1,8 @@
 {
-  "version": 2,
-  "routes": [
-    {
-      "src": "/api/proxy/(.*)",
-      "dest": "/api/proxy.js"
-    }
-  ]
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": "public",
+  "framework": "static",
+  "env": {
+    "CLOUD_API": "https://school-7g0r6pyl5a3b9046-1414403628.ap-shanghai.app.tcloudbase.com"
+  }
 }

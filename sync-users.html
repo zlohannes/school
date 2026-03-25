@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户数据同步工具</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:800px;margin:50px auto;padding:20px;background:#f5f5f5}
+    .card{background:#fff;padding:30px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    h1{color:#333;margin-bottom:20px}
+    .btn{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:16px;cursor:pointer;margin-right:10px}
+    .btn:hover{opacity:0.9}
+    .log{margin-top:20px;padding:15px;background:#f8f9fa;border-radius:8px;font-family:monospace;font-size:13px;max-height:400px;overflow-y:auto;white-space:pre-wrap}
+    .success{color:#22c55e}
+    .error{color:#ef4444}
+    .info{color:#667eea}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔄 用户数据同步工具</h1>
+    <p>将本地注册的用户数据同步到云端，使管理员可以看到所有用户。</p>
+    <button class="btn" onclick="syncUsers()">开始同步</button>
+    <button class="btn" onclick="checkData()" style="background:#6b7280">检查数据</button>
+    <button class="btn" onclick="window.location.href='forum.html'" style="background:#22c55e">返回论坛</button>
+    <div class="log" id="log"></div>
+  </div>
+
+<script>
+const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
+
+function log(msg, type) {
+  const el = document.getElementById('log');
+  const color = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+  el.innerHTML += `<div class="${color}">${new Date().toLocaleTimeString()}: ${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function checkData() {
+  document.getElementById('log').innerHTML = '';
+  log('=== 检查数据 ===');
+  
+  // 检查本地用户
+  const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+  log(`本地用户数量: ${localUsers.length}`);
+  localUsers.forEach(u => {
+    log(`  - ${u.username} (${u.nickname || '无昵称'}, ${u.role || 'user'})`);
+  });
+  
+  // 检查云端用户
+  try {
+    const res = await fetch(JSONBIN_URL, {headers: {'X-ACCESS-KEY': JSONBIN_KEY}});
+    const data = await res.json();
+    const cloudUsers = (data.record && data.record.users) || [];
+    log(`\n云端用户数量: ${cloudUsers.length}`);
+    cloudUsers.forEach(u => {
+      log(`  - ${u.username} (${u.nickname || '无昵称'}, ${u.role || 'user'})`);
+    });
+  } catch(e) {
+    log('获取云端数据失败: ' + e.message, 'error');
+  }
+}
+
+async function syncUsers() {
+  document.getElementById('log').innerHTML = '';
+  log('=== 开始同步用户数据 ===');
+  
+  // 1. 获取本地用户
+  const localUsers = JSON.parse(localStorage.getItem('forum_users') || '[]');
+  log(`本地用户: ${localUsers.length} 个`);
+  
+  if (localUsers.length === 0) {
+    log('本地没有用户数据！', 'error');
+    return;
+  }
+  
+  // 2. 获取云端数据
+  let cloudData = {};
+  try {
+    const res = await fetch(JSONBIN_URL, {headers: {'X-ACCESS-KEY': JSONBIN_KEY}});
+    const data = await res.json();
+    cloudData = data.record || {};
+    log(`云端现有用户: ${(cloudData.users || []).length} 个`);
+  } catch(e) {
+    log('获取云端数据失败: ' + e.message, 'error');
+    return;
+  }
+  
+  // 3. 合并用户数据（以本地为准，云端补充）
+  const mergedUsers = [...(cloudData.users || [])];
+  let addedCount = 0;
+  
+  localUsers.forEach(localUser => {
+    const existingIndex = mergedUsers.findIndex(u => u.username === localUser.username);
+    if (existingIndex === -1) {
+      // 本地有，云端没有，添加
+      mergedUsers.push(localUser);
+      addedCount++;
+      log(`添加用户: ${localUser.username}`, 'success');
+    } else {
+      // 两边都有，保留云端版本（可能更新）
+      log(`用户已存在: ${localUser.username}`);
+    }
+  });
+  
+  log(`\n新增用户: ${addedCount} 个`);
+  log(`合并后总用户: ${mergedUsers.length} 个`);
+  
+  // 4. 上传到云端
+  const uploadData = {
+    ...cloudData,
+    users: mergedUsers
+  };
+  
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify(uploadData)
+    });
+    
+    if (res.ok) {
+      log('\n✅ 同步成功！', 'success');
+      log('管理员现在可以在用户管理界面看到所有用户了。');
+    } else {
+      log('\n❌ 同步失败: ' + res.status, 'error');
+    }
+  } catch(e) {
+    log('\n❌ 上传失败: ' + e.message, 'error');
+  }
+}
+
+// 页面加载时自动检查
+window.onload = checkData;
+</script>
+</body>
+</html>
