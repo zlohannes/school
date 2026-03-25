@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;margin:0;padding:60px 16px 20px}
+    h1{text-align:center;color:#333;margin-bottom:20px}
+    .posts{background:#fff;border-radius:12px;padding:20px;max-width:800px;margin:0 auto}
+    .post{padding:15px;border-bottom:1px solid #eee}
+    .post:last-child{border-bottom:none}
+    .post-title{font-size:16px;font-weight:600;color:#333;margin-bottom:8px}
+    .post-meta{font-size:13px;color:#666}
+    .loading{text-align:center;padding:40px;color:#999}
+    .error{color:red;text-align:center;padding:20px}
+    a{color:#667eea}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading" id="loading">加载中...</div>
+  </div>
+
+<script>
+var POSTS_KEY = 'forum_posts';
+var JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
+var allPosts = [];
+
+function render() {
+  var app = document.getElementById('app');
+  if (allPosts.length === 0) {
+    app.innerHTML = '<div class="posts"><div class="post">暂无帖子</div></div>';
+    return;
+  }
+  var html = '<div class="posts">';
+  allPosts.forEach(function(p) {
+    html += '<div class="post"><div class="post-title">' + (p.title || '') + '</div><div class="post-meta">' + (p.author || '') + ' | ' + (p.reply_count || 0) + '回复</div></div>';
+  });
+  html += '</div>';
+  app.innerHTML = html;
+}
+
+function init() {
+  console.log('init...');
+  document.getElementById('loading').style.display = 'none';
+  
+  // 加载本地数据
+  var data = localStorage.getItem(POSTS_KEY);
+  if (data) {
+    try { allPosts = JSON.parse(data); } catch(e) { allPosts = []; }
+  }
+  console.log('本地帖子:', allPosts.length);
+  render();
+  
+  // 后台加载云端
+  fetch(JSONBIN_URL + '?t=' + Date.now(), {headers: {'X-ACCESS-KEY': JSONBIN_KEY}})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.record && d.record.posts) {
+        allPosts = d.record.posts;
+        localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
+        render();
+      }
+    })
+    .catch(function(e) { console.log('云端错误:', e); });
+}
+
+init();
+</script>
+</body>
+</html>

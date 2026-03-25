@@ -226,6 +226,12 @@ function doLogin(e) {
   }
   
   if (user) {
+    // 检查账户是否被封禁
+    if (user.is_banned) {
+      showError('❌ 您的账户已被封禁，请联系管理员解封');
+      return;
+    }
+    
     // 保存完整用户信息到 sessionStorage
     sessionStorage.setItem('currentUser', JSON.stringify(user));
     window.location.href = 'forum.html';

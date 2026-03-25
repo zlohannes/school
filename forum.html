@@ -4,433 +4,342 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>鹿城学院论坛 - 校园交流社区</title>
+  <title>鹿城学院论坛</title>
   <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
   <style>
-    :root{--bg:#f0f2f5;--card:#fff;--text:#1c1e21;--muted:#65676b;--acc:#667eea}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
-    a{color:var(--acc);text-decoration:none}
-    
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh}
+    a{color:#667eea;text-decoration:none}
     .navbar{position:sticky;top:0;z-index:100;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
     .nav-inner{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
-    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .nav-logo{font-size:18px;font-weight:700;color:#333;display:flex;align-items:center;gap:8px}
+    .nav-logo img{height:28px;width:28px;border-radius:4px;vertical-align:middle}
     .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
-    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    .nav-link{color:#666;padding:6px 12px;border-radius:6px;font-size:14px}
     .nav-link:hover{background:#f5f5f5}
-    .user-info{display:flex;align-items:center;gap:8px;cursor:pointer}
-    .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .user-name{font-size:14px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    
-    .main{max-width:1080px;margin:16px auto;padding:0 16px;display:grid;grid-template-columns:1fr 280px;gap:16px}
-    
+    .btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:8px 16px;border:none;border-radius:6px;font-size:14px;cursor:pointer}
+    .btn:active{opacity:0.9}
+    .btn-outline{background:transparent;border:1px solid #667eea;color:#667eea}
+    .main{max-width:1080px;margin:16px auto;padding:0 16px}
     .categories{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-    .category-tag{padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;background:#f0f2f5;transition:all 0.2s}
-    .category-tag.active{background:var(--acc);color:#fff}
-    .tag-learning{background:#e3f2fd;color:#1976d2}
-    .tag-campus{background:#f3e5f5;color:#7b1fa2}
-    .tag-trade{background:#e8f5e9;color:#388e3c}
-    .tag-job{background:#fff3e0;color:#f57c00}
-    .tag-chat{background:#fce4ec;color:#c2185b}
-    .tag-notice{background:#ffebee;color:#d32f2f}
-    
-    .card{background:var(--card);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.1);overflow:hidden}
-    .card-header{padding:16px 20px;border-bottom:1px solid #eee;font-weight:600;display:flex;justify-content:space-between;align-items:center}
-    
-    .post-item{padding:16px 20px;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background 0.15s}
-    .post-item:hover{background:#f8f9fa}
+    .category-tag{padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;background:white;border:1px solid #eee}
+    .category-tag.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-color:transparent}
+    .card{background:white;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.1);overflow:hidden}
+    .card-header{padding:14px 16px;border-bottom:1px solid #eee;font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+    .post-item{padding:14px 16px;border-bottom:1px solid #f0f2f5;cursor:pointer}
+    .post-item:hover{background:#fafafa}
     .post-item:last-child{border-bottom:none}
-    .post-title{font-size:16px;font-weight:600;margin-bottom:8px}
-    .post-preview{color:var(--muted);font-size:14px;margin-bottom:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .post-meta{display:flex;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
-    .post-stats{display:flex;gap:12px;margin-left:auto}
-    
-    .sidebar{display:flex;flex-direction:column;gap:16px}
-    .notice-card{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:12px}
-    .notice-title{font-size:18px;font-weight:700;margin-bottom:12px}
-    .notice-text{font-size:14px;line-height:1.6;opacity:0.95}
-    .notice-phone{font-weight:600}
-    
-    .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(102,126,234,0.4);z-index:99;display:flex;align-items:center;justify-content:center}
-    .fab:hover{transform:scale(1.05)}
-    
-    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500}
+    .post-title{font-size:15px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+    .post-preview{color:#666;font-size:13px;margin-bottom:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .post-meta{display:flex;gap:12px;font-size:12px;color:#999;flex-wrap:wrap}
+    .category-badge{padding:2px 8px;border-radius:4px;font-size:11px}
+    .cat-learning{background:#e3f2fd;color:#1976d2}.cat-campus{background:#f3e5f5;color:#7b1fa2}
+    .cat-trade{background:#e8f5e9;color:#388e3c}.cat-job{background:#fff3e0;color:#f57c00}
+    .cat-chat{background:#fce4ec;color:#c2185b}.cat-notice{background:#ffebee;color:#d32f2f}
+    .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(102,126,234,0.4);z-index:99}
+    .fab:active{transform:scale(0.95)}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;z-index:500;font-size:16px;color:#666}
     .loading.hidden{display:none}
-    .spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    
-    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
     .toast.error{background:#ef4444}
-    
-    .mobile-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15);padding:10px;z-index:99;border-top:1px solid #eee}
+    .empty{text-align:center;padding:60px 20px;color:#999}
+    .empty-icon{font-size:48px;margin-bottom:12px}
+    .user-info{display:flex;align-items:center;gap:8px;cursor:pointer}
+    .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600}
+    .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .user-name{font-size:14px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .mobile-menu{display:none;position:absolute;top:100%;left:0;right:0;background:white;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:99}
     .mobile-menu.active{display:block}
-    .mobile-menu-item{padding:12px 16px;display:flex;align-items:center;gap:10px;color:#333;border-radius:8px;font-size:14px;cursor:pointer}
+    .mobile-menu-item{padding:14px 16px;border-bottom:1px solid #f0f2f5;cursor:pointer}
     .mobile-menu-item:hover{background:#f5f5f5}
-    .menu-btn{display:none;background:none;border:none;color:#333;font-size:24px;cursor:pointer;padding:4px;margin-left:auto}
-    .mobile-avatar{display:none !important;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer;overflow:hidden;flex-shrink:0}
-    .mobile-avatar img{width:100%;height:100%;object-fit:cover}
-    
+    .menu-btn{display:none;background:none;border:none;font-size:24px;cursor:pointer}
+    .mobile-avatar{display:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;align-items:center;justify-content:center;font-size:14px;font-weight:600;cursor:pointer}
     @media(max-width:768px){
-      .main{grid-template-columns:1fr;padding:0 12px;margin:12px auto}
-      .sidebar{display:none}
-      .nav-logo{font-size:16px}
-      .user-name{display:none}
-      .avatar{width:28px;height:28px;font-size:12px}
-      .post-item{padding:12px 14px}
-      .post-title{font-size:14px}
-      .post-preview{font-size:12px}
-      .post-meta{font-size:11px}
-      .fab{bottom:20px;right:20px;width:50px;height:50px;font-size:20px}
+      .main{padding:0 12px;margin:12px auto}
+      .nav-links{display:none}
       .menu-btn{display:block}
       .mobile-avatar{display:flex !important}
-      .nav-links{display:none}
       .nav-inner{position:relative}
-    }
-    
-    @media(max-width:480px){
-      .nav-inner{padding:10px 12px}
-      .main{margin:10px auto}
-      .card-header{padding:10px 14px;font-size:14px}
-      .post-item{padding:10px 14px}
-      .post-title{font-size:13px}
     }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div class="loading" id="loading">加载中...</div>
   <div class="toast" id="toast"></div>
   
   <nav class="navbar">
     <div class="nav-inner">
-      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px;"> 鹿城学院论坛</a>
+      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽"> 鹿城学院论坛</a>
       <div class="nav-links">
-        <div id="guestLoginBtn" style="display:none"><a href="index.html" class="nav-link">登录</a></div>
+        <a href="index.html" class="nav-link" id="guestLoginBtn" style="display:none">登录</a>
         <a href="notifications.html" class="nav-link">消息</a>
         <a href="admin.html" class="nav-link" id="adminLink" style="display:none;color:#ef4444">管理</a>
-        <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'"></div>
+        <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'" style="cursor:pointer"></div>
       </div>
-      <button class="menu-btn" id="menuBtn" onclick="toggleMobileMenu()">☰</button>
+      <button class="menu-btn" onclick="toggleMobileMenu()">☰</button>
       <div class="mobile-avatar" id="mobileAvatar" onclick="window.location.href='profile.html'"></div>
-      <div class="mobile-menu" id="mobileMenu">
-        <div id="mobileGuestLogin" style="display:none"><a href="index.html" class="mobile-menu-item">登录</a></div>
-        <a href="forum.html" class="mobile-menu-item">首页</a>
-        <a href="notifications.html" class="mobile-menu-item">消息</a>
-        <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">用户管理</a>
-        <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">退出登录</div>
-      </div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="index.html" class="mobile-menu-item" id="mobileGuestLogin" style="display:none">登录</a>
+      <a href="notifications.html" class="mobile-menu-item">消息通知</a>
+      <a href="profile.html" class="mobile-menu-item">个人资料</a>
+      <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">用户管理</a>
+      <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">退出登录</div>
     </div>
   </nav>
   
   <main class="main">
-    <div class="content">
-      <div class="categories" id="categories"></div>
-      <div class="card">
-        <div class="card-header">
-          <span>帖子列表</span>
-          <span id="postCount"></span>
-        </div>
-        <div id="postList"></div>
+    <div class="categories" id="categories"></div>
+    <div class="card">
+      <div class="card-header">
+        <span>帖子列表</span>
+        <span id="postCount" style="font-weight:normal;color:#999;font-size:13px"></span>
       </div>
+      <div id="postList"></div>
     </div>
-    
-    <aside class="sidebar">
-      <div class="notice-card">
-        <div class="notice-title">公告</div>
-        <div class="notice-text">
-          欢迎使用鹿城学院论坛！<br>
-          如有问题请联系：<span class="notice-phone">13587769094</span>
-        </div>
-      </div>
-    </aside>
   </main>
   
   <button class="fab" id="fabBtn" onclick="window.location.href='post.html?action=new'">+</button>
 
 <script>
-const USERS_KEY = 'forum_users';
-const POSTS_KEY = 'forum_posts';
-const REPLIES_KEY = 'forum_replies';
-const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
-const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
-const POSTS_PER_PAGE = 10;
+// 腾讯云配置
+const CLOUD_API = 'https://school-7g0r6pyl5a3b9046.service.tcloudbase.com';
+const CLOUDBASE_API_KEY = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLGIwY2M2M2Q4MTQ5OCJ9.eyJhdWQiOiJzY2hvb2wtN2cwcjZweWw1YTNiOTA0NiIsImV4cCI6MjUzNDAyMzAwNzk5LCJpYXQiOjE3NzQxODgyODYsImF0X2hhc2giOiJNUGsyRzRMblJBR1ZIUDhvX0NHZzdBIiwicHJvamVjdF9pZCI6InNjaG9vbC03ZzByNnB5bDVhM2I5MDQ2IiwibWV0YSI6eyJwbGF0Zm9ybSI6IkFwaUtleSJ9LCJhZG1pbmlzdHJhdG9yX2lkIjoiMjAzNTcxODIzMjgyNTA5MDA0OSIsInVzZXJfdHlwZSI6IiIsImNsaWVudF90eXBlIjoiY2xpZW50X3NlcnZlciIsImlzX3N5c3RlbV9hZG1pbiI6dHJ1ZX0.hD7PbsR3oYBusYXS-PngMEEFBR4ziQaEDfeS77rDc47uXNsBaLmy5JTmIMMtl_8STwEvmyKTM5D9T4G6zDVLph6F0UxMF5SWQs1O5WnhIl6-bOGtyNTEjg236QvPHMzprYsHEJy0zD7VRKnCgjNezUsvEq7ZtEvDmRlx4UbEkxZbDZVkhy3kbeS-5yoSOj4EEqYiGUfvM5pGfphn0YfvaArTxsTvR8STZBZLirZqmCsCNDnMhhNI8BFAe_s9dWQZtb16futx0j2qyPJdidv9BBCFxWi5qcd7mMq3POVpuUYPkVbCD6878tYJOPySBmu-gmEYgzvKuQqPA-t-w3PlIA';
 
 const CATEGORIES = [
-  {id:'all',name:'全部'},
-  {id:'learning',name:'学习交流'},
-  {id:'campus',name:'校园生活'},
-  {id:'trade',name:'二手交易'},
-  {id:'job',name:'游戏搭子'},
-  {id:'chat',name:'闲聊灌水'},
-  {id:'notice',name:'公告通知'}
+  {id:'all', name:'全部'},
+  {id:'learning', name:'学习交流'},
+  {id:'campus', name:'校园生活'},
+  {id:'trade', name:'二手交易'},
+  {id:'job', name:'游戏搭子'},
+  {id:'chat', name:'闲聊灌水'},
+  {id:'notice', name:'公告通知'}
 ];
 
 let currentUser = null;
 let allPosts = [];
 let currentCategory = 'all';
-let currentPage = 1;
 
-function $(id){return document.getElementById(id);}
+function $(id) { return document.getElementById(id); }
 
-function timeAgo(dateStr){
-  if(!dateStr)return'';
-  const s=Math.floor((Date.now()-new Date(dateStr))/1000);
-  if(s<60)return'刚刚';
-  if(s<3600)return Math.floor(s/60)+'分钟前';
-  if(s<86400)return Math.floor(s/3600)+'小时前';
-  if(s<2592000)return Math.floor(s/86400)+'天前';
-  return new Date(dateStr).toLocaleDateString('zh-CN');
+function showToast(msg, isError) {
+  var t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 3000);
 }
 
-function showToast(msg,error){
-  const t=$('toast');
-  t.textContent=msg;
-  t.className='toast'+(error?' error':'');
-  t.style.display='block';
-  setTimeout(()=>t.style.display='none',3000);
+function hideLoading() {
+  var el = $('loading');
+  if (el) el.classList.add('hidden');
 }
 
-function hideLoading(){$('loading').classList.add('hidden');}
-
-function toggleMobileMenu(){
+function toggleMobileMenu() {
   $('mobileMenu').classList.toggle('active');
 }
 
-function logout(){
+function logout() {
   sessionStorage.removeItem('currentUser');
-  window.location.href='index.html';
+  window.location.href = 'index.html';
 }
 
-function updateUserDisplay(){
-  try{
-    const el=$('userInfo');
-    if(el&&currentUser){
-      const name=currentUser.nickname||currentUser.username||'?';
-      const initial=name.charAt(0).toUpperCase();
-      const avatarHtml=currentUser.avatar
-        ?'<div class="avatar"><img src="'+currentUser.avatar+'"></div>'
-        :'<div class="avatar">'+initial+'</div>';
-      el.innerHTML=avatarHtml+'<span class="user-name">'+name+'</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  var s = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (s < 60) return '刚刚';
+  if (s < 3600) return Math.floor(s / 60) + '分钟前';
+  if (s < 86400) return Math.floor(s / 3600) + '小时前';
+  return Math.floor(s / 86400) + '天前';
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  var map = {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'};
+  return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function updateUserDisplay() {
+  var el = $('userInfo');
+  if (el && currentUser) {
+    var name = currentUser.nickname || currentUser.username || '?';
+    var initial = name.charAt(0).toUpperCase();
+    var avatarHtml = currentUser.avatar
+      ? '<div class="avatar"><img src="' + currentUser.avatar + '"></div>'
+      : '<div class="avatar">' + initial + '</div>';
+    el.innerHTML = avatarHtml + '<span class="user-name">' + name + '</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
+  }
+  
+  var mobileAvatar = $('mobileAvatar');
+  if (mobileAvatar && currentUser) {
+    if (currentUser.avatar) {
+      mobileAvatar.innerHTML = '<img src="' + currentUser.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+    } else {
+      mobileAvatar.textContent = (currentUser.nickname || currentUser.username || '?').charAt(0).toUpperCase();
     }
-    
-    const mobileAvatar=$('mobileAvatar');
-    if(mobileAvatar&&currentUser){
-      if(currentUser.avatar){
-        mobileAvatar.innerHTML='<img src="'+currentUser.avatar+'">';
-      }else{
-        mobileAvatar.textContent=(currentUser.nickname||currentUser.username||'?').charAt(0).toUpperCase();
-      }
-    }
-  }catch(e){
-    console.error('updateUserDisplay error:',e);
   }
 }
 
-function renderUserInfo(){
-  try{
-    const userStr=sessionStorage.getItem('currentUser');
-    if(!userStr){
-      window.location.href='index.html';
-      return;
-    }
-    currentUser=JSON.parse(userStr);
-    updateUserDisplay();
-    
-    const isGuest=!currentUser||currentUser.role==='guest';
-    const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
-    
-    const setDisplay=(id,display)=>{
-      const el=$(id);
-      if(el)el.style.display=display;
-    };
-    
-    setDisplay('guestLoginBtn',isGuest?'block':'none');
-    setDisplay('mobileGuestLogin',isGuest?'block':'none');
-    setDisplay('adminLink',isAdmin?'block':'none');
-    setDisplay('mobileAdminLink',isAdmin?'flex':'none');
-    setDisplay('mobileLogout',!isGuest?'flex':'none');
-    setDisplay('fabBtn',isGuest?'none':'block');
-  }catch(e){
-    console.error('renderUserInfo error:',e);
+function renderUserInfo() {
+  var userStr = sessionStorage.getItem('currentUser');
+  if (!userStr) {
+    // 游客模式
+    $('fabBtn').style.display = 'none';
+    $('guestLoginBtn').style.display = 'block';
+    $('mobileGuestLogin').style.display = 'block';
+    return;
   }
+  
+  try {
+    currentUser = JSON.parse(userStr);
+  } catch(e) {
+    currentUser = null;
+    $('fabBtn').style.display = 'none';
+    return;
+  }
+  
+  updateUserDisplay();
+  
+  var isGuest = !currentUser || currentUser.role === 'guest';
+  var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  
+  $('guestLoginBtn').style.display = isGuest ? 'block' : 'none';
+  $('mobileGuestLogin').style.display = isGuest ? 'block' : 'none';
+  $('adminLink').style.display = isAdmin ? 'block' : 'none';
+  $('mobileAdminLink').style.display = isAdmin ? 'block' : 'none';
+  $('mobileLogout').style.display = !isGuest ? 'block' : 'none';
+  $('fabBtn').style.display = isGuest ? 'none' : 'flex';
 }
 
-function renderCategories(){
-  $('categories').innerHTML=CATEGORIES.map(c=>
-    '<span class="category-tag '+(c.id===currentCategory?'active':'')+' tag-'+c.id+'" onclick="selectCategory(\''+c.id+'\')">'+c.name+'</span>'
-  ).join('');
+function renderCategories() {
+  $('categories').innerHTML = CATEGORIES.map(function(c) {
+    return '<span class="category-tag ' + (c.id === currentCategory ? 'active' : '') + '" onclick="selectCategory(\'' + c.id + '\')">' + c.name + '</span>';
+  }).join('');
 }
 
-function selectCategory(id){
-  currentCategory=id;
-  currentPage=1;
+function selectCategory(id) {
+  currentCategory = id;
   renderCategories();
   renderPosts();
 }
 
-function renderPosts(){
-  let posts=allPosts;
-  if(currentCategory!=='all'){
-    posts=posts.filter(p=>p.category===currentCategory);
+function renderPosts() {
+  var posts = allPosts;
+  
+  if (currentCategory !== 'all') {
+    posts = posts.filter(function(p) { return p.category === currentCategory; });
   }
-  posts=posts.filter(p=>!p.is_deleted);
+  
+  posts = posts.filter(function(p) { return !p.is_deleted; });
   
   // 置顶帖子排在最前
-  posts.sort((a,b)=>{
-    if(a.is_pinned && !b.is_pinned) return -1;
-    if(!a.is_pinned && b.is_pinned) return 1;
-    return new Date(b.created_at)-new Date(a.created_at);
+  posts.sort(function(a, b) {
+    if (a.is_pinned && !b.is_pinned) return -1;
+    if (!a.is_pinned && b.is_pinned) return 1;
+    return new Date(b.created_at) - new Date(a.created_at);
   });
   
-  const start=(currentPage-1)*POSTS_PER_PAGE;
-  const pagePosts=posts.slice(start,start+POSTS_PER_PAGE);
+  $('postCount').textContent = posts.length + '条';
   
-  $('postCount').textContent=posts.length+'条';
-  
-  if(pagePosts.length===0){
-    $('postList').innerHTML='<div style="text-align:center;padding:60px;color:#999"><div style="font-size:48px;margin-bottom:16px">📝</div><div>暂无帖子</div></div>';
+  if (posts.length === 0) {
+    $('postList').innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div>暂无帖子</div></div>';
     return;
   }
   
-  const catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
-  const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
+  var catNames = {learning:'学习交流', campus:'校园生活', trade:'二手交易', job:'游戏搭子', chat:'闲聊灌水', notice:'公告通知'};
+  var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
   
-  $('postList').innerHTML=pagePosts.map(p=>{
-    const authorName=p.is_anonymous?'匿名':(p.author_nickname||p.author);
-    const pinBtn=isAdmin?'<span class="pin-btn" onclick="event.stopPropagation();togglePin('+p.id+')" style="margin-left:8px;cursor:pointer;color:'+(p.is_pinned?'#f59e0b':'#999')+'">📌</span>':'';
-    const pinnedMark=p.is_pinned?'<span style="color:#f59e0b;margin-right:4px">📌</span>':'';
-    return '<div class="post-item" onclick="viewPost('+p.id+')">'+
-      '<div class="post-title">'+pinnedMark+escapeHtml(p.title)+pinBtn+'</div>'+
-      '<div class="post-preview">'+escapeHtml(p.content||'').substring(0,100)+(p.content&&p.content.length>100?'...':'')+'</div>'+
-      '<div class="post-meta">'+
-        '<span class="category-tag tag-'+p.category+'">'+(catNames[p.category]||p.category)+'</span>'+
-        '<span>'+authorName+'</span>'+
-        '<span>'+timeAgo(p.created_at)+'</span>'+
-        '<span class="post-stats">💬 '+(p.reply_count||0)+' ❤️ '+(p.likes||0)+'</span>'+
-      '</div>'+
+  $('postList').innerHTML = posts.map(function(p) {
+    var authorName = p.is_anonymous ? '匿名' : (p.author_nickname || p.author || '?');
+    var pinBtn = isAdmin ? '<span onclick="event.stopPropagation();togglePin(' + p.id + ')" style="margin-left:8px;cursor:pointer;color:' + (p.is_pinned ? '#f59e0b' : '#999') + '">📌</span>' : '';
+    var pinnedMark = p.is_pinned ? '<span style="color:#f59e0b;margin-right:4px">📌</span>' : '';
+    return '<div class="post-item" onclick="viewPost(' + p.id + ')">' +
+      '<div class="post-title">' + pinnedMark + escapeHtml(p.title || '无标题') + pinBtn + '</div>' +
+      '<div class="post-preview">' + escapeHtml((p.content || '').substring(0, 80)) + '</div>' +
+      '<div class="post-meta">' +
+        '<span class="category-badge cat-' + p.category + '">' + (catNames[p.category] || p.category) + '</span>' +
+        '<span>' + authorName + '</span>' +
+        '<span>' + timeAgo(p.created_at) + '</span>' +
+        '<span>💬 ' + (p.reply_count || 0) + ' ❤️ ' + (p.likes || 0) + '</span>' +
+      '</div>' +
     '</div>';
   }).join('');
 }
 
-function viewPost(id){
-  window.location.href='post.html?id='+id;
-}
-
-function togglePin(postId){
-  const isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
-  if(!isAdmin){
-    showToast('只有管理员可以置顶帖子','error');
+function togglePin(postId) {
+  var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.username === 'lohannes');
+  if (!isAdmin) {
+    showToast('只有管理员可以置顶帖子', true);
     return;
   }
   
-  const post=allPosts.find(p=>p.id===postId);
-  if(!post)return;
+  var post = allPosts.find(function(p) { return p.id === postId; });
+  if (!post) return;
   
-  post.is_pinned=!post.is_pinned;
-  localStorage.setItem(POSTS_KEY,JSON.stringify(allPosts));
+  post.is_pinned = !post.is_pinned;
+  localStorage.setItem('forum_posts', JSON.stringify(allPosts));
   renderPosts();
   
-  syncToCloud().then(()=>{
-    showToast(post.is_pinned?'置顶成功':'取消置顶');
-  }).catch(()=>showToast('同步失败','error'));
+  showToast(post.is_pinned ? '置顶成功' : '取消置顶');
 }
 
-function escapeHtml(text){
-  if(!text)return'';
-  const map={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
-  return text.replace(/[&<>"']/g,m=>map[m]);
+function viewPost(id) {
+  window.location.href = 'post.html?id=' + id;
 }
 
-async function loadPostsFromCloud(){
-  try{
-    // 添加时间戳避免缓存
-    const url = JSONBIN_URL + '?t=' + Date.now();
-    const res=await fetch(url,{headers:{'X-ACCESS-KEY':JSONBIN_KEY,'Cache-Control':'no-cache'}});
-    const data=await res.json();
-    if(data.record&&data.record.posts){
-      return data.record.posts;
+async function loadPosts() {
+  // 先从本地加载
+  var localData = localStorage.getItem('forum_posts');
+  if (localData) {
+    try {
+      allPosts = JSON.parse(localData);
+    } catch(e) {
+      allPosts = [];
     }
-  }catch(e){
-    console.log('加载云端帖子失败:',e);
   }
-  return[];
-}
-
-async function loadRepliesFromCloud(){
-  try{
-    const res=await fetch(JSONBIN_URL,{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
-    const data=await res.json();
-    if(data.record&&data.record.replies){
-      localStorage.setItem(REPLIES_KEY,JSON.stringify(data.record.replies));
-    }
-  }catch(e){
-    console.log('加载云端回复失败:',e);
-  }
-}
-
-async function syncToCloud(){
-  try{
-    const res=await fetch(JSONBIN_URL,{headers:{'X-ACCESS-KEY':JSONBIN_KEY}});
-    const data=await res.json();
-    const record=data.record||{};
-    
-    const localUsers=JSON.parse(localStorage.getItem(USERS_KEY)||'[]');
-    const localPosts=JSON.parse(localStorage.getItem(POSTS_KEY)||'[]');
-    const localReplies=JSON.parse(localStorage.getItem(REPLIES_KEY)||'[]');
-    
-    const body={
-      users:localUsers.length>0?localUsers:(record.users||[]),
-      posts:localPosts.length>0?localPosts:(record.posts||[]),
-      replies:localReplies.length>0?localReplies:(record.replies||[])
-    };
-    
-    await fetch(JSONBIN_URL,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-ACCESS-KEY':JSONBIN_KEY},
-      body:JSON.stringify(body)
-    });
-  }catch(e){
-    console.log('同步失败:',e);
-  }
-}
-
-function init() {
-  var postsData = localStorage.getItem(POSTS_KEY);
-  if (postsData) {
-    try { allPosts = JSON.parse(postsData); } catch(e) { allPosts = []; }
-  }
+  
   renderPosts();
-  renderUserInfo();
-  renderCategories();
   hideLoading();
   
-  setTimeout(function() {
-    loadPostsFromCloud().then(function(cloudPosts) {
-      if (cloudPosts && cloudPosts.length > 0) {
-        cloudPosts.forEach(function(cp) {
-          if (!allPosts.find(function(p) { return p.id === cp.id; })) {
-            allPosts.push(cp);
-          }
-        });
-        localStorage.setItem(POSTS_KEY, JSON.stringify(allPosts));
-        renderPosts();
-      }
+  // 后台尝试云端同步
+  try {
+    var res = await fetch(CLOUD_API + '/getPosts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + CLOUDBASE_API_KEY
+      },
+      body: JSON.stringify({limit: 100})
     });
-  }, 1000);
+    
+    var data = await res.json();
+    
+    if (data.code === 0 && data.data) {
+      // 合并云端数据
+      data.data.forEach(function(cp) {
+        if (!allPosts.find(function(p) { return p.id === cp.id; })) {
+          allPosts.push(cp);
+        }
+      });
+      localStorage.setItem('forum_posts', JSON.stringify(allPosts));
+      renderPosts();
+    }
+  } catch (e) {
+    console.log('云端同步失败:', e);
+  }
 }
 
-// 从详情页返回时刷新数据
-window.addEventListener('pageshow', function(e) {
-  if (e.persisted) {
-    // 从缓存恢复，重新加载数据
-    console.log('从缓存恢复，重新加载数据');
-    location.reload();
-  }
-});
+window.onload = function() {
+  // 立即隐藏 loading
+  hideLoading();
+  
+  renderUserInfo();
+  renderCategories();
+  
+  // 后台加载帖子
+  loadPosts();
+};
 </script>
 </body>
 </html>

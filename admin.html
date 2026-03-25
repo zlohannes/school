@@ -235,13 +235,15 @@ function renderUsers() {
       passwordCell = '<td style="display:none"></td>';
     }
     
+    const bannedMark = u.is_banned ? '<span style="color:#ef4444;font-weight:600">🚫 已封禁</span>' : '';
+    
     return '<tr>' +
-      '<td><strong>' + escapeHtml(u.username) + '</strong></td>' +
+      '<td><strong>' + escapeHtml(u.username) + '</strong> ' + bannedMark + '</td>' +
       '<td>' + escapeHtml(u.nickname || '-') + '</td>' +
       '<td><span class="role-badge ' + roleClass + '">' + roleName + '</span></td>' +
       passwordCell +
       '<td>' + createdDate + '</td>' +
-      '<td><button class="btn-small" onclick="showUserDetails(\'' + escapeHtml(u.username) + '\')">查看详情</button></td>' +
+      '<td><button class="btn-small" onclick="showUserDetails(\'' + escapeHtml(u.username) + '\')">详情</button></td>' +
     '</tr>';
   }).join('');
   
@@ -307,6 +309,8 @@ function showUserDetails(username) {
     '</div>';
   }
   
+  const bannedStatus = user.is_banned ? '<span style="color:#ef4444">🚫 已封禁</span>' : '<span style="color:#22c55e">✅ 正常</span>';
+  
   let html = '<div class="info-row">' +
     '<span class="info-label">用户名</span>' +
     '<span class="info-value">' + escapeHtml(user.username) + '</span>' +
@@ -329,12 +333,88 @@ function showUserDetails(username) {
     '<span class="info-value">' + roleName + '</span>' +
   '</div>' +
   '<div class="info-row">' +
+    '<span class="info-label">账户状态</span>' +
+    '<span class="info-value">' + bannedStatus + '</span>' +
+  '</div>' +
+  '<div class="info-row">' +
     '<span class="info-label">创建时间</span>' +
     '<span class="info-value">' + (user.createdAt ? new Date(user.createdAt).toLocaleString('zh-CN') : '-') + '</span>' +
-  '</div>';
+  '</div>' +
+  '<div style="margin-top:16px;display:flex;gap:8px">';
+  
+  // 只有管理员才能封号/解封
+  if (currentUser.role === 'admin' || currentUser.username === 'lohannes') {
+    if (user.is_banned) {
+      html += '<button onclick="unbanUser(\'' + escapeHtml(user.username) + '\')" style="flex:1;padding:10px;background:#22c55e;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">✅ 解封账户</button>';
+    } else {
+      html += '<button onclick="banUser(\'' + escapeHtml(user.username) + '\')" style="flex:1;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">🚫 封禁账户</button>';
+    }
+  }
+  
+  html += '</div>';
   
   $('userDetails').innerHTML = html;
   $('userModal').classList.add('active');
+}
+
+function banUser(username) {
+  if (!confirm('确定要封禁用户 ' + username + ' 吗？')) return;
+  
+  const user = allUsers.find(u => u.username === username);
+  if (!user) return;
+  
+  user.is_banned = true;
+  localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
+  
+  // 同步到云端
+  syncToCloud();
+  
+  alert('✅ 已封禁用户 ' + username);
+  showUserDetails(username);
+  renderUsers();
+}
+
+function unbanUser(username) {
+  if (!confirm('确定要解封用户 ' + username + ' 吗？')) return;
+  
+  const user = allUsers.find(u => u.username === username);
+  if (!user) return;
+  
+  user.is_banned = false;
+  localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
+  
+  // 同步到云端
+  syncToCloud();
+  
+  alert('✅ 已解封用户 ' + username);
+  showUserDetails(username);
+  renderUsers();
+}
+
+async function syncToCloud() {
+  try {
+    const res = await fetch(JSONBIN_URL, {
+      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
+    });
+    const data = await res.json();
+    const record = data.record || {};
+    
+    await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-ACCESS-KEY': JSONBIN_KEY
+      },
+      body: JSON.stringify({
+        users: allUsers,
+        posts: record.posts || [],
+        replies: record.replies || [],
+        notifications: record.notifications || []
+      })
+    });
+  } catch(e) {
+    console.log('云端同步失败:', e);
+  }
 }
 
 function closeUserModal() {

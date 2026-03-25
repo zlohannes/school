@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鹿城学院论坛</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:white;display:flex;align-items:center;justify-content:center;z-index:500;font-size:18px}
+    .navbar{background:white;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+    .main{max-width:800px;margin:16px auto;padding:0 16px}
+    .card{background:white;border-radius:12px;overflow:hidden}
+    .card-header{padding:16px 20px;border-bottom:1px solid #eee;font-weight:600}
+    .post-item{padding:16px 20px;border-bottom:1px solid #f0f2f5}
+    .post-title{font-size:16px;font-weight:600;margin-bottom:8px}
+    .post-meta{font-size:13px;color:#666}
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">加载中...</div>
+  <nav class="navbar">
+    <strong>🏠 鹿城学院论坛</strong>
+  </nav>
+  <main class="main">
+    <div class="card">
+      <div class="card-header">帖子列表</div>
+      <div id="postList"></div>
+    </div>
+  </main>
+<script>
+console.log('Step 1: Script loaded');
+
+var POSTS_KEY = 'forum_posts';
+var JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
+var JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c11555aa77b81da90e70f1';
+var allPosts = [];
+
+function $(id) { return document.getElementById(id); }
+
+function hideLoading() {
+  console.log('hideLoading called');
+  var el = document.getElementById('loading');
+  if (el) el.style.display = 'none';
+}
+
+function renderPosts() {
+  console.log('renderPosts, count:', allPosts.length);
+  var el = document.getElementById('postList');
+  if (!el) { console.log('postList not found'); return; }
+  if (!allPosts.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:#999">暂无帖子</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < allPosts.length; i++) {
+    var p = allPosts[i];
+    html += '<div class="post-item"><div class="post-title">' + (p.title||'') + '</div><div class="post-meta">' + (p.author||'') + ' | ' + (p.reply_count||0) + '回复</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function init() {
+  console.log('init start');
+  
+  // 加载本地数据
+  var data = localStorage.getItem(POSTS_KEY);
+  if (data) {
+    try { allPosts = JSON.parse(data); } catch(e) { allPosts = []; }
+  }
+  
+  // 渲染
+  renderPosts();
+  hideLoading();
+  console.log('init done');
+}
+
+// 启动
+console.log('Before init');
+init();
+console.log('After init');
+</script>
+</body>
+</html>

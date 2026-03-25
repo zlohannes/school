@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>鹿城学院论坛 - 校园交流社区</title>
+  <link rel="icon" href="https://www.wzvtc.cn/favicon.ico">
+  <!-- 引入腾讯云 SDK -->
+  <script src="https://img.jscloud.tc.qq.com/libs/tcb-sdk/1.3.5/tcb.js"></script>
+  <style>
+    :root{--bg:#f0f2f5;--card:#fff;--text:#1c1e21;--muted:#65676b;--acc:#667eea}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    a{color:var(--acc);text-decoration:none}
+    .navbar{position:sticky;top:0;z-index:100;background:white;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+    .nav-inner{max-width:1080px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+    .nav-logo{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+    .nav-links{display:flex;align-items:center;gap:8px;margin-left:auto}
+    .nav-link{color:var(--muted);padding:6px 12px;border-radius:6px;font-size:14px}
+    .nav-link:hover{background:#f5f5f5}
+    .user-info{display:flex;align-items:center;gap:8px;cursor:pointer}
+    .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;overflow:hidden}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .user-name{font-size:14px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .main{max-width:1080px;margin:16px auto;padding:0 16px;display:grid;grid-template-columns:1fr 280px;gap:16px}
+    .categories{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .category-tag{padding:8px 14px;border-radius:20px;font-size:13px;cursor:pointer;background:#f0f2f5;transition:all 0.2s}
+    .category-tag.active{background:var(--acc);color:#fff}
+    .tag-learning{background:#e3f2fd;color:#1976d2}.tag-campus{background:#f3e5f5;color:#7b1fa2}
+    .tag-trade{background:#e8f5e9;color:#388e3c}.tag-job{background:#fff3e0;color:#f57c00}
+    .tag-chat{background:#fce4ec;color:#c2185b}.tag-notice{background:#ffebee;color:#d32f2f}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,0.1);overflow:hidden}
+    .card-header{padding:16px 20px;border-bottom:1px solid #eee;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+    .post-item{padding:16px 20px;border-bottom:1px solid #f0f2f5;cursor:pointer;transition:background 0.15s}
+    .post-item:hover{background:#f8f9fa}.post-item:last-child{border-bottom:none}
+    .post-title{font-size:16px;font-weight:600;margin-bottom:8px}
+    .post-preview{color:var(--muted);font-size:14px;margin-bottom:8px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .post-meta{display:flex;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+    .post-stats{display:flex;gap:12px;margin-left:auto}
+    .sidebar{display:flex;flex-direction:column;gap:16px}
+    .notice-card{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:12px}
+    .notice-title{font-size:18px;font-weight:700;margin-bottom:12px}
+    .notice-text{font-size:14px;line-height:1.6;opacity:0.95}
+    .fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(102,126,234,0.4);z-index:99;display:flex;align-items:center;justify-content:center}
+    .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;z-index:500;font-size:18px;color:#666}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:999;display:none}
+    .toast.error{background:#ef4444}
+    .mobile-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15);padding:10px;z-index:99;border-top:1px solid #eee}
+    .mobile-menu.active{display:block}
+    .mobile-menu-item{padding:12px 16px;display:flex;align-items:center;gap:10px;color:#333;border-radius:8px;font-size:14px;cursor:pointer}
+    .mobile-menu-item:hover{background:#f5f5f5}
+    .menu-btn{display:none;background:none;border:none;color:#333;font-size:24px;cursor:pointer;padding:4px}
+    .mobile-avatar{display:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;align-items:center;justify-content:center;font-size:14px;font-weight:700;cursor:pointer}
+    .mobile-avatar img{width:100%;height:100%;object-fit:cover}
+    @media(max-width:768px){
+      .main{grid-template-columns:1fr;padding:0 12px;margin:12px auto}
+      .sidebar{display:none}.nav-logo{font-size:16px}.user-name{display:none}
+      .avatar{width:28px;height:28px;font-size:12px}.post-item{padding:12px 14px}
+      .post-title{font-size:14px}.post-preview{font-size:12px}.post-meta{font-size:11px}
+      .fab{bottom:20px;right:20px;width:50px;height:50px;font-size:20px}
+      .menu-btn{display:block}.mobile-avatar{display:flex !important}.nav-links{display:none}.nav-inner{position:relative}
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">加载中...</div>
+  <div class="toast" id="toast"></div>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="forum.html" class="nav-logo"><img src="logo.jpg" alt="校徽" style="height:24px;width:24px;vertical-align:middle;border-radius:4px"> 鹿城学院论坛</a>
+      <div class="nav-links">
+        <div id="guestLoginBtn" style="display:none"><a href="index.html" class="nav-link">登录</a></div>
+        <a href="notifications.html" class="nav-link">消息</a>
+        <a href="admin.html" class="nav-link" id="adminLink" style="display:none;color:#ef4444">管理</a>
+        <div class="user-info" id="userInfo" onclick="window.location.href='profile.html'"></div>
+      </div>
+      <button class="menu-btn" id="menuBtn" onclick="toggleMobileMenu()">☰</button>
+      <div class="mobile-avatar" id="mobileAvatar" onclick="window.location.href='profile.html'"></div>
+      <div class="mobile-menu" id="mobileMenu">
+        <div id="mobileGuestLogin" style="display:none"><a href="index.html" class="mobile-menu-item">登录</a></div>
+        <a href="forum.html" class="mobile-menu-item">首页</a>
+        <a href="notifications.html" class="mobile-menu-item">消息</a>
+        <a href="admin.html" class="mobile-menu-item" id="mobileAdminLink" style="display:none;color:#ef4444">用户管理</a>
+        <div class="mobile-menu-item" id="mobileLogout" onclick="logout()" style="display:none;color:#ef4444">退出登录</div>
+      </div>
+    </div>
+  </nav>
+  <main class="main">
+    <div class="content">
+      <div class="categories" id="categories"></div>
+      <div class="card">
+        <div class="card-header"><span>帖子列表</span><span id="postCount"></span></div>
+        <div id="postList"></div>
+      </div>
+    </div>
+    <aside class="sidebar">
+      <div class="notice-card">
+        <div class="notice-title">公告</div>
+        <div class="notice-text">欢迎使用鹿城学院论坛！<br>如有问题请联系：<strong>13587769094</strong></div>
+      </div>
+    </aside>
+  </main>
+  <button class="fab" id="fabBtn" onclick="window.location.href='post.html?action=new'">+</button>
+
+<script>
+// 腾讯云初始化
+const app = tcb.init({
+  env: 'school-7g0r6pyl5a3b9046'
+});
+const db = app.database();
+
+const POSTS_PER_PAGE = 10;
+const CATEGORIES = [
+  {id:'all',name:'全部'},{id:'learning',name:'学习交流'},{id:'campus',name:'校园生活'},
+  {id:'trade',name:'二手交易'},{id:'job',name:'游戏搭子'},{id:'chat',name:'闲聊灌水'},{id:'notice',name:'公告通知'}
+];
+
+let currentUser = null;
+let allPosts = [];
+let currentCategory = 'all';
+let currentPage = 1;
+
+function $(id){return document.getElementById(id);}
+
+function timeAgo(dateStr){
+  if(!dateStr)return'';
+  const s=Math.floor((Date.now()-new Date(dateStr))/1000);
+  if(s<60)return'刚刚';
+  if(s<3600)return Math.floor(s/60)+'分钟前';
+  if(s<86400)return Math.floor(s/3600)+'小时前';
+  if(s<2592000)return Math.floor(s/86400)+'天前';
+  return new Date(dateStr).toLocaleDateString('zh-CN');
+}
+
+function showToast(msg,error){
+  const t=$('toast');
+  t.textContent=msg;
+  t.className='toast'+(error?' error':'');
+  t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+function hideLoading(){
+  var el=document.getElementById('loading');
+  if(el)el.style.display='none';
+}
+
+function toggleMobileMenu(){$('mobileMenu').classList.toggle('active');}
+
+function logout(){sessionStorage.removeItem('currentUser');window.location.href='index.html';}
+
+function updateUserDisplay(){
+  try{
+    var el=$('userInfo');
+    if(el&&currentUser){
+      var name=currentUser.nickname||currentUser.username||'?';
+      var initial=name.charAt(0).toUpperCase();
+      var avatarHtml=currentUser.avatar?'<div class="avatar"><img src="'+currentUser.avatar+'"></div>':'<div class="avatar">'+initial+'</div>';
+      el.innerHTML=avatarHtml+'<span class="user-name">'+name+'</span><button onclick="logout()" style="padding:6px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">退出</button>';
+    }
+    var mobileAvatar=$('mobileAvatar');
+    if(mobileAvatar&&currentUser){
+      mobileAvatar.innerHTML=currentUser.avatar?'<img src="'+currentUser.avatar+'" style="width:100%;height:100%;object-fit:cover">':(currentUser.nickname||currentUser.username||'?').charAt(0).toUpperCase();
+    }
+  }catch(e){console.log(e);}
+}
+
+function renderUserInfo(){
+  try{
+    var userStr=sessionStorage.getItem('currentUser');
+    if(!userStr){window.location.href='index.html';return;}
+    currentUser=JSON.parse(userStr);
+    updateUserDisplay();
+    var isGuest=!currentUser||currentUser.role==='guest';
+    var isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
+    var setDisplay=function(id,display){var el=$(id);if(el)el.style.display=display;};
+    setDisplay('guestLoginBtn',isGuest?'block':'none');
+    setDisplay('mobileGuestLogin',isGuest?'block':'none');
+    setDisplay('adminLink',isAdmin?'block':'none');
+    setDisplay('mobileAdminLink',isAdmin?'flex':'none');
+    setDisplay('mobileLogout',!isGuest?'flex':'none');
+    setDisplay('fabBtn',isGuest?'none':'block');
+  }catch(e){console.log(e);}
+}
+
+function renderCategories(){
+  $('categories').innerHTML=CATEGORIES.map(function(c){
+    return'<span class="category-tag '+(c.id===currentCategory?'active':'')+' tag-'+c.id+'" onclick="selectCategory(\''+c.id+'\')">'+c.name+'</span>';
+  }).join('');
+}
+
+function selectCategory(id){currentCategory=id;currentPage=1;renderPosts();}
+
+function renderPosts(){
+  var posts=allPosts;
+  if(currentCategory!=='all'){posts=posts.filter(function(p){return p.category===currentCategory;});}
+  posts=posts.filter(function(p){return!p.is_deleted;});
+  posts.sort(function(a,b){
+    if(a.is_pinned&&!b.is_pinned)return-1;
+    if(!a.is_pinned&&b.is_pinned)return 1;
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+  var start=(currentPage-1)*POSTS_PER_PAGE;
+  var pagePosts=posts.slice(start,start+POSTS_PER_PAGE);
+  $('postCount').textContent=posts.length+'条';
+  if(pagePosts.length===0){
+    $('postList').innerHTML='<div style="text-align:center;padding:60px;color:#999;font-size:48px">📝</div><div style="text-align:center;color:#999">暂无帖子</div>';
+    return;
+  }
+  var catNames={learning:'学习交流',campus:'校园生活',trade:'二手交易',job:'游戏搭子',chat:'闲聊灌水',notice:'公告通知'};
+  var isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
+  $('postList').innerHTML=pagePosts.map(function(p){
+    var authorName=p.is_anonymous?'匿名':(p.author_nickname||p.author);
+    var pinBtn=isAdmin?'<span onclick="event.stopPropagation();togglePin('+p.id+')" style="margin-left:8px;cursor:pointer;color:'+(p.is_pinned?'#f59e0b':'#999')+'">📌</span>':'';
+    var pinnedMark=p.is_pinned?'<span style="color:#f59e0b;margin-right:4px">📌</span>':'';
+    return'<div class="post-item" onclick="viewPost('+p.id+')">'+
+      '<div class="post-title">'+pinnedMark+escapeHtml(p.title)+pinBtn+'</div>'+
+      '<div class="post-preview">'+escapeHtml((p.content||'').substring(0,100))+'</div>'+
+      '<div class="post-meta">'+
+        '<span class="category-tag tag-'+p.category+'">'+(catNames[p.category]||p.category)+'</span>'+
+        '<span>'+authorName+'</span>'+
+        '<span>'+timeAgo(p.created_at)+'</span>'+
+        '<span class="post-stats">💬 '+(p.reply_count||0)+' ❤️ '+(p.likes||0)+'</span>'+
+      '</div></div>';
+  }).join('');
+}
+
+function viewPost(id){window.location.href='post.html?id='+id;}
+
+function togglePin(postId){
+  var isAdmin=currentUser&&(currentUser.role==='admin'||currentUser.username==='lohannes');
+  if(!isAdmin){showToast('只有管理员可以置顶','error');return;}
+  var post=allPosts.find(function(p){return p.id===postId;});
+  if(!post)return;
+  post.is_pinned=!post.is_pinned;
+  db.collection('posts').doc(postId).update({is_pinned:post.is_pinned}).then(function(){
+    renderPosts();showToast(post.is_pinned?'置顶成功':'取消置顶');
+  }).catch(function(){showToast('操作失败','error');});
+}
+
+function escapeHtml(text){if(!text)return'';var map={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};return text.replace(/[&<>"']/g,function(m){return map[m];});}
+
+// 从腾讯云加载帖子
+function loadPostsFromCloud(){
+  return db.collection('posts').orderBy('created_at','desc').get().then(function(res){
+    if(res.data&&res.data.length>0){
+      allPosts=res.data;
+      renderPosts();
+    }
+  }).catch(function(e){console.log('加载失败:',e);allPosts=[];renderPosts();});
+}
+
+function init(){
+  renderUserInfo();
+  renderCategories();
+  hideLoading();
+  loadPostsFromCloud();
+}
+
+init();
+</script>
+</body>
+</html>

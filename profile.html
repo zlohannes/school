@@ -150,38 +150,8 @@
 <script>
 const USERS_KEY = 'forum_users';
 const POSTS_KEY = 'forum_posts';
-const JSONBIN_KEY = '$2a$10$59Djck2h5v5Jn9Iw6mJXSOowLLNncsWykFED5zdhoe1J9ATaVmcJu';
-const JSONBIN_ID = '69c11555aa77b81da90e70f1';
-const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/' + JSONBIN_ID;
 let currentUser = null;
 let newAvatarData = null;
-
-async function syncUsersToCloud(users) {
-  try {
-    // 先读取云端现有数据，避免覆盖其他字段
-    const res = await fetch(JSONBIN_URL, {
-      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
-    });
-    const data = await res.json();
-    const record = data.record || {};
-    
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-ACCESS-KEY': JSONBIN_KEY
-      },
-      body: JSON.stringify({
-        users: users,
-        posts: record.posts || [],
-        replies: record.replies || [],
-        notifications: record.notifications || []
-      })
-    });
-  } catch(e) {
-    console.log('云同步失败:', e);
-  }
-}
 
 function $(id){return document.getElementById(id)}
 
@@ -191,11 +161,7 @@ function getUsers() {
 }
 
 function saveUsers(users) {
-  // 先保存到本地
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  
-  // 同步到云端（合并模式）
-  syncUsersToCloud(users).catch(() => {});
 }
 
 function init() {
@@ -206,49 +172,23 @@ function init() {
   // 检查游客身份
   const isGuest = currentUser.role === 'guest' || currentUser.username === '__GUEST__';
   if (isGuest) {
-    // 游客无法编辑，显示提示
     document.querySelector('.avatar-hint').textContent = '游客无法编辑资料';
     document.querySelector('.avatar-wrapper').style.cursor = 'not-allowed';
-    document.querySelector('.avatar-wrapper').onclick = () => {
+    document.querySelector('.avatar-wrapper').onclick = function() {
       alert('游客无法编辑资料，请登录后编辑');
     };
   }
   
-  // 从云端加载最新用户数据
-  loadUsersFromCloud().then(cloudUsers => {
-    if (cloudUsers) {
-      const stored = cloudUsers.find(u => u.username === currentUser.username);
-      if (stored) {
-        currentUser = Object.assign({}, currentUser, stored);
-        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        localStorage.setItem(USERS_KEY, JSON.stringify(cloudUsers));
-      }
-    }
-    renderProfile();
-    loadMyPosts();
-  }).catch(() => {
-    // 云端加载失败，使用本地
-    const users = getUsers();
-    const stored = users.find(u => u.username === currentUser.username);
-    if (stored) currentUser = Object.assign({}, currentUser, stored);
-    renderProfile();
-    loadMyPosts();
-  });
-}
-
-async function loadUsersFromCloud() {
-  try {
-    const res = await fetch(JSONBIN_URL, {
-      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
-    });
-    const data = await res.json();
-    if (data.record && data.record.users) {
-      return data.record.users;
-    }
-  } catch(e) {
-    console.log('云端加载失败:', e);
+  // 从本地加载最新用户数据
+  const users = getUsers();
+  const stored = users.find(u => u.username === currentUser.username);
+  if (stored) {
+    currentUser = Object.assign({}, currentUser, stored);
+    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
   }
-  return null;
+  
+  renderProfile();
+  loadMyPosts();
 }
 
 function renderProfile() {
@@ -330,46 +270,11 @@ function saveProfile() {
   // 保存到本地
   saveUsers(users);
   
-  // 优先同步到云端，等待完成
-  saveUsersAndSync(users).then(() => {
-    currentUser = Object.assign({}, currentUser, updates);
-    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-    closeEdit();
-    renderProfile();
-    showToast('保存成功！');
-  }).catch(() => {
-    showToast('保存失败，请重试', 'error');
-  });
-}
-
-async function saveUsersAndSync(users) {
-  // 先读取云端现有数据
-  try {
-    const res = await fetch(JSONBIN_URL, {
-      headers: {'X-ACCESS-KEY': JSONBIN_KEY}
-    });
-    const data = await res.json();
-    const record = data.record || {};
-    
-    await fetch(JSONBIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-ACCESS-KEY': JSONBIN_KEY
-      },
-      body: JSON.stringify({
-        users: users,
-        posts: record.posts || [],
-        replies: record.replies || [],
-        notifications: record.notifications || []
-      })
-    });
-    
-    console.log('用户数据已同步到云端');
-  } catch(e) {
-    console.log('用户数据同步失败:', e);
-    throw e;
-  }
+  currentUser = Object.assign({}, currentUser, updates);
+  sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+  closeEdit();
+  renderProfile();
+  showToast('保存成功！');
 }
 
 function showToast(msg, type = 'success') {
