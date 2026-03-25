@@ -1,0 +1,95 @@
+name: Sync Posts to JSON
+
+on:
+  schedule:
+    # 每30分钟同步一次
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install @supabase/supabase-js
+      
+    - name: Fetch posts from Supabase
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: |
+        node << 'EOF'
+        const { createClient } = require('@supabase/supabase-js');
+        
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_KEY
+        );
+        
+        async function fetchPosts() {
+          // 获取最近30天的帖子，最多200条
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          
+          const { data: posts, error } = await supabase
+            .from('posts')
+            .select('id,title,content,category,author,author_nickname,created_at,likes,is_pinned,is_anonymous,is_deleted')
+            .gte('created_at', thirtyDaysAgo)
+            .eq('is_deleted', false)
+            .order('is_pinned', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(200);
+          
+          if (error) {
+            console.error('Error fetching posts:', error);
+            process.exit(1);
+          }
+          
+          // 获取回复数统计
+          const postIds = posts.map(p => p.id);
+          const { data: replies, error: replyError } = await supabase
+            .from('replies')
+            .select('post_id')
+            .in('post_id', postIds);
+          
+          const replyCounts = {};
+          if (!replyError && replies) {
+            replies.forEach(r => {
+              replyCounts[r.post_id] = (replyCounts[r.post_id] || 0) + 1;
+            });
+          }
+          
+          // 合并数据
+          const postsWithReplies = posts.map(p => ({
+            ...p,
+            reply_count: replyCounts[p.id] || 0
+          }));
+          
+          const output = {
+            updated_at: new Date().toISOString(),
+            count: postsWithReplies.length,
+            posts: postsWithReplies
+          };
+          
+          const fs = require('fs');
+          fs.writeFileSync('public/data/posts.json', JSON.stringify(output, null, 2));
+          console.log(`Synced ${postsWithReplies.length} posts`);
+        }
+        
+        fetchPosts();
+        EOF
+        
+    - name: Commit and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add public/data/posts.json
+        git diff --staged --quiet || (git commit -m "Update posts data [$(date +%Y-%m-%d_%H:%M)]" && git push)

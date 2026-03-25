@@ -1,0 +1,7 @@
+{
+  "name": "supabase-proxy",
+  "version": "1.0.0",
+  "description": "Supabase proxy for Tencent CloudBase",
+  "main": "index.js",
+  "dependencies": {}
+}
